@@ -1418,8 +1418,8 @@ var ru = (function ($, ru) {
             radius = null,
             arcRadius = null,
             title = {
-              'pie_canwit': 'Canon witnesses',
               'pie_manu': 'Manuscripts',
+              'pie_canwit': 'Canon witnesses',
               'pie_austat': 'Authority statements'},
             g = null,
             color = null,
