@@ -1,0 +1,25 @@
+<div>
+  <span class="" data-toggle="collapse" data-target="#codi-units">
+    <a class="btn btn-xs jumbo-1" >Hide/View ({{codico_count}} units)</a>
+  </span>
+  {% if is_app_editor and not reconstructed %}
+    <span>&nbsp;</span>
+    <span class="">
+      <a class="btn btn-xs jumbo-3" 
+          onclick="document.getElementById('create_new_codico').submit();">
+        <span class="glyphicon glyphicon-plus"></span>
+        <span>Create new codicological unit</span>
+      </a>
+    </span>
+  {% elif is_app_editor and reconstructed %}
+    <span>&nbsp;</span>
+    <span class="">
+      <a class="btn btn-xs jumbo-3" 
+         data-target="#add_to_reconstruction"
+         data-toggle="collapse">
+        <span class="glyphicon glyphicon-plus"></span>
+        <span>Add existing codicological unit</span>
+      </a>
+    </span>
+  {% endif %}
+</div>

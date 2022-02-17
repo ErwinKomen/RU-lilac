@@ -1,0 +1,23 @@
+{% load i18n %}
+
+<div class="container-small">
+  <form >
+    <!-- Be sure to add csrf -->
+    {% csrf_token %}
+    <div id="downloadcenter" class="hidden">
+      <input name='downloadtype' id='downloadtype' class='form-control' value='' >
+    </div>
+    <div class="dropdown">
+      <a id="downloadmenu" role="button" class="btn jumbo-1 btn-xs dropdown-toggle" 
+         data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"  >
+        Download report contents <span class="caret"></span>
+      </a>
+      <ul class="dropdown-menu" aria-labelledby="downloadmenu">
+        <li><a role="button" downloadtype="xlsx" ajaxurl="{% url 'report_results' report.id %}" onclick="ru.lila.post_download(this);">Excel</a></li>
+        <li class="divider" role="separator"></li>
+        <li><a role="button" downloadtype="csv"  ajaxurl="{% url 'report_results' report.id  %}" onclick="ru.lila.post_download(this);">csv (tab-separated)</a></li>
+        <li><a role="button" downloadtype="json" ajaxurl="{% url 'report_results' report.id  %}" onclick="ru.lila.post_download(this);">json</a></li>
+      </ul>
+    </div>
+  </form>
+</div>

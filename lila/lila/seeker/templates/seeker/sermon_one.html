@@ -1,0 +1,113 @@
+{% load i18n %}
+
+    <!-- Information on one sermon-->
+    <div sermonid="{{msitem.obj.id}}" level="{{level}}" id="sermon_{{msitem.obj.id}}"
+         sermontype="{% if msitem.shead %}head{% else %}sermon{% endif %}"
+         class="tree {% if lean_method and level > 1 %} hidden{% endif %}">
+
+      <!-- Possible start of a new codicological unit -->
+      {% if msitem.codistart %}
+        <div class="codi-start {% if is_app_editor and msitem.codiorder > 1 %}draggable{% endif %}" 
+             {% if is_app_editor and msitem.codiorder > 1 %}
+                draggable="true"
+                ondragstart="ru.lila.seeker.sermon_drag(event);"
+             {% endif %}
+             order="{{msitem.codiorder}}"
+             targetid="{{msitem.codistart}}">
+          <hr />
+        </div>
+      {% endif %}
+
+      <table class="func-view sermons" style="width: 100%;">
+        <tbody>
+          <!-- Horizontal ruler that can be expanded -->
+          <tr style="font-size: 1px;" class="">
+            <td colspan="2" class="ruler ruler_white" 
+                {% if is_app_editor %}ondragover="ru.lila.seeker.sermon_dragenter(event);" 
+                ondragenter="ru.lila.seeker.sermon_dragenter(event);" ondragleave="ru.lila.seeker.sermon_dragleave(event);"
+                ondrop="ru.lila.seeker.sermon_drop(event);"{% endif %}
+                >
+
+            </td>
+            <td colspan="2" style="background-color: white;"></td>
+          </tr>
+          <!-- Actual line-->
+          <tr>
+            <!-- Either '+' sign or empty space -->
+            <td valign="top" class="sermonbutton"
+                {% if msitem.isparent %}{% endif %}>
+              {% if msitem.isparent %}
+                <span class="glyphicon glyphicon-plus" onclick="ru.lila.seeker.sermon_level(this);"></span>
+              {% elif msitem.sermon %}
+                <a href="{% url 'canwit_details' msitem.sermon.id %}"><span>&nbsp;</span></a>
+              {% else %}
+                <span>&nbsp;</span>
+              {% endif %}
+            </td>
+
+            <!-- The number of the sermon in our current hierarchy -->
+            <td valign="top" class="sermonnumber tdnowrap" onclick="ru.lila.seeker.sermon_selection(this);">
+              <span>{{msitem.number}}</span>
+            </td>
+
+            <!-- The *LOCUS* of the sermon that serves as drag point -->
+            <td valign="top" class="tdnowrap sermonlocus"  style="background-color: white;"
+                {% if is_app_editor %}ondragover="ru.lila.seeker.sermon_dragenter(event);" 
+                ondragenter="ru.lila.seeker.sermon_dragenter(event);" ondragleave="ru.lila.seeker.sermon_dragleave(event);"
+                ondrop="ru.lila.seeker.sermon_drop(event);"{% endif %}
+                >
+                {% if msitem.sermon %}
+                  <code draggable="true" class="draggable" 
+                        {% if is_app_editor %}ondragstart="ru.lila.seeker.sermon_drag(event);"{% endif %}
+                        >{% if msitem.sermon.locus %}{{msitem.sermon.locus}}{% else %}?{% endif %}</code>
+                {% elif msitem.shead %}
+                  <code draggable="true" class="draggable" 
+                        {% if is_app_editor %}ondragstart="ru.lila.seeker.sermon_drag(event);"{% endif %}
+                        >{% if msitem.shead.locus %}{{msitem.shead.locus}}{% else %}?{% endif %}</code>
+
+                  {% if is_app_editor %}
+                    <!-- Add a button to (re-)calculate the LOCUS -->
+                    <a class="edit-mode btn btn-xs jumbo-1" onclick="ru.lila.seeker.sermon_locus(this);">
+                      <span class="glyphicon glyphicon-repeat" title="Calculate the LOCUS"></span>
+                    </a>
+                  {% endif %}
+
+                {% endif %}
+            </td>
+
+            <!-- The sermon itself -->
+            <td valign="top" class="td clickable" style="width: 100%;" >
+              <span draggable="false" targeturl="{{msitem.obj.target}}">
+                {% if msitem.obj.goldsermons.count > 0 %}
+                  <span class="badge signature ot" title="This links to {{msitem.obj.goldsermons.count}} Sermons Gold">G</span>
+                {% endif %}
+                {% if msitem.obj.get_eqsetcount > 0 %}
+                  <span class="glyphicon glyphicon-link" style="color: darkgreen;" title="This links to {{msitem.obj.get_eqsetcount}} Authority files"></span>
+                {% endif %}
+                {% if msitem.sermon %}
+                  <a href="{% url 'canwit_details' msitem.sermon.id %}" class="sermon">
+                    <span>{% include 'seeker/sermon_view.html' with sermon=msitem.sermon %}</span>
+                  </a>
+                  <span class="sermon">
+                    <span class="manusermo hc hidden">{{msitem.hclist|safe}}</span>
+                  </span>
+                {% elif msitem.shead %}
+                  <span class="shead" {% if is_app_editor %}contenteditable="true"
+                          oninput="ru.lila.seeker.sermon_change(this);"
+                        {% endif %}
+                        >
+                    {% if msitem.shead.title %}{{msitem.shead.title}}{% else %}(structure head){% endif %}
+                  </span>
+
+                {% endif %}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      {% for child in canwit_list %}
+        {% if child.obj.parent and child.obj.parent.id == msitem.obj.id %}
+          {% include 'seeker/sermon_one.html' with msitem=child canwit_list=canwit_list level=level|add:1 %}
+        {% endif %}
+      {% endfor %}
+    </div>

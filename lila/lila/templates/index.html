@@ -1,0 +1,108 @@
+{% extends "layout.html" %}
+{% load staticfiles %}
+
+{% block content %}
+
+<div class="container body-content">
+  <div class="jumbotron" style="max-height: 180px;">
+      <h1>
+        <span>LiLaC</span>
+        <span class="pull-right">
+          {% if not user.is_authenticated %}
+            <a class="btn btn-default" href="{% url 'login' %}"><span class="glyphicon glyphicon-user" aria-hidden="true"></span>Log in</a>
+            <a class="btn btn-default" href="{% url 'signup' %}">Sign up</a>
+          {% endif %}
+          <a href="{% url 'about' %}" class="btn btn-primary btn-large">Learn more &raquo;</a>
+        </span>
+      </h1>
+      <p class="lead">
+        <span>The lila web application provides search facilities for the Living Law Canon.</span>
+        <span style="font-weight: bold; font-size: larger;">&nbsp;&nbsp;Disclaimer: </span>
+        <span class="" style="color: red; font-weight: bold; font-size: large;">This is a beta version</span>
+      </p>
+  </div>
+
+  {% if is_404 %}
+    <div class="sent-error">
+      Sorry, but the path that you attempted to use is not available for the lila application.
+    </div>
+  {% endif %}
+
+  <div class="row">
+      <div class="col-md-6 bgimg">
+        <h2>Summary</h2>
+        <p>Currently the web application hosts {{count_canwit}} Canon Witnesses, that are part of {{count_manu}} Manuscripts. 
+        We keep track of the information that is extracted from external <a href="{% url 'source_list' %}" target="_blank">sources</a> 
+        (<a href="{% url 'about' %}">statistics</a>).
+        More details can be found on the <a href="{% url 'literature_list' %}" target="_blank">bibliography page</a>.</p>
+
+        <div class="row" style="height: 200px;" targeturl="{% url 'guide' %}">
+          <div id="pie_canwit" class="col-md-4" >
+          </div>
+          <div id="pie_austat" class="col-md-4" >
+          </div>
+          <div id="pie_manu"  class="col-md-4" >
+          </div>
+        </div>
+
+        <h2>Latest news</h2>
+        {% if newsitem_list %}
+          {% for item in newsitem_list %}
+            <div class="panel-news panel-default">
+              <div class="panel-heading collapsed" data-toggle="collapse" data-target="#news-item-{{item.id}}">
+                <span>{{item.title}}</span>
+                <span class="pull-right" style="font-size: smaller;">
+                  {% if item.saved|date:"j/b/o" == item.created|date:"j/b/o" %}
+                    <i>{{item.saved|date:"j/b/o"}}</i>
+                  {% else %}
+                    <i>{{item.created|date:"j/b/o"}} - {{item.saved|date:"j/b/o"}}</i>
+                  {% endif %}
+                </span>
+              </div>
+              <div class="collapse newsitem" id="news-item-{{item.id}}">
+                {{item.msg|safe}}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p><i>(There is no news yet)</i></p>
+        {% endif %}
+      </div>
+      <div class="col-md-6">
+        <h2>Project</h2>
+        <p>See the lila <a href="https://www.ru.nl/rich/our-research/research-groups/representations-city/current-projects/projects/living-law-minor-canonical-collections-carolingian/" 
+                           target="_blank">project page</a> for more information.</p>
+        <p>In the eighth and ninth centuries, Western Europe experienced an impressive rekindled enthusiasm for scholarship and learning, 
+        fuelled by the Carolingian ambitions of <em>correctio</em> and <em>emendatio</em> of religious texts and practice. 
+        Its most important result was the impressive rise in the production of books.
+        These Carolingian codices were filled with works of biblical exegesis, historiography, poetry, educational texts and (late-)antique literature. 
+        As a genre that intersects ‘with every aspect of medieval life and society’—to quote Kriston Rennie—, 
+        <b>canon law</b> was one of the main focal points of the period’s intellectual energy. 
+        In addition to the increased organisation of church councils, considerable learned effort and vast economic funds were spent on copying and distributing 
+        late-antique and more recent collections of canon law. It resulted in well over a hundred extant eighth- and ninth-century 
+        manuscript witnesses of great canonical collections with names like the <em>Collectio Dionysiana</em>, the <em>Collectio Quesnelliana</em>, 
+        the <em>Collectio Quadripartitus</em>, the <em>Collectio Vetus Gallica</em>, and the Irish <em>Collectio canonum Hibernensis</em>—to name a few.</p>
+
+        <h2>Getting started</h2>
+        <p>
+          The lila application has been designed by the Technical Service Group of the Humanities Lab at the Radboud University Nijmegen.
+          Any researcher is invited to register (via <a role="button" class="btn btn-default btn-xs" href="{% url 'signup' %}">sign up</a>).
+          Regular researchers are able to read and search through the information that is provided.
+        </p>
+        <p>
+          {% if user.is_authenticated %}
+          (See the <b>Extra</b> menu for logout and other options)
+          {% endif %}
+        </p>
+
+
+      </div>
+  </div>
+</div>
+<script type="text/javascript">
+  var g_pie_data = {{pie_data|safe}} ;
+
+</script>
+
+
+{% endblock %}

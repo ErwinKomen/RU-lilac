@@ -1,0 +1,70 @@
+{% load i18n %}
+
+<div>
+    <table class="func-view" style="width: 100%;">
+      <tbody>
+        {% for instance in superlist %}
+          <tr class="form-row">
+            <!-- The kind of link 
+            <td valign="top"><span class='badge signature ot'>{{instance.get_linktype_display}}</span></td>
+              -->
+
+            <!-- The contents of the linked SSG -->
+            <td style="width: 100%;">
+
+              <!-- View-mode: show the destination SSG according to the specs-->
+              <div class="view-mode">
+                <!-- Only allow copying, if the link is 'equal' -->
+                {% if instance.linktype == "eqs" or instance.linktype == "uns" %}
+                  <span>
+                    <a class="btn btn-xs jumbo-1" 
+                        onclick="ru.lila.seeker.elevate_confirm(this)"
+                        title="Copy information from this Super Sermon Gold to this Sermon manifestation (Author, incipit, explicit)">
+                      Copy <span class="glyphicon glyphicon-share-alt"></span>
+                    </a>
+                  </span>
+                {% endif %}
+                <!-- The standard details of the SSG -->
+                <span>
+                  <a href="{% url 'austat_details' instance.super.id %}">{{instance.super.get_view|safe}}</a>
+                </span>
+              </div>
+
+              <!-- Confirmation of COPY -->
+              {% if is_app_editor %}
+                <div class="elevate-confirm hidden">
+                  <div>
+                    <span>The information that will be copied is:</span>
+                    <table>
+                      <tr><td>Author</td><td>{{instance.super.author.name}}</td></tr>
+                      <tr><td>Incipit</td><td>{{instance.super.get_incipit_markdown}}</td></tr>
+                      <tr><td>Explicit</td><td>{{instance.super.get_explicit_markdown}}</td></tr>
+                    </table>
+                  </div>
+                  <div>
+                    <span>Do you really want to copy these details to the Sermon manifestation?</span>
+                    <span>
+                      <a class="btn btn-xs jumbo-1" onclick="ru.lila.seeker.elevate_cancel(this);">Cancel</a>
+                    </span>
+                    <span>
+                      <a class="btn btn-xs jumbo-4" 
+                         onclick="ru.lila.seeker.elevate_confirm(this)"
+                         href="{% url 'canwit_details' object_id %}?supercopy={{instance.super.id}}"
+                         title="Copy information from this Super Sermon Gold to this Sermon manifestation (Author, incipit, explicit)">
+                        Copy <span class="glyphicon glyphicon-share-alt"></span>
+                      </a>
+                    </span>
+                  </div>
+                </div>
+              {% endif %}
+
+            </td>
+
+          </tr>
+
+        {% endfor %}
+
+      </tbody>
+    </table>
+</div>
+

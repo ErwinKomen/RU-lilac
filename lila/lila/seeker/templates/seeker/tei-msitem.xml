@@ -1,0 +1,26 @@
+<msItem>
+  {% if msitem.itemsermons.count == 1 %}
+    {% for sermon in msitem.itemsermons.all %}
+      <locus from="{{sermon.locus_first}}" to="{{sermon.locus_last}}">{{sermon.locus}}</locus>
+      <title>{% if sermon.title %}{{sermon.title.strip}}{% endif %}</title>
+      {% if sermon.subtitle %}<rubric>{{sermon.subtitle.strip}}</rubric>{% endif %}
+      {% if sermon.ftext %}<ftext>{{sermon.ftext}}</ftext>{% endif %}
+      {% if sermon.ftrans %}<ftrans>{{sermon.ftrans}}</ftrans>{% endif %}
+      {% if sermon.quote %}<quote>{{sermon.quote}}</quote>{% endif %}
+      {% if sermon.note %}<note>{{sermon.note}}</note>{% endif %}
+      {% if sermon.author %}
+        <author cert="{{sermon.get_autype_display}}">{{sermon.author.name}}</author>
+      {% endif %}
+    {% endfor %}
+  {% else %}
+    {% for canhead in msitem.itemheads.all %}
+      <locus from="{{canhead.locus_first}}" to="{{canhead.locus_last}}">{{canhead.locus}}</locus>
+      <title>{% if canhead.title %}{{canhead.title.strip}}{% endif %}</title>
+    {% endfor %}
+  {% endif %}
+
+  {% for child in msitem.get_children %}
+    {% include 'seeker/tei-msitem.xml' with msitem=child %}
+  {% endfor %}
+</msItem>
+

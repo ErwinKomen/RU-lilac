@@ -1,0 +1,1894 @@
+body {
+    padding-top: 50px;
+    padding-bottom: 20px;
+}
+
+/* Set padding to keep content from hitting the edges */
+.body-content {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.center {
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+}
+.container-large {
+    margin-left: 50px;
+}
+.container {
+  max-width: 1350px;
+}
+/* Set width on the form input elements since they're 100% wide by default */
+/*
+input,
+select,
+textarea {
+    max-width: 280px;
+}*/
+
+/* styles for validation helpers */
+.field-validation-error {
+    color: #b94a48;
+}
+
+.field-validation-valid {
+    display: none;
+}
+
+input.input-validation-error {
+    border: 1px solid #b94a48;
+}
+
+input[type="checkbox"].input-validation-error {
+    border: 0 none;
+}
+
+.validation-summary-errors {
+    color: #b94a48;
+}
+
+.validation-summary-valid {
+    display: none;
+}
+
+.coll-xml {
+  background-color: lightgoldenrodyellow;
+  color: darkred;
+}
+
+/* My own modifications */
+a.list-group-item-info:hover {
+  background-color: lightgoldenrodyellow !important;
+}
+table tbody tr:hover {
+  /* 
+  background-color: lightblue !important;
+  cursor: pointer;*/
+  /*  */
+}
+table tbody tr td.clickable:hover, table tbody tr.clickable td:hover, div.clickable:hover, span.clickable:hover, th div a.clickable:hover {
+  cursor: pointer;
+}
+table tbody tr td.clickable:hover, table tbody tr.clickable td:hover, table tbody tr td span.clickable:hover, th div a.clickable:hover {
+  background-color: lightgoldenrodyellow ;
+}
+
+table tbody tr td .clickable {
+
+}
+
+th div a.clickable.ordered {
+  color: darkgoldenrod;
+}
+
+th div a.clickable.ordered:hover {
+  color: darkgoldenrod;
+  background-color: lightgoldenrodyellow;
+}
+
+table tbody tr td.hoverable:hover {
+  background-color: lightgoldenrodyellow !important;
+}
+
+/*
+div.inline-group a.add-related {
+    visibility: hidden;
+} */
+
+.submit-row a.deletelink {
+  height: 35px;
+}
+
+/* Adaptation of the standard panel */
+.panel {
+    margin-top: 5px;
+    margin-left: 15px;
+    margin-right: 15px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.panel-plain {
+    margin-left: 0px !important;
+    margin-right: 0px !important;
+    padding-left: 0px !important;
+    padding-right: 0px !important;
+}
+
+.panel-news {
+  margin-top: 5px;
+	/* margin-bottom:20px;
+	background-color:#fff;
+	-webkit-box-shadow:0 1px 1px rgba(0,0,0,0.05);
+	box-shadow:0 1px 1px rgba(0,0,0,0.05);
+    */
+	border-radius:4px;
+	border:1px solid #ddd;
+}
+
+.panel-function {
+    margin-right: 10px;
+    background-color: lightyellow;
+    display: inline-block;
+}
+
+.panel-wide {
+    margin-left: 0px;
+    margin-right: 0px;
+    cursor: pointer; 
+}
+
+.panel-none {
+  border: 0 !important;
+  box-shadow: none;
+}
+
+/* navbar */
+.navbar-custom {
+    background-color: goldenrod;
+    border-top-color: darkgoldenrod;
+}
+/* title */
+.navbar-custom .navbar-brand {
+    color: lightgoldenrodyellow;
+}
+.navbar-custom .navbar-brand:hover,
+.navbar-custom .navbar-brand:focus {
+    color: sandybrown;
+}
+/* link */
+.navbar-custom .navbar-nav > li > a {
+    color: white;
+}
+.navbar-custom .navbar-nav > li > a:hover,
+.navbar-custom .navbar-nav > li > a:focus {
+    color: lightgoldenrodyellow;
+    background-color: darkgoldenrod;
+}
+.navbar-custom .navbar-nav > .active > a, 
+.navbar-custom .navbar-nav > .active > a:hover, 
+.navbar-custom .navbar-nav > .active > a:focus {
+    color: lightgoldenrodyellow;
+    background-color: darkgoldenrod;
+}
+.navbar-custom .navbar-nav > .open > a, 
+.navbar-custom .navbar-nav > .open > a:hover, 
+.navbar-custom .navbar-nav > .open > a:focus {
+    color: #ffe6d1;
+    background-color: #D5D5D5;
+}
+/* caret */
+.navbar-custom .navbar-nav > .dropdown > a .caret {
+    border-top-color: #ecf0f1;
+    border-bottom-color: #ecf0f1;
+}
+.navbar-custom .navbar-nav > .dropdown > a:hover .caret,
+.navbar-custom .navbar-nav > .dropdown > a:focus .caret {
+    border-top-color: #ffe6d1;
+    border-bottom-color: #ffe6d1;
+}
+.navbar-custom .navbar-nav > .open > a .caret, 
+.navbar-custom .navbar-nav > .open > a:hover .caret, 
+.navbar-custom .navbar-nav > .open > a:focus .caret {
+    border-top-color: #ffe6d1;
+    border-bottom-color: #ffe6d1;
+}
+/* mobile version */
+.navbar-custom .navbar-toggle {
+    border-color: #d35400;
+}
+.navbar-custom .navbar-toggle:hover,
+.navbar-custom .navbar-toggle:focus {
+    background-color: #d35400;
+}
+.navbar-custom .navbar-toggle .icon-bar {
+    background-color: #ecf0f1;
+}
+@media (max-width: 767px) {
+    .navbar-custom .navbar-nav .open .dropdown-menu > li > a {
+        color: #ecf0f1;
+    }
+    .navbar-custom .navbar-nav .open .dropdown-menu > li > a:hover,
+    .navbar-custom .navbar-nav .open .dropdown-menu > li > a:focus {
+        color: #ffe6d1;
+        background-color: #d35400;
+    }
+}
+
+#header  .navbar-custom  .open .dropdown-menu li  a:link,
+#header  .navbar-custom  .open .dropdown-menu li  a:visited {
+  color: black !important;
+}
+
+/* BASE.css */
+p { 
+    padding: 0;
+    line-height: 140%;
+}
+
+/* Extra small pagination */
+.pagination {
+    margin: 3px 0;
+}
+.pagination-xsm > li > a,
+.pagination-xsm > li > span {
+  padding: 2px 4px;     /* Note: this is vertical, horizontal... */
+  font-size: 12px;
+}
+.pagination-xsm > li > a:hover {
+  cursor: pointer; 
+}
+
+.pagination-xsm > li:first-child > a,
+.pagination-xsm > li:first-child > span {
+  border-bottom-left-radius: 2px;
+  border-top-left-radius: 2px;
+}
+
+.pagination-xsm > li:last-child > a,
+.pagination-xsm > li:last-child > span {
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
+}
+
+/* Bootstrap dashboard */
+/*
+ * Sidebar
+ */
+
+/* Hide for mobile, show later */
+.sidebar {
+  display: none;
+}
+@media (min-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 80px;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    display: block;
+    padding: 20px;
+    overflow-x: hidden;
+    overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+    background-color: #f5f5f5;
+    border-right: 1px solid #eee;
+  }
+}
+
+/* Sidebar navigation */
+.nav-sidebar {
+  margin-right: -21px; /* 20px padding + 1px border */
+  margin-bottom: 20px;
+  margin-left: -20px;
+}
+.nav-sidebar > li > a {
+  padding-right: 20px;
+  padding-left: 20px;
+}
+.nav-sidebar > .active > a,
+.nav-sidebar > .active > a:hover,
+.nav-sidebar > .active > a:focus {
+  color: #fff;
+  background-color: #428bca;
+}
+
+
+/*
+ * Main content
+ */
+
+.main {
+  padding: 20px;
+}
+@media (min-width: 768px) {
+  .main {
+    padding-right: 40px;
+    padding-left: 40px;
+  }
+}
+.main .page-header {
+  margin-top: 0;
+}
+
+
+/* Text visualisations */
+.text-line .line-identifier {
+    font-size: x-small;
+    color: green;
+    position: relative;
+    top: -5px;
+}
+.text-line .line-text a {
+    color: black;
+}
+.text-line .line-text a:hover {
+    background-color: lightgoldenrodyellow;
+    text-decoration-line: none;
+}
+
+/* Patch for Google Chrome */
+/* */
+.glyphicon {
+  position: relative;
+  top: 1px;
+  display: inline-block;
+  font-family: 'Glyphicons Halflings';
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1.5;     /* This is the correct measure for btn-xs */
+
+  -webkit-font-smoothing: antialiased;
+  /*-moz-osx-font-smoothing: grayscale; */
+}
+
+/* If the remove glyphicon is *not* in a button, it should be aligned differently */
+a:not(.btn) span.glyphicon-remove {
+   padding-left: 5px; 
+   margin-right: -8px;
+}
+
+.glyphicon-refresh-animate {
+    animation: spin .7s infinite linear;
+    -webkit-animation: spin2 .7s infinite linear;
+}
+
+@-webkit-keyframes spin2 {
+    from { -webkit-transform: rotate(0deg);}
+    to { -webkit-transform: rotate(360deg);}
+}
+
+@keyframes spin {
+    from { transform: scale(1) rotate(0deg);}
+    to { transform: scale(1) rotate(360deg);}
+}
+
+/* Tree drawing */
+.sent-error {
+    background-color: lightgoldenrodyellow;
+    color: darkred;
+}
+
+.visborder {
+    border: 1px solid blue;
+}
+
+svg {
+    stroke-width: 1;
+}
+
+svg line {
+    vector-effect: non-scaling-stroke;
+}
+    
+svg .lithium-conn path:hover {
+    stroke: red;
+    stroke-width: 2;
+}
+
+svg .lithium-shadow rect:hover {
+    fill: lightgray;
+    stroke: transparent;
+    stroke-width: 1;
+}
+svg .lithium-toggle rect:hover {
+    fill: yellow;
+    stroke: darkred;
+    stroke-width: 1;
+}
+
+/* What happens when we hover over a node */
+svg g.lithium-node:hover > rect {
+    fill: yellow;
+    stroke: darkred;
+    stroke-width: 2;
+}
+svg g.lithium-node:hover > text {
+    fill: darkgreen;
+}
+.svg-features {
+    background: #b4d4d1 none repeat scroll 0 0;
+    border: 1px solid #628f8b;
+    display: block;
+    font-size: 12px;
+    /* left: 2em; */
+    /* right: 10px; */
+    opacity: 0.9;
+    padding: 5px;
+    position: absolute;
+    text-decoration: none !important;
+    /* top: 90px; */
+    /* width: 320px; */
+    max-width: 600px;
+}
+.svg-features .attrlabel {
+    color: #254643;
+    display: inline-block;
+    font-weight: bold;
+    width: 90px;
+}
+.svg-features .attrvalue {
+    font-family: monospace;
+}
+
+.svg-main {
+    background: lightgoldenrodyellow none repeat scroll 0 0;
+    border: none;
+    border-radius: 3px;
+    display: block;
+    font-size: 12px;
+    opacity: 0.9;
+    padding: 5px;
+    position: absolute;
+    text-decoration: none !important;
+    max-width: 600px;
+}
+.svg-main .cellvalue {
+    font-family: monospace;
+}
+
+
+/*  cesar.seeker */
+.research-part {
+  padding: 5px 30px;
+}
+.glyphicon-plus {
+    color: mediumseagreen;
+}
+.glyphicon-remove {
+  color: red;
+}
+/*
+.glyphicon-arrow-left {
+  color: darkred;
+}*/
+.glyphicon-ok, .glyphicon-edit, .glyphicon-pencil {
+  color: green;
+}
+
+
+.result-part .row {
+    margin-right: 20px;
+    margin-left: 20px;
+}
+
+.seeker-choice {
+  border: 1px solid gold;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+
+.seeker-choice td {
+  background-color: lightgoldenrodyellow;
+}
+.seeker-choice td.b {
+  font-family: monospace;
+  font-weight: bold;
+  color: darkblue;
+}
+
+.td-toggle-textarea {
+    font-family: monospace;
+    color: brown;
+}
+.td-textarea {
+    font-family: monospace;
+}
+.mytextarea {
+  font-family: monospace;
+  color: darkblue;
+}
+
+
+.arg-type select {
+    font-size: 11px;
+    height: 25px;
+    color: darkblue;
+    /* border: none;*/
+    background-color: whitesmoke;
+}
+.arg-type {
+    color: darkblue;
+}
+.arg-val-exp {
+    color: darkred;
+}
+
+.arg-intro  {
+    font-size: 12px;
+    width: 1%;
+    white-space: nowrap;
+}
+div.arg-value {
+    margin: 2px;
+    border: 1px solid #ddd;
+    border-radius: 3px; 
+    background-color: whitesmoke;
+    font-size: 12px !important;
+}
+/*
+.arg-item > td {
+    width: unset;
+    white-space:nowrap;
+}*/
+.table-fit {
+  width: 1px !important;
+}
+.table-fit td {
+  white-space:nowrap !important;
+}
+.table-fit select {
+  font-size: 11px;
+}
+.tdnowrap {
+  white-space:nowrap !important;
+}
+div.arg-selected {
+    background-color: lightcyan;  
+}
+.arg-parent {
+    color: orange;
+}
+
+/* Adjust [row] within forms */
+form .row {
+    margin-left: 0px;
+}
+form .panel-heading.row {
+    margin-right: 0px;
+    margin-left: 0px;
+}
+
+/* Colors of jumbo parts */
+.jumbo-1 {
+  background-color: lavender;
+  color: chocolate;
+  fill: lavender;
+}
+.jumbo-1 text {
+  fill: goldenrod;
+}
+.jumbo-1.active {
+    background-color: lightgray;
+    color: saddlebrown;
+}
+
+.jumbo-2 {
+  background-color: chocolate;
+  color: lavender !important;
+  fill: chocolate;
+}
+.jumbo-3 {
+  background-color: #355e3b;
+  color: lavender !important;
+  fill: #355e3b;
+}
+.jumbo-4 {
+  background-color: #ff2400;
+  color: lavender !important;
+  fill: #ff2400;
+}
+.jumbo-5 {
+  background-color: blue;
+  color: white !important;
+  fill: white;
+}
+.jumbo-2 text, .jumbo-3 text, .jumbo-4 text, .jumbo-5 text {
+  fill: lavender;
+}
+
+.jumbo-1:hover {
+    color: black;
+    background-color: goldenrod;
+    fill: goldenrod;
+    cursor: pointer;
+}
+.jumbo-1:hover text {
+  fill: black;
+}
+.jumbo-2:hover, .jumbo-3:hover, .jumbo-4:hover {
+    color: white;
+    background-color: goldenrod;
+    fill: goldenrod;
+    cursor: pointer;
+    /* stroke: white; */
+}
+.jumbo-5:hover {
+    color: white;
+    background-color: darkblue;
+    fill: lightblue;
+    cursor: pointer;
+}
+
+/* What to do when the button is disabled */
+.jumbo-1:disabled, .jumbo-2:disabled, .jumbo-3:disabled, .jumbo-4:disabled, .jumbo-5:disabled {
+    color: lightgray;
+    background-color: darkgray;
+    fill: darkgray;
+    cursor: wait;
+}
+
+td.editable, span.editable {
+  cursor: pointer;
+}
+td.editable:hover, span.editable:hover {
+  background-color: lightyellow;
+  color: darkgreen;
+}
+
+.main-arrow {
+  stroke: black;
+  stroke-width: 1px;
+}
+
+a.jumbotron:visited {color:inherit;}
+a.jumbotron:hover {
+    text-decoration: none;
+    cursor: pointer;
+}
+.jumbotron p {
+    font-size: 12px;
+}
+
+/* Specify how a keyword should be shown */
+.kw {
+  font-family: monospace;
+  color: darkblue;
+  background-color: whitesmoke;
+}
+
+div.explanation {
+  background-color: lightyellow;
+  border-radius: 5px;
+  border: 1px solid gold;
+  padding: 4px 4px 4px 4px;
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+div.up {
+  margin-top: -10px !important;
+}
+
+/* Seeker KWIC */
+
+table.kwic-list a:hover {
+    text-decoration: none;
+    cursor: pointer;
+}
+table.kwic-list {
+  width: 100%;
+}
+
+table.kwic-list tbody > tr > td {
+  padding: 0px;
+  border-top-style: none;
+}
+
+table td.kwic-loc, table td span.kwic-loc, div span.kwic-loc {
+  font-family: monospace;
+  color: darkblue;
+  /* background-color: lightgray; */
+  font-size: small;
+  text-align: left;
+  white-space:nowrap !important;
+  padding: 0px;
+  border-top-style: none;
+}
+
+table td.kwic-pre {
+  color: brown;
+  font-size: small;
+  text-align: right;
+  white-space:nowrap !important;
+}
+
+table td.kwic-hit {
+  color: black;
+  font-weight: bold;
+  font-size: small;
+  text-align: center;
+  border: 2px solid white;
+  white-space:nowrap !important;
+}
+td.kwic-hit a {
+    color: black;
+}
+td.kwic-loc a {
+    color: darkblue;
+}
+
+table td.kwic-fol {
+  color: brown;
+  font-size: small;
+  text-align: left;
+  white-space:nowrap !important;
+}
+
+.kwic-filter-operator {
+    color: brown;
+    font-family: monospace;
+}
+
+.kwic-filter-field {
+    color: darkblue;
+    font-family: monospace;
+    background-color: whitesmoke;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 90%;
+    padding: 2px 4px;
+}
+
+.kwic-filter-value {
+    color: darkgreen;
+    font-family: monospace;
+}
+
+body > div > footer {
+  height: 18px;
+  padding-top: 4px;
+  background: darkgoldenrod;
+  color: white;
+  font-size: x-small;
+  position: fixed;
+  bottom: 0px;
+  width: 100%;
+  text-align: center;
+  z-index: 100;
+}
+body > div > footer a {
+  color: #355e3b;
+  position: relative;
+  z-index: 1000;
+}
+
+.citation {
+  color: darkblue;
+  font-family: monospace;
+  font-size: small;
+}
+
+.signup input {
+  width: 700px;
+}
+
+/* Dropdown submenu extension from: https://bootsnipp.com/snippets/oPWaZ */
+.dropdown-submenu {
+    position: relative;
+}
+
+.dropdown-submenu>.dropdown-menu {
+    top: 0;
+    left: 100%;
+    margin-top: -6px;
+    margin-left: -1px;
+    -webkit-border-radius: 0 6px 6px 6px;
+    -moz-border-radius: 0 6px 6px;
+    border-radius: 0 6px 6px 6px;
+}
+
+.dropdown-submenu:hover>.dropdown-menu {
+    display: block;
+}
+
+.dropdown-submenu>a:after {
+    display: block;
+    content: " ";
+    float: right;
+    width: 0;
+    height: 0;
+    border-color: transparent;
+    border-style: solid;
+    border-width: 5px 0 5px 5px;
+    border-left-color: #ccc;
+    margin-top: 5px;
+    margin-right: -10px;
+}
+
+.dropdown-submenu:hover>a:after {
+    border-left-color: #fff;
+}
+
+.dropdown-submenu.pull-left {
+    float: none;
+}
+
+.dropdown-submenu.pull-left>.dropdown-menu {
+    left: -100%;
+    margin-left: 10px;
+    -webkit-border-radius: 6px 0 6px 6px;
+    -moz-border-radius: 6px 0 6px 6px;
+    border-radius: 6px 0 6px 6px;
+}
+
+.function-arg-type {
+  font-family: monospace;
+  font-size: small;
+  color: darkblue;
+}
+
+.function-item {
+  /* background-color: lightgoldenrodyellow; /* */
+  border-bottom: 1px solid lightgray;
+}
+
+table.err-view {
+  border: 1px solid white;
+  background-color: lightgray;
+}
+table.err-view td {
+  border: 1px solid white;
+}
+table.err-view th {
+  border: 1px solid white;
+  background-color: darkgreen;
+  color: white;
+}
+
+table.func-view {
+  border: 1px solid white;
+  /* border: none; */
+  background-color: lightgray;
+  margin-top: 0px;
+  vertical-align: top;
+  padding: 2px;
+}
+table.func-view.sermons {
+    padding: 0px 2px 0px 2px;
+}
+table.func-view th {
+  border: 1px solid white;
+  font-size: 12px;
+  background-color: darkgreen;
+  color: white;
+  border-radius: 3px 3px;
+  margin-top: 0px;
+  margin-left:20px;
+  vertical-align: top;
+  padding: 2px;
+  background-clip: padding-box;
+}
+table.func-view th.selected {
+  background-color: darkorange;
+}
+table.func-view th.whitecell {
+  border: none;
+  background-color: white;
+  color: black;
+}
+table.func-view th:hover {
+  background-color: green;
+}
+table.func-view th.selected:hover {
+  background-color: orangered;
+}
+table.func-view th .func-title {
+  color: lightgray;
+}
+table.func-view th > span > .func-name {
+  font-family: monospace;
+}
+table.func-view td .func-name {
+  color: black;
+  font-family: monospace;
+  border-radius: 3px 3px;
+}
+table.func-view td .func-name:hover {
+  background-color: darkgreen;
+  color: white;
+  font-family: monospace;
+  border-radius: 3px 3px;
+}
+table.func-view td .arg-line {
+  color: black;
+  font-family: monospace;
+  border-radius: 3px 3px;
+}
+table.func-view th .func-title:hover {
+  background-color: darkolivegreen;
+}
+table.func-oview tbody tr:hover {
+  background-color: palegreen !important;
+}
+table tr.func-inline {
+  background-color: lavender;
+}
+table.func-view td {
+  border: 1px solid white;
+  font-size: 12px;
+  margin-top: 0px;
+  vertical-align: top;
+  padding: 2px;
+  overflow: hidden;
+  /*
+  overflow-wrap: normal;
+  text-overflow: clip;*/
+}
+table.func-view.sermons td {
+    padding: 0px 2px 0px 2px;
+}
+table.func-view td.vmiddle {
+  vertical-align: middle;
+}
+table.func-view td.whitecell {
+  border: none;
+  background-color: white;
+  color: black;
+}
+td.function-name {
+  color: darkblue;
+  font-family: monospace;
+}
+td.function-name:hover {
+  color: black;
+  background-color: lightgray;
+}
+td.arg-plus {
+  background-color: lightgray;
+  color: darkblue;
+  width: 20px;
+  text-align: center;
+  vertical-align: middle;
+}
+td.arg-plus:hover {
+  background-color: greenyellow;
+  color: darkred;
+  cursor: pointer;
+}
+td.arg-pre {
+  background-color: lavender;
+  color: darkblue;
+}
+td.arg-pre:hover {
+  background-color: lightgoldenrodyellow;
+  color: darkblue;
+}
+td.arg-nodeid {
+  font-size: smaller; 
+  color: darkblue;
+}
+td.arg-text {
+  background-color: lightgray;
+  color: darkblue;
+}
+td.arg-text:hover {
+  background-color: mediumseagreen;
+  color: darkred;
+  /* cursor: pointer; */
+}
+td.arg-text .arg-endnode {
+  color: black;
+  background-color: lightgray;
+}
+
+td.prj-text {
+  background-color: lightgray;
+  color: darkblue;
+}
+td.prj-text:hover {
+  background-color: mediumseagreen;
+  color: darkred;
+  cursor: pointer; /* */
+}
+td.prj-text .arg-endnode {
+  color: black;
+  background-color: lightgray;
+}
+.prj-group {
+  display: none;
+}
+td.prj-text:hover .prj-group {
+  display: inline-flex;
+}
+
+select.input-xs {
+  height: 20px;
+  line-height: 20px;
+}
+.input-xs {
+  height: 20px;
+  padding: 2px;
+  font-size: 9px;
+  border-radius: 3px;
+}
+
+table.research-list {
+  border: 1px solid white;
+  background-color: white;
+  margin-top: 0px;
+  vertical-align: top;
+  padding: 2px;
+  /* font-size: 12px; */
+}
+table.research-list tr, table.research-list td, table.research-list tbody > tr > td  {
+  padding: 5px  !important;
+  /*height: 10px; */
+}
+table.research-list tr:hover {
+  background-color: lightgray;
+  border: 1px solid white;
+}
+
+td span.research-item-created {
+  font-size: x-small;
+  font-family: monospace;
+  color: darkblue;
+}
+
+td span.research-item-saved {
+  font-size: x-small;
+  font-family: monospace;
+  color: darkgreen;
+}
+
+td span.research-item-type {
+  font-size: xx-small;
+  font-family: monospace;
+}
+
+td span.research-item-code {
+  font-size: small;
+  font-family: monospace;
+  color: darkgreen;
+}
+
+td span.research-item-purpose {
+  width: 100%;
+}
+
+span.research-item-copy, span.research-item-name, span.research-item-del {
+  min-width: 28px;
+  display: inline-block;
+}
+
+table.result-list {
+  border: 1px solid white;
+  background-color: white;
+  margin-top: 0px;
+  vertical-align: top;
+  padding: 2px;
+}
+table.result-list tr, table.result-list td, table.result-list tbody > tr > td  {
+  padding: 5px;
+}
+table.result-list tr:hover {
+  background-color: lightgray;
+  border: 1px solid white;
+}
+
+.tablefield input {
+  width: 100%;
+}
+
+tr .selected, tr.selected {
+  background-color: lightgreen;
+}
+tr .selected:hover, table tbody tr .selected td.clickable:hover, tr.selected td.clickable:hover {
+  background-color: greenyellow !important;
+}
+
+table.compact-table, 
+table.compact-table tr, 
+table.compact-table td,
+table.compact-table tbody > tr > td {
+  font-size: small;
+  border: 1px solid white;
+  color: black;
+  font-family: monospace;
+  background-color: lightgray;
+  margin-top: 0px;
+  vertical-align: top;
+  padding: 2px !important;
+}
+table.compact-table td:hover {
+  background-color: lightblue;
+  color: black;
+  border: 1px solid white;
+}
+
+.newsitem {
+  background-color: lightgoldenrodyellow;
+  border: outset;
+  padding: 5px;
+}
+
+.error, .err-msg {
+    background-color: lightgoldenrodyellow;
+    color: red;
+    font-family: monospace;
+    font-size: smaller;
+}
+
+/* lila particular stuff */
+
+.manuscript {
+  background-color: lightgray;
+  color: darkblue;
+    font-family: monospace;
+    font-size: smaller;
+    border-radius: 2px;
+    /* padding: 2px; */
+     white-space:nowrap;
+}
+
+.manuscript-idno {
+    color: darkblue;
+    font-family: monospace;
+    background-color: lightgray;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 9pt;
+    padding: 0px 4px;
+}
+.manuscript-idno:hover {
+    color: whitesmoke;
+    background-color: darkblue;
+    cursor: pointer;
+}
+
+.codico-title {
+    color: darkred;
+    font-family: monospace;
+    background-color: lightgray;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 9pt;
+    padding: 0px 4px;
+}
+.codico-title:hover {
+    color: whitesmoke;
+    background-color: darkred;
+    cursor: pointer;
+}
+
+.manuscript-city, .manuscript-library {
+  min-width: 92px;
+}
+
+.lilalink {
+    color: darkgreen;
+    font-family: monospace;
+    background-color: lightgray;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 90%;
+    padding: 0px 4px;
+}
+
+.lilalink:hover {
+    color: whitesmoke;
+    background-color: darkblue;
+    cursor: pointer;
+}
+
+
+
+.keyword {
+    color: darkblue;
+    font-family: monospace;
+    background-color: lightgray;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 90%;
+    padding: 0px 4px;
+}
+
+.keyword:hover {
+    color: whitesmoke;
+    background-color: darkblue;
+    cursor: pointer;
+}
+
+.collection {
+    color: darkgreen;
+    font-family: monospace;
+    background-color: lightgray;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 90%;
+    padding: 0px 4px;
+}
+.collection.private {
+    color: white;
+}
+
+.collection:hover {
+    color: whitesmoke;
+    background-color: darkgreen;
+    cursor: pointer;
+}
+.collection.private:hover {
+    background-color: gray;
+}
+
+.project {
+    color: black;
+    font-family: monospace;
+    background-color: lightgoldenrodyellow;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 90%;
+    padding: 0px 4px;
+}
+.project:hover {
+    color: lightgoldenrodyellow;
+    background-color: darkgoldenrod;
+    cursor: pointer;
+}
+
+
+
+.sermon-author {
+  color: darkblue;
+}
+
+div.selected {
+  background-color: lightcyan;
+}
+
+/* Type ahead stuff 
+   NOTE: this is now [.tt-menu]
+.tt-dropdown-menu {
+  max-height: 150px;
+  overflow-y: auto;
+}*/
+
+.tt-menu { /* UPDATE: newer versions use tt-menu instead of tt-dropdown-menu */
+  width: 422px;
+  margin-top: 12px;
+  padding: 4px 4px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+  box-shadow: 0 3px 5px rgba(0,0,0,.2);
+  /* Make sure handles appear */
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+/*
+.tt-query, .tt-hint, .ttinput {
+    width: 396px;
+    height: 30px;
+    padding: 3px 4px;
+    font-size: 14px;
+    line-height: 16px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    outline: none;
+}*/
+
+/* Not currently used */
+.tt-hint {
+    color: #999;
+}
+
+div > span.twitter-typeahead {
+  display: inherit !important;
+}
+
+/* Adapt the standard modal to my own */
+.modal-dialog {
+    width: 80%;
+    margin: 30px auto;
+  }
+.modal-dialog.nodecolorpicker {
+    width: 350px;
+}
+.modal-comment {
+    width: 50%;
+    margin: 20px auto;
+  }
+.modal-header {
+  cursor: move;
+}
+
+.nodecolorpicker td {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+td.hightlighted {
+  background-color: yellow;
+}
+
+/* Badges with background color for link types */
+span.badge.eqs-link {
+  background-color: darkblue;
+}
+span.badge.prt-link {
+  background-color: lightgreen;
+}
+span.badge.neq-link {
+  background-color: darkgoldenrod;
+}
+span.badge.sim-link {
+  background-color: darkgreen;
+}
+span.badge.use-link {
+  background-color: mediumorchid;
+}
+
+span.badge.signature.gr {
+  background-color: lightblue;
+}
+span.badge.signature.cl {
+  background-color: lightgreen;
+}
+span.badge.signature.ot, span.badge.signature.eqset  {
+  background-color: lightgoldenrodyellow;
+}
+
+span.badge.signature {
+  background-color: lightgray;
+  color: darkblue;
+  font-size: 85%;
+  padding: 2px 5px;
+  font-weight: normal;
+  border-radius: 5px;
+  margin: 1px;
+}
+
+span.badge.signature:hover {
+    color: whitesmoke;
+    background-color: darkblue;
+    cursor: pointer;
+}
+
+/* Badges with background color for location types */
+span.badge.loctype-city {
+  background-color: darkblue;
+}
+span.badge.loctype-country {
+  background-color: darkgreen;
+}
+span.badge.loctype-region_high {
+  background-color: darkgoldenrod;
+}
+
+a.nostyle:link, a.nostyle:visited {
+    text-decoration: inherit;
+    color: inherit;
+    cursor: inherit;
+}
+
+td a.nostyle {
+  display: inline-block;
+}
+
+a.sermon:link, a.sermon:visited {
+    text-decoration: inherit;
+    color: inherit;
+    cursor: inherit;
+}
+
+.sermonnumber {
+    cursor: cell;
+    background-color: white;
+    width: 14px;
+    max-width: 20px;
+}
+.sermonnumber.selected {
+    background-color: yellow;
+}
+.sermonnumber.selected:visited {
+    background-color: white;
+}
+
+.sermonlocus {
+    width: 
+}
+
+.signature {
+  /* font-family: monospace; */
+  font-size: smaller;
+  color: darkblue;
+}
+.signature.ma {
+    color: darkgreen;
+}
+
+.lilacode {
+  /* font-family: monospace; */
+  font-size: smaller;
+  color: darkgreen;
+}
+
+div.view-mode a, div.any-mode a {
+  text-decoration: none;
+  color: inherit;
+}
+
+tr.selected > td.selectable {
+  background-color: yellow;
+}
+tr.selected > td.selectable:hover {
+  background-color: greenyellow;
+}
+
+
+/* Filter switches */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 22px;
+}
+/* Hide default HTML checkbox */
+.switch input, .badge.filter input { opacity: 0; width: 0; height: 0;}
+/* Slider of the switch */
+.switchslider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.switchslider:before {
+  position: absolute;
+  content: "";
+  height: 15px;
+  width: 15px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .switchslider { background-color: #2196F3; }
+
+input:focus + .switchslider {  box-shadow: 0 0 1px #2196F3; }
+
+input:checked + .switchslider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round, .switchslider.round {   border-radius: 34px; }
+
+.slider.round:before, .switchslider.round:before {   border-radius: 50%; }
+
+/* Sermon tree */
+.tree[level='1'] {
+    margin-left: 10px;
+}
+.tree[level='2'] {
+    margin-left: 20px;
+}
+.tree[level='3'] {
+    margin-left: 30px;
+}
+.tree[level='4'] {
+    margin-left: 40px;
+}
+.tree[level='5'] {
+    margin-left: 50px;
+}
+
+/* Drag and drop stuff */
+.draggable:hover {
+    /* border: 1px solid yellow; */
+    background-color: lightsalmon;
+    color: white;
+    cursor: move;
+}
+
+.td {
+    font-size: small;
+    /* background-color: lightgray;
+    border: 1px solid white;
+    /* line-height: 0/8; */
+    /* display: block; */
+}
+.tdhead {
+  border: 1px solid white;
+  font-size: 12px;
+  background-color: darkgreen;
+  color: white;
+  border-radius: 3px 3px;
+  margin-top: 0px;
+  vertical-align: top;
+  padding: 2px;
+}
+
+.sermonbutton {
+    white-space:nowrap !important;
+    background-color: white; 
+    min-width: 20px;
+}
+.sermonbutton:hover {
+    background-color: antiquewhite;
+    cursor: pointer;
+}
+
+.dragover {
+    background-color: yellow !important;
+    border: 1px dotted red;
+}
+
+.ruler_white {
+    background-color: white;
+}
+.ruler_black {
+    /* background-color: black; */
+    border: 1px solid black !important;
+}
+.ruler_show {
+    height: 12px;
+    border: 1px dashed black !important;
+}
+
+.searchincexp {
+    font-size: x-small;
+    color: darkblue;
+}
+
+.eqg-manu-col.full {
+    white-space:nowrap !important;
+}
+.eqg-manu-col.abbreviated {
+    min-width: 20px;
+}
+
+.columnSelector:hover {
+    border-right: 2px solid blue;
+}
+
+.template_notice {
+    width: 50%;
+    background-color: darkolivegreen;
+    color: white;
+}
+.template_notice:hover {
+    background-color: darkslateblue;
+    color: yellow;
+}
+
+span.overlap {
+    background-color: lightyellow;
+    color: darkblue;
+}
+
+.authorname {
+    color: darkgreen; font-size: small;
+}
+
+table.guide-table td {
+    padding: 2px;
+}
+table.guide-table td:hover {
+    background-color: lightblue;
+}
+
+
+/* D3 styles */
+
+.axis path, .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+.x.axis path {
+    /* display: none; */
+}
+
+g > text {
+    fill: currentColor;
+}
+
+.line {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 1.5px;
+}
+div.tooltip {
+    position: fixed; /*   !important; */
+    text-align: center;
+    width: 120px; 
+    height: 35px;
+    padding: 2px;
+    font: 12px sans-serif;
+    background-color: white;
+    /* border: 0px; /* */
+    border: 1px solid lightblue;
+    border-radius: 8px;
+    box-shadow: 1px 1px;
+    pointer-events: none;
+    opacity: 0.8;
+    z-index: 1;
+}
+svg .histogram-bar {
+    fill: #337ab7; /* #69b3a2; */
+}
+svg .histogram-bar:hover {
+    fill: darkblue; /* orange */
+}
+
+@keyframes diamondFillMode {
+    0% {
+        fill: lightblue; /* #CC2954;*/
+    }
+
+    100% {
+        fill: orange; /* #F2F230;*/
+    }
+}
+svg .histogram-bar:focus {
+    animation-name: diamondFillMode;
+    animation-duration: 2s;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+}
+
+svg .links {
+    stroke: #999;
+    stroke-opacity: 0.6;
+}
+.link-path {
+    stroke: #999;
+    stroke-opacity: 0.6;
+}
+svg .links .linktype_eqs:hover {
+    stroke-width: 4;
+    stroke: red;
+}
+svg .links .linktype_prt:hover {
+    stroke-width: 4;
+    stroke: blue;
+}
+svg .links .linktype_sim:hover {
+    stroke-width: 4;
+    stroke: green;
+}
+svg .links .linktype_use:hover {
+    stroke-width: 4;
+    stroke: yellow;
+}
+svg .links .linktype_neq:hover {
+    stroke-width: 4;
+    stroke: orange;
+}
+svg .links .linktype_uns:hover {
+    stroke-width: 4;
+    stroke: purple;
+}
+svg .links .linktype_ech:hover {
+    stroke-width: 4;
+    stroke: pink;
+}
+
+
+svg .nodes {
+    stroke: #fff;
+    stroke-width: 1.5;
+}
+svg .nodes text {
+    fill: currentColor;
+    stroke: none;
+}
+
+/* END OF D3 Section */
+
+.codico-target {
+    min-width: 100px; 
+    display: inline-block;
+}
+
+.codi-start hr {
+    height: 5px;
+    background-color: mediumseagreen;
+    margin-top: 1px;
+    margin-bottom: 1px;
+}
+
+.spacy-border td {
+    border: 4px solid transparent;
+}
+
+
+/* DCT stuff */
+.table-scroll {
+    position: relative;
+    /* max-width: 600px; */
+    max-width: 10000px;
+    margin: auto;
+    overflow: hidden;
+}
+.table-wrap {
+    width: 100%;
+    overflow: auto;
+}
+table.dct-view {
+    border: 1px solid white;
+    /* border: none; */
+    background-color: lightgray;
+    margin-top: 0px;
+    vertical-align: top;
+    padding: 2px;
+    width: 100%;
+    margin: auto;
+}
+
+
+
+table.dct-view th .shelf-city, table th .shelf-library, table th .shelf-idno, table th .shelf-size {
+    font-size: smaller;
+    white-space: nowrap;
+    text-align: center;
+}
+
+table.dct-view th .shelf-city {
+    color: lightblue;
+    cursor: pointer;
+}
+
+table.dct-view th .shelf-idno {
+    color: chartreuse;
+}
+
+table.dct-view th {
+  border: 1px solid white;
+  font-size: 12px;
+  background-color: darkgreen;
+  color: white;
+  border-radius: 3px 3px;
+  margin-top: 0px;
+  margin-left:20px;
+  vertical-align: top;
+  padding: 2px;
+  background-clip: padding-box;
+}
+table.dct-view th.selected {
+  background-color: darkorange;
+}
+table.dct-view th:hover {
+  background-color: green;
+}
+table.dct-view th.selected:hover {
+    background-color: orangered;
+}
+
+table.dct-view td .func-name {
+  color: black;
+  font-family: monospace;
+  border-radius: 3px 3px;
+}
+table.dct-view td .func-name:hover {
+  background-color: darkgreen;
+  color: white;
+  font-family: monospace;
+  border-radius: 3px 3px;
+}
+table.dct-view td {
+  border: 1px solid white;
+  font-size: 12px;
+  margin-top: 0px;
+  vertical-align: top;
+  padding: 2px;
+  /* overflow: hidden;
+  background-color: lightgray; */
+}
+table.dct-view tr.dct-even td {
+    background-color: #D9D9BF	;
+}
+
+table.dct-view tr.dct-odd td {
+    background-color: lightgray;
+}
+
+table.dct-view tr.dct-highlight td {
+    background-color: yellow;
+}
+
+table.dct-view tr td:hover {
+    background-color: #BCBC8F;
+}
+
+table.dct-view tr td.fixed-col1 {
+    cursor: pointer;
+}
+
+table.dct-view td, table.dct-view th {
+    z-index: 20;
+    position: relative;
+    background-clip: padding-box;
+}
+
+table.dct-view .fixed-side {
+    position: sticky;
+    z-index: 50;
+}
+
+.dct-tools .form-control {
+    font-size: small;
+}
+
+.dct-blinded {
+    opacity: 0.0;
+    min-width: 20px;
+    max-width: 20px;
+}
+
+.dct-blinded .glyphicon {
+    color: red;
+    margin-left: 4px;
+}
+
+.dct-hide:hover .dct-blinded {
+    opacity: 1.0;
+}
+
+div.tooltip.dct {
+    width: unset;
+    height: unset;
+    z-index: 200 ;
+    text-align: left;
+    color: darkblue;
+    background-color: whitesmoke;
+}
+div.tooltip.dct .tooltip-inner {
+    color: black;
+    background-color: lavenderblush;
+    max-width: 500px; /* */
+    text-align: left;
+}
+div.toolbox.dct .tooltip-inner tr td,
+table.dct-view tr td div.toolbox.dct .tooltip-inner tr td {
+    background-color: lavenderblush;
+}
+
+/* SVG class */
+.node-highlight circle {
+    stroke: goldenrod; 
+    stroke-width: 2px;
+}
+.node-highlight-multi circle {
+    stroke: greenyellow; 
+    stroke-width: 3px;
+}
+.overlap-node {
+    cursor: pointer;
+}
+
+.hangingindent {
+    padding-left: 1.5em;
+    text-indent:-1.5em;
+}
+
+.status-details {
+    color: darkblue;
+}
+

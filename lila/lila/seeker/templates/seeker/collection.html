@@ -1,0 +1,57 @@
+﻿{% extends "layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    {% include 'breadcrumb_list.html' %}
+  </div>
+{% endblock %}
+
+{% block content %}
+
+  <div class="container body-content">
+
+    {% if authenticated %}
+      <form>
+        <!-- Upper part of the search-a-manuscript interface -->
+        <div id="search_manuscript_main">
+          <div class="row">&nbsp;</div>
+          <div class="row">
+            <table>
+              <tr><td>COUNTRY</td><td>{{searchForm.country}}</td></tr>
+              <tr><td>CITY</td><td>{{searchForm.city}}</td></tr>
+              <tr><td>LIBRARY</td><td>{{searchForm.library}}</td></tr>
+              <tr><td>SIGNATURE</td><td>{{searchForm.signature}}</td></tr>
+            </table>
+          </div>
+          <div class="row">&nbsp;</div>
+        </div>
+
+        <!-- Possible matching sermon ID's -->
+        <div id="result_manuscript_ids" style="min-height:500px;">
+
+        </div>
+
+        <!-- Lower part: button to add an additional search field -->
+        <div id="search_manuscript_add">
+          <span>
+            <a class="btn btn-xs jumbo-2" role="button" href="">Add additional search field</a>
+          </span>
+        </div>
+      </form>
+    {% else %}
+      <div class="explanation">
+        <p>Dear user, you are <b>not</b> logged in.</p>
+        <p>Unfortunately this means that you will not be able to perform any searches.</p>
+        <p>Should you want to work with lila, here are your options:
+          <ul>
+            <li><a class="btn btn-info btn-xs" href="{% url 'login' %}">Login</a> - if you already have an account</li> 
+            <li><a class="btn btn-warning btn-xs" href="{% url 'signup' %}">Sign up</a> - if you don't have an account yet</li>
+          </ul>
+        </p>
+      </div>
+    {% endif %}
+  </div>
+
+
+{% endblock content %}

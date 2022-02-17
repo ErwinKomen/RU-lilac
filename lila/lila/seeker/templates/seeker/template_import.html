@@ -1,0 +1,31 @@
+<div class="collapse row" id="import_from_template">
+  <div class="col-md-4 col-md-offset-8">
+    <div>&nbsp;</div>
+    <form id="template_import_form" action="{% url 'template_import' %}" method="post">
+      {% csrf_token %}
+
+      <div class="hidden">{{frmImport.manu_id}}</div>
+
+      <!-- Allow user to choose a template-->
+      <div>{{frmImport.template}}</div>
+
+      <!-- Provide buttons to continue or to opt out -->
+      <div>
+        <!-- Opt out: close this template -->
+        <a id="import_cancel" title="Cancel importing a template" role="button" 
+            class="btn btn-xs jumbo-1" onclick="document.getElementById('{{import_button}}').click();">
+          <span>Cancel</span>
+        </a>
+        <a id="import_select" title="Continue and import Manuscript as well as Sermon (manifestations) from the selected template" 
+           class="btn btn-xs jumbo-3" 
+           onclick="ru.lila.seeker.submitform('template_import_form', disable=true);">
+          <span>Import</span>
+        </a>
+
+      </div>
+      <div class="hidden waiting">
+        <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+      </div>
+    </form>
+  </div>
+</div>

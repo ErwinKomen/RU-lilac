@@ -1,0 +1,44 @@
+{% load i18n %}
+
+{% if codi.codico_origins.count == 0 %}
+-
+{% else %}
+  <div>
+    <span class="badge signature ot"  title="Click to show/hide..." data-toggle="collapse" data-target="#codi_origin_table" >
+    {% spaceless %}
+      {% for cori in codi.codico_origins.all %}
+        {% if cori.origin.name %}{{cori.origin.name}}
+          {% else %}(no name){% endif %}
+        {% if not forloop.last %}, {% endif %}
+      {% endfor %}
+    {% endspaceless %}
+    </span>
+  </div>
+  <div id="codi_origin_table" class="inert collapse">
+    <table>
+      <tbody>
+        {% for cori in codi.codico_origins.all %}
+          <tr>
+            <td valign="top">{{forloop.counter}}</td>
+            <td valign="top" class="tdnowrap nostyle">
+              <span class='badge signature cl'>
+                <a href="{% url 'origin_details' cori.origin.id %}">
+                  <span>
+                    {% if cori.origin.name %}{{cori.origin.name}}
+                    {% else %}(no name){% endif %}
+                    {% if cori.origin.location %}({{cori.origin.location.name}}){% endif %}
+                  </span>
+                </a>
+              </span>
+            </td>
+            <td valign="top"  class="nostyle" style="font-size: smaller;">
+              <a href="{% url 'origincod_details' cori.id %}">
+                {% if cori.note %}{{cori.note}}{% else %}-{% endif %}
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}

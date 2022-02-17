@@ -1,0 +1,12 @@
+<physDesc>
+  <objectDesc form="codex">
+    <supportDesc material="perg">
+      <support>{% if codico.support %}{{codico.support}}{% endif %}</support>
+      <extent>
+        <measure type="leavesCount">{% if codico.extent %}{{codico.extent}}{% endif %}</measure>
+        <measure type="pageDimensions">{% if codico.format %}{{codico.format}}{% endif %}</measure>
+      </extent>
+    </supportDesc>
+  </objectDesc>
+</physDesc>
+

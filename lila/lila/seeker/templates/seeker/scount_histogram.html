@@ -1,0 +1,47 @@
+{% load i18n %}
+
+<div class="row">
+  <div id="scount_histogram_svg" class="col-md-8 col-md-offset-2">
+    <!-- THis is where SVG comes -->
+  </div>
+  <div class="col-md-2 container-small" align="right">
+    <form id="scounthistoform" action="">
+      {% csrf_token %}
+      <div id="downloadcenter" class="hidden">
+        <input name='downloadtype' id='downloadtype' class='form-control' value='' >
+        <input name="downloaddata" id="downloaddata" class="hidden form-control" value="" />
+      </div>
+      <div class="dropdown">
+        <button class="btn btn-default btn-sm dropdown-toggle"
+                type="button" id="downloadmenu"
+                data-toggle="dropdown" aria-haspopup="true"
+                aria-expanded="true">download&nbsp;<span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="downloadmenu">
+          <li class="scount_histogram_host">
+            <a href="#" id="hist_download_svg"
+                downloadtype="hist-svg"
+                contentid="#scount_histogram_svg"
+                ajaxurl="{% url 'austat_scount_download' %}"
+                onclick="ru.basic.post_download(this);" >Image (svg)</a>
+          </li>
+
+          <!-- Downloading as PNG -->
+          <li class="scount_histogram_host">
+            <a href="#" id="hist_download_png"
+                downloadtype="hist-png"
+                onclick="ru.basic.post_download(this);"
+                contentid="#scount_histogram_svg"
+                ajaxurl="{% url 'austat_scount_download' %}">Image (png)</a>
+          </li>
+        </ul>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="text/javascript">
+  var hist_data = {{histogram_data|safe}} ;
+
+  ru.lila.seeker.scount_histogram_show(hist_data, 'scount_histogram_svg');
+</script>

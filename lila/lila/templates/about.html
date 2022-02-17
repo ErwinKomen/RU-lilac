@@ -1,0 +1,100 @@
+{% extends "layout.html" %}
+{% load staticfiles %}
+
+
+{% block content %}
+
+<div class="container body-content">
+  <h2>{{ title }}</h2>
+  <div class="row">
+    <div class="col-md-6">
+      <h3>Background</h3>
+      <p>The lila web application is being developed as part of the ERC <a href="https://cordis.europa.eu/project/rcn/218691/en" target="_blank">lila project</a>.</p>
+      <p>lila stands for <b>Patristic Sermons in the Middle Ages</b>.
+      The project is <i>not</i> a study of the contents of these sermons, 
+      it focuses instead on their dissemination, their manipulation and their interpretation in the medieval Latin West.
+      </p>
+      <p>lila will study the medieval reception of the Latin sermons preached by the Early Church Fathers, using a digital network of manuscripts.
+      </p>
+      <p>The sermons of Augustine, Gregory the Great and other patristic preachers were transmitted throughout medieval Europe in the form of sermon collections, preserved in thousands of manuscripts. Nearly every manuscript contains a new combination of sermons, attesting to a continuous, widespread engagement with the authorities of the Early Church. The dynamic tradition of reorganising and rewriting the patristic heritage is largely overlooked by scholars of medieval religious practices, who concentrate on medieval preachers, and by scholars of Early Christianity, whose focus is the patristic context.
+      </p>
+      <p>Medieval collections of patristic sermons were part of the liturgical life of the monastery, but also of an intellectual tradition. They offer unique insights into medieval attitudes toward authority, techniques of appropriation, church organisation, monastic networks and knowledge exchange. lila will execute the first large-scale analysis of the formation and spread of patristic sermon collections in medieval Europe. The project will develop a digital network of manuscripts, using well-tried principles from the field of textual criticism. Building on this network, lila will pursue three lines of inquiry: the customizing of standard liturgical collections as indicative of individual purposes and contexts, the impact of transmission on the popularity of patristic sermons, and pseudo-epigraphic sermons as revelatory of medieval perceptions of the Church Fathers.
+      </p>
+      <p>lila will bridge two disciplinary divides, between patristic and medieval sermon studies and between textual criticism and reception studies. Developing an interdisciplinary methodology with a wide applicability in the study of intellectual history, this project will introduce patristic preaching as a vibrant strand in the tapestry of the medieval religious tradition.
+      </p>
+    </div>
+    <div class="col-md-6">
+      <section id='statistics'>
+        <h3>Statistics</h3>
+        <p>Different people have entered manuscripts manually:</p>
+        <table class="func-view">
+          <thead>
+            <tr><th>Person</th><th>Manuscripts</th></tr>
+          </thead>
+          <tbody>
+            {% for item in people %}
+              <tr><td>{{item.person}}</td><td align="right">{{item.count}}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p>We also have read and processed information from external sources:</p>
+        <table class="func-view">
+          <thead>
+            <tr><th>Source url</th><th>Manuscripts</th></tr>
+          </thead>
+          <tbody>
+            {% for item in sites %}
+              <tr><td>{{item.url}}</td><td align="right">{{item.count}}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <h3>Quick Reference</h3>
+      <p>The main purpose of the lila web application is to facilitate searches:
+      <table>
+        <tr><td valign="top">Sermon:</td><td valign="top"><i>(mockup phase)</i></td></tr>
+        <tr><td valign="top">Manuscript:</td><td valign="top"><i>(mockup phase)</i></td></tr>
+        <tr><td valign="top">Collection:</td><td valign="top"><i>(mockup phase)</i></td></tr>
+        <tr>
+          <td valign="top">Library:</td>
+          <td valign="top"><b>(working!)</b> 
+            Find one or more libraries by choosing a country, city and/or (part of a) library&nbsp;('s&nbsp;name). 
+            Choose <code>Search >> Library</code>.
+            Then use 'typeahead' and/or 'wildcards' to find a selection of libraries.
+            Download that selection as Excel, CSV or JSON.
+          </td>
+        </tr>
+      </table>
+      </p>
+      <p>
+        The source code of lila is available at <a href="https://github.com/ErwinKomen/RU-lila">github</a>.
+      </p>
+      <p>
+        <a class="btn btn-default" href="mailto:e.komen@let.ru.nl">Request assistance &raquo;</a>
+        <span class="pull-right">
+          <a class="btn btn-primary" href="{% url 'guide' %}" target="_blank">Short guide</a>
+          <a class="btn btn-primary" href="{% static 'browser/content/lilaManual.pdf' %}" target="_blank">Manual (pdf)</a>
+          <a class="btn btn-primary" href="{% url 'technical' %}">Technical information</a>
+        </span>
+      </p>
+    </div>
+
+  </div>
+
+  <div class="row">
+    <div class="col-md-12">
+      <h4>Bibliography</h4>
+      <div class="citation">
+        Surname, I.N. 2019 <i>Patristic sermon dissemination in the Middle Ages - European routes</i>, The Best Journal 36(2):430-462. (<a href="" target="_blank">pdf</a>)
+      </div>
+      <div class="citation">
+        b.
+      </div>
+      <div class="citation">
+          c.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

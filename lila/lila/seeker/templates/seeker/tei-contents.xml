@@ -1,0 +1,7 @@
+<msContents>
+  {% if codico.notes %}<p>{{codico.notes}}</p>{% endif %}
+  {% for msitem in codico.codicoitems.all %}
+    {% include 'seeker/tei-msitem.xml' with msitem=msitem %}
+  {% endfor %}
+</msContents>
+

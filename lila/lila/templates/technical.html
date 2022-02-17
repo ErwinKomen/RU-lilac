@@ -1,0 +1,122 @@
+﻿{% extends "layout.html" %}
+{% load staticfiles %}
+
+
+{% block content %}
+
+<div class="container body-content">
+  <div class="row">
+
+    <h2>{{ title }}</h2>
+
+    <div class="col-md-6">
+      <div>
+        <h3>Introduction</h3>
+        <p>The lila application is a <a href="https://www.djangoproject.com/">Django</a> web application. 
+        Django is a high-level framework built on the Python programming language.
+        The web application consists of the following parts:
+        <ul>
+          <li><b>Front-end</b> - the 'HTML' pages that are 'served' to the user</li>
+          <li><b>Back-end</b> - the django/python program running on the Radboud university server</li>
+          <li><b>Database</b> - the place where the manuscripts, sermons and other information chunks are stored</li>
+        </ul>
+        </p>
+        <div>
+          <img src="{% static 'seeker/content/lila_technical_setup.png' %}" style="max-width: 95%;" />
+        </div>
+        <div class="pull-right" style="font-size: x-small; color: darkblue; margin-right: 20px;">
+          Ger Groothuijsen, &copy; 2021.
+        </div>
+      </div>
+
+      <div>
+        <h3>Front-end - web browser</h3>
+        <p>The front-end is the user's browser. This is the system that the user interacts with first of all. 
+        The user sees HTML pages on the browser, and interacts with these pages via calls to 'Javascript' code. 
+        Whenever the user loads a HTML page, Javascript code is loaded too.
+        Pressing buttons often results in the execution of a piece of Javascript code--something that takes place entirely on the user's browser.
+        Some pieces of Javascript send POST or GET requests to the back-end server, resulting in dynamically updated web pages.
+        </p>
+        <p>Data visualization on the site has been implemented using <a href="https://d3js.org/">d3js</a>, which provides
+        <a href="https://en.wikipedia.org/wiki/Scalable_Vector_Graphics">svg</a> pictures.</p>
+        <p>As for <b>requirements</b> - any up-to-date web browser should be able to handle this web application.
+        The application has <i>not</i> been tested on <i>all</i> browsers, but it should at least work on Firefox and on Chrome.
+        </p>
+      </div>
+      <div>
+        <h3>Back-end - server</h3>
+        <p>The back-end application is the one that makes use of the Django-Python framework.
+        The back-end is a program running on the 'Ponyland' server park of the Radboud University.
+        It is served through <em>uwsgi</em>.
+        The framework uses a 'model-view-controller' system: the model reflects the structure of the database, 
+        the controller determines what is shown to the user when, and the view consists of the HTML files that are served.
+        </p>
+        <p>
+        The back-end is the place where most of the work takes place for the lila application.
+        While users are served HTML files, the buttons they press trigger requests to be sent to the server.
+        The Python functions that run there handle the requests and, if needed prepare other HTML pages that are then sent to the user's browser.
+        </p>
+        <p>The preparation of HTML pages in the Django framework makes use of a template system. 
+        The templates contain the rough sketch of the HTML pages, and the data-dependant context provide the information to fill in the details.
+        </p>
+      </div>
+
+    </div>
+
+    <div class="col-md-6">
+      <div>
+        <h3>Database</h3>
+        <p>The lila application uses an <a href="https://www.sqlite.org/">SQLite</a> database. 
+        This kind of database is contained in one file. This file resides somewhere on the server.
+        Regular back-ups of this file assure little loss of data, should a calamity occur.
+        (Note: the database <i>is</i> a relational one, but it is <i>not</i> a MySQL one.)
+        </p>
+        <p>The structure of the database can best be seen by glancing through the 
+          <a href="https://github.com/ErwinKomen/RU-lila/blob/master/lila/lila/seeker/models.py">models.py</a> file of the Github place where the code is kept.
+          Each class based on <code>models.Model</code> represents one table in the database.
+          <!-- TODO: The overview below lists the tables that are currently used in the database, as well as their fields-->
+        </p>
+        <!-- This is where the database table will appear -->
+        <div>
+          <!-- LOAD DATABASE OVERVIEW -->
+        </div>
+      </div>
+
+      <div>
+        <h3>Data access</h3>
+        <p>The lila web application allows downloading data in a number of different ways.</p>
+        <ul>
+          <li><b>Manuscript</b>: the information of individual manuscripts, including their sermons, can be downloaded in Excel.
+          The Excel file contains one page with information about the manuscript itself and one page where the sermons,
+          including their hierarchy, are described (one line is one sermon).
+          </li>
+          <li><b>Authors</b>: the list of authors that are defined internally (json, csv or Excel).</li>
+          <li><b>Libraries</b>: the whole list of internally defined libraries (json, csv, Excel).</li>
+        </ul>
+
+        <p>Visualizations can also be downloaded, but note that the current visualizations are all quite experimental right now, 
+        and not each download function is guaranteed to work as one might want to.
+        We are gradually working on that.</p>
+        <ul>
+          <li><b>Overlap</b>: the SSG overlap network (svg, png, json).</li>
+          <li><b>Transmission</b>: the SSG transmission network (svg, png, json).</li>
+          <li><b>Co-occurrance</b>: manuscripts in which SSGs co-occur (svg, png, json).</li>
+        </ul>
+      </div>
+
+      <div>
+        <h3>API access</h3>
+        <p>Accessing data by a different program will be made possible in the near future.</p>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="row">
+    <div class="col-md-12">
+      <!-- add more general information -->
+    </div>
+  </div>
+</div>
+{% endblock %}

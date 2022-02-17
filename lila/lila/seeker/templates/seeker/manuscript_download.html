@@ -1,0 +1,22 @@
+{% csrf_token %}
+
+<div class="dropdown" style="display: inline;">  
+  <a id="downloadmenu" role="button" class="btn btn-xs jumbo-3 dropdown-toggle" 
+     data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" onclick="">
+    Download&nbsp;<span class="caret"></span>
+  </a>
+
+  <div class="hidden">
+    <input type="text" id="downloadtype" name="downloadtype" value="" />
+  </div>
+  <ul class="dropdown-menu" aria-labelledby="downloadmenu">                
+    <li><a href="#" downloadtype="excel" ajaxurl="{{ajaxurl}}" onclick="ru.basic.post_download(this);">Excel</a></li>
+    {% if is_superuser %}
+      <li><a href="#" downloadtype="json" ajaxurl="{{ajaxurl}}" onclick="ru.basic.post_download(this);">JSON</a></li>
+    {% endif %}
+    <li class="divider" role="separator"></li>
+    <li><a href="#" downloadtype="tei" ajaxurl="{{ajaxurl}}" onclick="ru.basic.post_download(this);">TEI (xml)</a></li>
+  </ul>
+              
+</div>
+

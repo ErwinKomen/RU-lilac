@@ -1,0 +1,389 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
+    <Name>passim</Name>
+    <RootNamespace>passim</RootNamespace>
+    <InterpreterId>MSBuild|lila|$(MSBuildProjectFullPath)</InterpreterId>
+    <WebBrowserPort>6900</WebBrowserPort>
+    <WebBrowserUrl>
+    </WebBrowserUrl>
+    <SuppressConfigureTestFrameworkPrompt>true</SuppressConfigureTestFrameworkPrompt>
+    <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
+    <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>7d72ad3b-e3dd-4f4f-9c4d-585c4af902f5</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <ProjectTypeGuids>{5F0BE9CA-D677-4A4D-8806-6076C0FAAD37};{349c5851-65df-11da-9384-00065b846f21};{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <StartupFile>manage.py</StartupFile>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <LaunchProvider>Web launcher</LaunchProvider>
+    <OutputPath>.</OutputPath>
+    <WebBrowserUrl>http://localhost</WebBrowserUrl>
+    <WebBrowserUrl>http://localhost</WebBrowserUrl>
+    <WebBrowserUrl>http://localhost</WebBrowserUrl>
+    <WebBrowserUrl>http://localhost</WebBrowserUrl>
+    <WebBrowserUrl>http://localhost</WebBrowserUrl>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="lila\seeker\views_api.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\seeker\views_ta.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\seeker\views_main.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="manage.py" />
+    <Compile Include="lila\basic\admin.py" />
+    <Compile Include="lila\basic\apps.py" />
+    <Compile Include="lila\basic\migrations\__init__.py" />
+    <Compile Include="lila\basic\models.py" />
+    <Compile Include="lila\basic\tests.py" />
+    <Compile Include="lila\basic\utils.py" />
+    <Compile Include="lila\basic\views.py" />
+    <Compile Include="lila\basic\widgets.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\basic\__init__.py" />
+    <Compile Include="lila\bible\admin.py" />
+    <Compile Include="lila\bible\apps.py" />
+    <Compile Include="lila\bible\migrations\__init__.py" />
+    <Compile Include="lila\bible\models.py" />
+    <Compile Include="lila\bible\tests.py" />
+    <Compile Include="lila\bible\utils.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\bible\views.py" />
+    <Compile Include="lila\bible\__init__.py" />
+    <Compile Include="lila\reader\admin.py" />
+    <Compile Include="lila\reader\apps.py" />
+    <Compile Include="lila\reader\excel.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\reader\forms.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\reader\migrations\__init__.py" />
+    <Compile Include="lila\reader\models.py" />
+    <Compile Include="lila\reader\tests.py" />
+    <Compile Include="lila\reader\views.py" />
+    <Compile Include="lila\reader\__init__.py" />
+    <Compile Include="lila\seeker\adaptations.py" />
+    <Compile Include="lila\seeker\admin.py" />
+    <Compile Include="lila\seeker\apps.py" />
+    <Compile Include="lila\stylo\analysis.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\stylo\clustering\api.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\stylo\clustering\cluster.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\stylo\clustering\dendrogram.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\stylo\clustering\distance.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\stylo\clustering\linkage.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\stylo\clustering\__init__.py" />
+    <Compile Include="lila\stylo\corpus.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\seeker\excel.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\seeker\forms.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\seeker\migrations\__init__.py" />
+    <Compile Include="lila\seeker\models.py" />
+    <Compile Include="lila\seeker\tests.py" />
+    <Compile Include="lila\stylo\distance_metrics.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\stylo\tokenize\api.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\stylo\tokenize\regexp.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\stylo\tokenize\simple.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\stylo\tokenize\util.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\stylo\tokenize\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\stylo\vectorization.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\seeker\views.py" />
+    <Compile Include="lila\seeker\visualizations.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\seeker\__init__.py" />
+    <Compile Include="lila\stylo\admin.py" />
+    <Compile Include="lila\stylo\apps.py" />
+    <Compile Include="lila\stylo\migrations\__init__.py" />
+    <Compile Include="lila\stylo\models.py" />
+    <Compile Include="lila\stylo\tests.py" />
+    <Compile Include="lila\stylo\views.py" />
+    <Compile Include="lila\stylo\__init__.py" />
+    <Compile Include="lila\utils.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\views.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\__init__.py" />
+    <Compile Include="lila\settings.py" />
+    <Compile Include="lila\urls.py" />
+    <Compile Include="lila\wsgi.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="lila\" />
+    <Folder Include="lila\basic\" />
+    <Folder Include="lila\basic\migrations\" />
+    <Folder Include="lila\basic\static\" />
+    <Folder Include="lila\basic\static\basic\" />
+    <Folder Include="lila\basic\static\basic\content\" />
+    <Folder Include="lila\basic\static\basic\fonts\" />
+    <Folder Include="lila\basic\static\basic\scripts\" />
+    <Folder Include="lila\basic\templates\" />
+    <Folder Include="lila\basic\templates\basic\" />
+    <Folder Include="lila\bible\" />
+    <Folder Include="lila\bible\migrations\" />
+    <Folder Include="lila\bible\templates\" />
+    <Folder Include="lila\reader\" />
+    <Folder Include="lila\reader\migrations\" />
+    <Folder Include="lila\reader\templates\" />
+    <Folder Include="lila\reader\templates\reader\" />
+    <Folder Include="lila\seeker\static\" />
+    <Folder Include="lila\seeker\static\seeker\" />
+    <Folder Include="lila\seeker\static\seeker\content\" />
+    <Folder Include="lila\seeker\static\seeker\fonts\" />
+    <Folder Include="lila\seeker\static\seeker\scripts\" />
+    <Folder Include="lila\seeker\templates\seeker\" />
+    <Folder Include="lila\stylo\" />
+    <Folder Include="lila\stylo\migrations\" />
+    <Folder Include="lila\stylo\clustering\" />
+    <Folder Include="lila\stylo\tokenize\" />
+    <Folder Include="lila\stylo\templates\" />
+    <Folder Include="lila\templates\" />
+    <Folder Include="lila\seeker\" />
+    <Folder Include="lila\seeker\migrations\" />
+    <Folder Include="lila\seeker\templates\" />
+    <Folder Include="lila\templates\admin\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include=".editorconfig" />
+    <Content Include="codemeta.json">
+      <SubType>Code</SubType>
+    </Content>
+    <None Include="lila\seeker\static\seeker\scripts\_references.js" />
+    <Content Include="lila\basic\static\basic\content\basic.css" />
+    <Content Include="lila\basic\static\basic\content\font-awesome.min.css" />
+    <Content Include="lila\basic\static\basic\fonts\fontawesome-webfont.eot" />
+    <Content Include="lila\basic\static\basic\fonts\fontawesome-webfont.svg" />
+    <Content Include="lila\basic\static\basic\fonts\fontawesome-webfont.ttf" />
+    <Content Include="lila\basic\static\basic\fonts\fontawesome-webfont.woff" />
+    <Content Include="lila\basic\static\basic\fonts\fontawesome-webfont.woff2" />
+    <Content Include="lila\basic\static\basic\fonts\FontAwesome.otf" />
+    <Content Include="lila\basic\static\basic\fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="lila\basic\static\basic\fonts\glyphicons-halflings-regular.svg" />
+    <Content Include="lila\basic\static\basic\fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="lila\basic\static\basic\fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="lila\basic\static\basic\fonts\glyphicons-halflings-regular.woff2" />
+    <Content Include="lila\basic\static\basic\scripts\basic.js" />
+    <Content Include="lila\basic\static\basic\scripts\html2canvas.js" />
+    <Content Include="lila\basic\static\basic\scripts\htmlsvg2canvas.js" />
+    <Content Include="lila\basic\static\basic\scripts\select2.js" />
+    <Content Include="lila\basic\templates\basic\basic_details.html" />
+    <Content Include="lila\basic\templates\basic\basic_edit.html" />
+    <Content Include="lila\basic\templates\basic\basic_list.html" />
+    <Content Include="lila\basic\templates\basic\filter_help.html" />
+    <Content Include="lila\reader\templates\reader\import_manuscripts.html" />
+    <Content Include="lila\seeker\static\seeker\content\bootstrap.css" />
+    <Content Include="lila\seeker\static\seeker\content\bootstrap.min.css" />
+    <Content Include="lila\seeker\static\seeker\content\passim_technical_setup.png" />
+    <Content Include="lila\seeker\static\seeker\content\ru-base.css" />
+    <Content Include="lila\seeker\static\seeker\content\ru-form.css" />
+    <Content Include="lila\seeker\static\seeker\content\ru-widgets.css" />
+    <Content Include="lila\seeker\static\seeker\content\site.css" />
+    <Content Include="lila\seeker\static\seeker\fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="lila\seeker\static\seeker\fonts\glyphicons-halflings-regular.svg" />
+    <Content Include="lila\seeker\static\seeker\fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="lila\seeker\static\seeker\fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="lila\seeker\static\seeker\fonts\glyphicons-halflings-regular.woff2" />
+    <Content Include="lila\seeker\static\seeker\scripts\bootstrap.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\bootstrap.min.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\d3.v6.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\d3.v6.min.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\lila.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\crpstudio.htable.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\crpstudio.svg.js" />
+    <None Include="lila\seeker\static\seeker\scripts\jquery.validate-vsdoc.js" />
+    <None Include="lila\seeker\static\seeker\scripts\jquery-1.10.2.intellisense.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\jquery-1.10.2.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\jquery-1.10.2.min.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\jquery-1.10.2.min.map" />
+    <Content Include="lila\seeker\static\seeker\scripts\jquery.validate.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\jquery.validate.min.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\jquery.validate.unobtrusive.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\jquery.validate.unobtrusive.min.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\modernizr-2.6.2.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\lila.seeker.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\respond.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\respond.min.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\typeahead.bundle.js" />
+    <Content Include="lila\seeker\static\seeker\scripts\xhr2.js" />
+    <Content Include="lila\seeker\templates\seeker\approve_keywords.html" />
+    <Content Include="lila\seeker\templates\seeker\author_info.html" />
+    <Content Include="lila\seeker\templates\seeker\basket_choices.html" />
+    <Content Include="lila\seeker\templates\seeker\basket_buttons.html" />
+    <Content Include="lila\seeker\templates\seeker\codico_buttons.html" />
+    <Content Include="lila\seeker\templates\seeker\codico_list.html" />
+    <Content Include="lila\seeker\templates\seeker\codi_origins.html" />
+    <Content Include="lila\seeker\templates\seeker\collection.html" />
+    <Content Include="lila\seeker\templates\seeker\collection_sermset.html" />
+    <Content Include="lila\seeker\templates\seeker\collpriv.html" />
+    <Content Include="lila\seeker\templates\seeker\coll_buttons.html" />
+    <Content Include="lila\seeker\templates\seeker\comment_add.html" />
+    <Content Include="lila\seeker\templates\seeker\comment_list.html" />
+    <Content Include="lila\seeker\templates\seeker\comment_mail.html" />
+    <Content Include="lila\seeker\templates\seeker\dataset_add.html" />
+    <Content Include="lila\seeker\templates\seeker\download.html" />
+    <Content Include="lila\seeker\templates\seeker\filter_help.html" />
+    <Content Include="lila\seeker\templates\seeker\formset_new.html" />
+    <Content Include="lila\seeker\templates\seeker\import_gold.html" />
+    <Content Include="lila\seeker\templates\seeker\import_manuscripts.html" />
+    <Content Include="lila\seeker\templates\seeker\import_authors.html" />
+    <Content Include="lila\seeker\templates\seeker\item_new.html" />
+    <Content Include="lila\seeker\templates\seeker\literature_list.html" />
+    <Content Include="lila\seeker\templates\seeker\manuscript_download.html" />
+    <Content Include="lila\seeker\templates\seeker\manuscript_sermons.html" />
+    <Content Include="lila\seeker\templates\seeker\codi_provs.html" />
+    <Content Include="lila\seeker\templates\seeker\manu_provs.html" />
+    <Content Include="lila\seeker\templates\seeker\passim_watermark.html" />
+    <Content Include="lila\seeker\templates\seeker\pending_changes.html" />
+    <Content Include="lila\seeker\templates\seeker\project_statistics.html" />
+    <Content Include="lila\seeker\templates\seeker\report_download.html" />
+    <Content Include="lila\seeker\templates\seeker\sermon_one.html" />
+    <Content Include="lila\seeker\templates\seeker\sermon_view.html" />
+    <Content Include="lila\seeker\templates\seeker\sermon_superlinks.html" />
+    <Content Include="lila\seeker\templates\seeker\super_goldset.html" />
+    <Content Include="lila\seeker\templates\seeker\scount_histogram.html" />
+    <Content Include="lila\seeker\templates\seeker\super_graph_hist.html" />
+    <Content Include="lila\seeker\templates\seeker\super_graph.html" />
+    <Content Include="lila\seeker\templates\seeker\syncpassim.html" />
+    <Content Include="lila\seeker\templates\seeker\tei-msitem.xml" />
+    <Content Include="lila\seeker\templates\seeker\tei-physdesc.xml" />
+    <Content Include="lila\seeker\templates\seeker\tei-additional.xml" />
+    <Content Include="lila\seeker\templates\seeker\tei-contents.xml" />
+    <Content Include="lila\seeker\templates\seeker\tei-template.xml" />
+    <Content Include="lila\seeker\templates\seeker\template_import.html" />
+    <Content Include="lila\seeker\templates\seeker\template_create.html" />
+    <Content Include="lila\stylo\templates\index.html" />
+    <Content Include="lila\templates\mylila.html" />
+    <Content Include="lila\templates\guide.html" />
+    <Content Include="lila\templates\about.html" />
+    <Content Include="lila\templates\admin\base.html" />
+    <Content Include="lila\templates\technical.html" />
+    <Content Include="lila\templates\technical_404.html" />
+    <Content Include="lila\templates\tools_huwa.html" />
+    <Content Include="lila\templates\tools.html" />
+    <Content Include="lila\templates\breadcrumb_list.html" />
+    <Content Include="lila\templates\contact.html" />
+    <Content Include="lila\templates\index.html" />
+    <Content Include="lila\templates\layout.html" />
+    <Content Include="lila\templates\login.html" />
+    <Content Include="lila\templates\loginpartial.html" />
+    <Content Include="lila\templates\bibliography.html" />
+    <Content Include="lila\templates\more.html" />
+    <Content Include="lila\templates\nlogin.html" />
+    <Content Include="lila\templates\pagination.html" />
+    <Content Include="lila\templates\paginationpost.html" />
+    <Content Include="lila\templates\signup.html" />
+    <Content Include="lila\templates\submit_row.html" />
+    <Content Include="lila\templates\topnav.html" />
+    <Content Include="requirements.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="readme.mht">
+      <SubType>WebBrowser</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Interpreter Include="..\..\..\..\..\env\lila\">
+      <Id>lila</Id>
+      <Version>3.6</Version>
+      <Description>lila (Python 3.6 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.Django.targets" />
+  <!-- Specify pre- and post-build commands in the BeforeBuild and 
+       AfterBuild targets below. -->
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
+        <WebProjectProperties>
+          <AutoAssignPort>True</AutoAssignPort>
+          <UseCustomServer>True</UseCustomServer>
+          <CustomServerUrl>http://localhost</CustomServerUrl>
+          <SaveServerSettingsInUserFile>False</SaveServerSettingsInUserFile>
+        </WebProjectProperties>
+      </FlavorProperties>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}" User="">
+        <WebProjectProperties>
+          <StartPageUrl>
+          </StartPageUrl>
+          <StartAction>CurrentPage</StartAction>
+          <AspNetDebugging>True</AspNetDebugging>
+          <SilverlightDebugging>False</SilverlightDebugging>
+          <NativeDebugging>False</NativeDebugging>
+          <SQLDebugging>False</SQLDebugging>
+          <ExternalProgram>
+          </ExternalProgram>
+          <StartExternalURL>
+          </StartExternalURL>
+          <StartCmdLineArguments>
+          </StartCmdLineArguments>
+          <StartWorkingDirectory>
+          </StartWorkingDirectory>
+          <EnableENC>False</EnableENC>
+          <AlwaysStartWebServerOnDebug>False</AlwaysStartWebServerOnDebug>
+        </WebProjectProperties>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>

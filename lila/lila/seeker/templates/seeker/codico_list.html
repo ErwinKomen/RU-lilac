@@ -1,0 +1,176 @@
+
+<div id="codi-units" class="in panel panel-default panel-plain" >
+
+  <!-- Room to have the form-link to create a new sermon for this manuscript -->
+  <div class="hidden" >
+    {% if reconstructed %}
+    -
+    {% else %}
+      <form id="create_new_codico" action="{% url 'codico_details' %}" method="post" >
+        {% csrf_token %}
+        <input type="text" name="codi-manuscript" value="{{object.id}}" />
+      </form>
+    {% endif %}
+  </div>
+
+  <!-- Room to add an existing codicological unit -->
+  <div id="add_to_reconstruction" class="collapse">
+    <form action="{% url 'manuscript_codico' %}" method="post">
+      <div class="hidden">
+        {% csrf_token %}
+        <input type="text" name="mrec-manuscript" value="{{object.id}}" />
+      </div>
+      Select the codicological unit that should be linked to this reconstruction:
+      {{mrecForm.rcodico}}
+      <a class="btn btn-xs jumbo-3" onclick="ru.lila.seeker.codico_process(this, 'add');">Add to manuscript</a>
+    </form>
+  </div>
+
+  <div id="save_section" class="hidden">
+    <form action="{% url 'manuscript_codico' %}" method="post">
+      <div class="hidden">
+        {% csrf_token %}
+        <input type="text" name="mrec-manuscript" value="{{object.id}}" />
+        <input type="text" name="mrec-codicolist" value="" id="id_mrec-codicolist" />
+      </div>
+      <a class="btn btn-xs jumbo-2" onclick="ru.lila.seeker.codico_process(this, 'save');">
+        <span class="glyphicon glyphicon-ok"></span>
+        Save
+      </a>
+    </form>
+  </div>
+
+  <div class="panel-body codico-list" >
+    {% for codico in codico_list %}
+      <div class="codico-unit">
+        <table style='width: 100%;' id="{{codico.codico_id}}" 
+               {% if is_app_editor %}
+               draggable="true" 
+               ondragstart="ru.lila.seeker.codico_drag(event);"
+               {% endif %}
+               
+               >
+          <thead></thead>
+          <tbody>
+            {% for item in codico.kvlist %}
+            
+              <tr class="view-row {% if not forloop.first %}hidden_NOT codico-unit-{{codico.codico_id}} {% endif %}">
+                <!-- Name of this codico-field -->
+                <td valign="top" class='tdnowrap' {% if forloop.first %}style="min-width: 100px;"{% endif %} >{{item.label}}</td>
+
+                <!-- Value of this codico-field -->
+                <td valign="top" class='hoverable' style="width: 100%;" >
+                  <div class="view-mode">
+                    {% if forloop.first %}
+                      <code class="codico-target {% if is_app_editor %}draggable{% endif %}"
+                            {% if is_app_editor %}
+                              ondragover="ru.lila.seeker.codico_dragenter(event);"
+                              ondragleave="ru.lila.seeker.codico_dragleave(event);"
+                              ondrop="ru.lila.seeker.codico_drop(event);"
+                            {% endif %}
+                            >{{item.value|safe}}</code>
+                    {% else %}
+                      <span style="min-width: 100px; display: inline-block">
+                        {% if item.value %}{{item.value|safe}}
+                        {% else %}-{% endif %}
+                      </span>
+                    {% endif %}
+                    {% if forloop.first %}
+                      <!-- the Hide and view button -->
+                      <a class="btn btn-xs jumbo-1" 
+                         onclick="ru.lila.seeker.codico_toggle(this, 'codico-unit-{{codico.codico_id}}');">Hide/View</a>
+
+                      {% if reconstructed %}
+                        <!-- Button to go the the manuscript of this codico -->
+                        <a class="btn btn-xs jumbo-3" href="{{codico.url_manu}}"
+                           title="View the manuscript this codicological unit belongs to">
+                          <span class="glyphicon glyphicon-chevron-right"></span>
+                          Manuscript identifier...
+                        </a>
+                      {% elif mtype != "tem" %}
+                        <!-- Button to switch to the details view -->
+                        <a class="btn btn-xs jumbo-3" href="{{codico.url}}"
+                           title="Open the details view of this codicological unit">
+                          <span class="glyphicon glyphicon-chevron-right"></span>
+                          Details...
+                        </a>
+                      {% endif %}
+
+                      {% if is_app_editor and not reconstructed and mtype != "tem" %}
+                        <!-- all reconstruction possibilities -->
+                        <div class="btn-group">
+                          <button type="button" class="btn btn-xs jumbo-3 dropdown-toggle" data-toggle="dropdown">
+                            Reconstruction <span class="caret"></span>
+                          </button>
+                          <ul class="dropdown-menu" role="menu">
+                            <li>
+                              <!-- Create a new manuscript on the basis of this codicological unit -->
+                              <a onclick="document.getElementById('create_new_reconstruction_{{codico.codico_id}}').submit();"
+                                 title="Create a reconstructed manuscript on the bases of this codicological unit">
+                                Create...
+                              </a>
+                            </li>
+                            <li>
+                              <!-- Add this unit to an existing reconstructed manuscript -->
+                              <a data-target="#add_to_reconstruction_{{codico.codico_id}}"
+                                 data-toggle="collapse"
+                                 title="">Add to manuscript...</a>
+                            </li>
+                          </ul>
+                        </div>
+
+                        <!-- Room to have the form-link to create a new reconstruction manuscript -->
+                        <div class="hidden">
+                          <form action="{% url 'manuscript_details' %}" method="post" id="create_new_reconstruction_{{codico.codico_id}}">
+                            {% csrf_token %}
+                            <input type="text" name="manu-codicostart" value="{{codico.codico_id}}">
+                          </form>
+                        </div>
+                        <div id="add_to_reconstruction_{{codico.codico_id}}" class="collapse">
+                          <form action="{% url 'manuscript_codico' %}" method="post">
+                            <div class="hidden">
+                              {% csrf_token %}
+                              <input type="text" name="mrec-codicostart" value="{{codico.codico_id}}">
+                            </div>
+                            Select the reconstructed manuscript to which this codicological unit may be linked:
+                            {{mrecForm.rmanu}}
+                            <a class="btn btn-xs jumbo-3" onclick="ru.lila.seeker.add_codico(this);">Add to manuscript</a>
+                          </form>
+                        </div>
+                      {% endif %}
+
+                      {% if is_app_editor %}
+                        <a mode="skip" class="view-mode btn btn-xs jumbo-3 pull-right" onclick="ru.basic.delete_confirm(this);">
+                          <span class="glyphicon glyphicon-remove" title="Remove (disconnect) this codicological unit"></span>
+                        </a>
+                      {% endif %}
+                    {% endif %}
+                  </div> 
+
+                  <!-- Standard way to confirm deletion -->
+                  <div class="delete-confirm selected hidden">
+                    <span>Are you sure you would like to delete this item?</span>
+                    <span>
+                      <!-- The button to cancel deletion -->
+                      <a title="Cancel disconnect (removal)" class="btn btn-xs jumbo-1" 
+                         onclick="ru.basic.delete_cancel(this);">Cancel</a>
+                      <!-- The actual delete button-->
+                      <a mode="delete" title="Delete this item" class="btn btn-xs jumbo-3" 
+                         onclick="ru.lila.seeker.codico_remove(this);">Delete</a>
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            
+            {% endfor %}
+          </tbody>
+        </table>
+        <!-- Possibly add horizontal ruler-->
+        {% if not forloop.last %}
+          <div class="codico-ruler"><hr /></div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+</div>

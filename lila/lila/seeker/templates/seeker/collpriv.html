@@ -1,0 +1,38 @@
+{% load i18n %}
+
+<table>
+  <tr>
+    <td valign="top" style="min-width: 20px;">{% if size %}{{size|safe}}{% else %}&nbsp;{% endif %}</td>
+    <td valign="top" >
+      <div>
+        <a class="btn btn-xs jumbo-1" data-toggle="collapse" data-target="#colladdinfo">
+          <span class="glyphicon glyphicon-plus"></span>Add {{pl_name}} to this personal dataset
+        </a>
+      </div>
+
+      <div id="colladdinfo" class="collapse row">
+          <p>This personal dataset can be used to store a collection of {{pl_name}}.
+          Adding such items can be done in this way:</p>
+          <ul>
+            <li>Go to the listview of the {{pl_name}}</li>
+            <li>Use the search filters to create a basket that contains the right items</li>
+            <li>Use the basket button "add to a dataset..." to add the items to the dataset you have created</li>
+          </ul>
+          <p>Here is a shortcut to the listview that you need:
+              {% if datasettype == "manu" %}
+                <a class="btn btn-xs jumbo-3" style="color: white;" href="{% url 'manuscript_list' %}">Goto manuscripts</a>
+              {% elif datasettype == "sermo" %}
+                <a class="btn btn-xs jumbo-3" style="color: white;" href="{% url 'canwit_list' %}">Goto sermons</a>
+              {% elif datasettype == "gold" %}
+                <a class="btn btn-xs jumbo-3" style="color: white;" href="{% url 'gold_list' %}">Goto gold sermons</a>
+              {% elif datasettype == "super" %}
+                <a class="btn btn-xs jumbo-3" style="color: white;" href="{% url 'austat_list' %}">Goto super sermons gold</a>
+              {% else %}
+                <i>Sorry, something went wrong. I'm not able to determine what kind of items this dataset holds.</i>
+              {% endif %}
+          </p>
+
+      </div>
+    </td>
+  </tr>
+</table>

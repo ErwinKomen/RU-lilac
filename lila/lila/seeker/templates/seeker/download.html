@@ -1,0 +1,35 @@
+
+<a id="download_{{downloadid}}" role="button" 
+    class="btn jumbo-1 btn-xs dropdown-toggle" 
+    data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+  Download&nbsp;<span class="caret"></span>
+</a>
+<ul class="dropdown-menu" aria-labelledby="download_{{downloadid}}">
+  <li>
+    <a href="#" 
+        downloadtype="hist-svg"
+        contentid="#super_network_{{downloadid}}"
+        ajaxurl="{% url urlname object_id %}"
+        onclick="ru.basic.post_download(this);" >Image (svg)</a>
+  </li>
+
+  <!-- Downloading as PNG -->
+  <li>
+    <a href="#" 
+        downloadtype="hist-png"
+        onclick="ru.basic.post_download(this);"
+        contentid="#super_network_{{downloadid}}"
+        ajaxurl="{% url urlname object_id %}">Image (png)</a>
+  </li>
+  <li class="divider" role="separator"></li>
+
+  <!-- Downloading JSON data -->
+  <li>
+    <a href="#" 
+        downloadtype="json"
+        onclick="ru.basic.post_download(this);"
+        contentid="#super_network_{{downloadid}}"
+        ajaxurl="{% url urlname object_id %}">Data (json)</a>
+  </li>
+</ul>
+

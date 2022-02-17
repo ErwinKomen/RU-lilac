@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+{% load i18n %}
+
+{% block content %}
+
+<div class="container body-content">
+
+  <div class="row">
+    <div class="col-md-10">
+      <h2>Bibliography</h2>
+      <p>
+        [Explanation]
+      </p>
+      <p>
+        <h3>Editions</h3>
+      </p>
+      <table>
+        <thead>
+        <tr><th>Short reference</th><th>Full reference</th></tr>
+        </thead>
+        <tbody>
+        {% for item in edition_list %}
+            <tr>
+            <td class="bibliography-literature" align="left">{{item.abbr}}</td>
+                <td>{{item.full}}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+        
+      </table>
+      <p>  
+        <h3>Literature</h3> 
+      </p>
+      <table>
+        <thead>
+        <tr><th>Short reference</th><th>Full reference</th></tr>
+        </thead>
+        <tbody>
+        {% for item in reference_list %} 
+            <tr>
+            <td class="bibliography-literature" align="left">{{item.abbr}}</td>
+                <td>{{item.full}}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+
+      </table>
+
+
+
+      
+      
+        
+        
+     
+        
+        
+     
+    </div>
+  </div>
+
+
+</div>
+
+{% endblock %}

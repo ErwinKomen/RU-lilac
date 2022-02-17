@@ -1,0 +1,97 @@
+{% load i18n %}
+
+<div >
+
+  <a id="basketmenu" class="btn jumbo-1 btn-sm dropdown-toggle" role="button" data-toggle="dropdown" 
+          aria-haspopup="true" aria-expanded="false">
+    <span class="glyphicon glyphicon-shopping-cart"></span>
+    <span>Basket</span>
+    {% if basketsize > 0 %}
+      <span>({{basketsize}})</span>
+    {% endif %}
+    <span class="caret"></span>
+  </a>
+  
+  <ul class="dropdown-menu" aria-labelledby="basketmenu">
+    {% if basketsize == 0 %}
+      <li>
+        <a id="basket_create" title="Create basket from current search results" href="#" operation="create" 
+            targetid="basket_buttons"
+            ajaxurl="{{basket_update}}" onclick="ru.lila.seeker.do_basket(this);">
+          <span class="glyphicon glyphicon-send"></span>
+          <span>Create</span>
+        </a>
+      </li>
+    {% else %}
+      <li>
+        <a id="basket_show" title="Show the contents of the basket" href="{{basket_show}}" >
+          <span>Show</span>
+        </a>
+      </li>
+      <li role="separator" class="divider"></li>
+      <li>
+        <a id="basket_add" title="Add search results to the basket" href="#" operation="add" 
+            targetid="basket_buttons"
+            ajaxurl="{{basket_update}}" onclick="ru.lila.seeker.do_basket(this);">
+          <span class="glyphicon glyphicon-plus"></span>
+          <span>Add</span>
+        </a>
+      </li>
+      <li>
+        <a id="basket_remove" title="Remove these search results from the basket" href="#" operation="remove" 
+            targetid="basket_buttons"
+            ajaxurl="{{basket_update}}" onclick="ru.lila.seeker.do_basket(this);">
+          <span class="glyphicon glyphicon-minus"></span>
+          <span>Remove</span>
+        </a>
+      </li>
+      <li>
+        <a id="basket_reset" title="Clear the basket" href="#" operation="reset" 
+            targetid="basket_buttons"
+            ajaxurl="{{basket_update}}" onclick="ru.lila.seeker.do_basket(this);">
+          <span class="glyphicon glyphicon-off"></span>
+          <span>Clear</span>
+        </a>
+      </li>
+      <li role="separator" class="divider"></li>
+      <li>
+        <a id="basket_collcreate" title="Add search results to a personal dataset or historical collection" href="#" operation="collcreate" 
+            targetid="basket_buttons"
+            ajaxurl="{{basket_update}}" onclick="ru.lila.seeker.do_basket(this);">
+          <span class="glyphicon glyphicon-send"></span>
+          <span>Create dataset</span>
+        </a>
+      </li>
+      <li>
+        <a id="basket_colladd" title="Add search results to a personal dataset or historical collection" href="#" operation="colladdstart" 
+            targetid="colladdinterface" onclick="ru.lila.seeker.do_basket(this);">
+          <span class="glyphicon glyphicon-plus"></span>
+          <span>Add to a dataset...</span>
+        </a>
+      </li>
+      {% if colltype == "manu" %}
+        <li role="separator" class="divider"></li>
+        <li>
+          <a id="basket_collcreate" title="Add search results to a 'ResearchSet', from which a DCT can be made" href="#" operation="rsetcreate" 
+              targetid="basket_buttons"
+              ajaxurl="{{basket_update}}" onclick="ru.lila.seeker.do_basket(this);">
+            <span class="glyphicon glyphicon-send"></span>
+            <span>Create research-set</span>
+          </a>
+        </li>
+        <li>
+          <a id="basket_dctlaunch" title="Launch a DCT based on the manuscripts in the basket (this also creates a 'ResearchSet')" href="#" operation="dctlaunch" 
+              targetid="basket_buttons"
+              ajaxurl="{{basket_update}}" onclick="ru.lila.seeker.do_basket(this);">
+            <span class="glyphicon glyphicon-send"></span>
+            <span>Launch DCT</span>
+          </a>
+        </li>
+      {% endif %}
+    {% endif %}
+  </ul>
+
+
+</div>
+
+

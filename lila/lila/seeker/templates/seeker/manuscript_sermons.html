@@ -1,0 +1,207 @@
+
+
+<div class="row">&nbsp;</div>
+<div id="manuscript_itemset" class="row">
+  <div class="col-md-12">
+    <!-- Sermons in this manuscript -->
+    <h3>
+      <span>Contents</span>
+      {% if is_app_editor %}
+        <span id="add_search_criteria" class="pull-right">
+          <!-- Completely manual sermon adding -->
+          <a class="btn btn-xs jumbo-3" role="button" 
+             onclick="document.getElementById('create_new_sermon').submit();"             
+              >
+            <span class="glyphicon glyphicon-plus"></span>Add a sermon to this manuscript
+          </a>
+        </span>
+      {% endif %}
+    </h3>
+
+    {% if is_app_editor %}
+      <!-- Room to have the form-link to create a new sermon for this manuscript -->
+      <div class="row">
+        <div class="hidden col-md-offset-6 col-md-6" >
+          <form id="create_new_sermon" action="{% url 'canwit_details' %}" method="post" >
+            {% csrf_token %}
+            <div class="hidden" >
+              <input type="text" name="sermo-manu" value="{{manuForm.instance.id}}" />
+              <input type="text" name="sermo-mtype" value="{{manuForm.instance.mtype}}" />
+            </div>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Hidden hierarchy submit form -->
+    <div class="hidden">
+      <form id="save_new_hierarchy" method="post" action="{% url 'manuscript_hierarchy' pk=manuForm.instance.id %}">
+        {% csrf_token %}
+        <input type="text" id="id_manu-hlist" name="manu-hlist" value="" />
+      </form>
+    </div>
+
+    {% if canwit_list|length == 0 %}  <!-- object.manuitems.count -->
+      <p><i>This manuscript does not contain a definition of its contents</i></p>
+    {% else %}
+
+    <div id="sermonlog"></div>
+
+      <!-- A place where the Sermons are put in hierarchically organized <div> elements -->
+      <div id="sermon_tree" class="not_hidden">
+        <div class="" level="1">
+          <table class="func-view sermons" style="width: 100%;">
+            <thead>
+              <tr>
+                <th style="width: 100%;">
+                  <!-- Summary infor of this manuscript's items/sermons -->
+                  <span>Details of this manuscript's {{object.manuitems.count}} items ({{object.get_sermon_count}} sermons)</span>
+                  {% if is_app_editor %}
+                    <span class="tree" sermonid="" id="sermon_new">
+                      <!-- The *LOCUS* of the sermon that serves as drag point -->
+                      <span ondragover="ru.lila.seeker.sermon_dragenter(event);" ondragenter="ru.lila.seeker.sermon_dragenter(event);"
+                            ondragleave="ru.lila.seeker.sermon_dragleave(event);" ondrop="ru.lila.seeker.sermon_drop(event);">
+                        <code draggable="true" class="draggable" title="Add a new structure element from here"
+                              ondragstart="ru.lila.seeker.sermon_drag(event);">Structure...</code>
+                      </span>
+                    </span>
+                  {% endif %}
+
+                  <!-- Buttons completely at the right-->
+                  <span role="group" aria-label="erwin" class="btn-group btn-group-xs pull-right">
+                    <span type="button" class="btn jumbo-2" title="Gryson/Clavis codes linked through the Super Sermon Gold"
+                          onclick="ru.lila.seeker.manusermo(this, 'sig-auto');">Gryson A</span>
+                    <span type="button" class="btn jumbo-1" title="Gryson/Clavis codes added manually"
+                          onclick="ru.lila.seeker.manusermo(this, 'sig-manual');">Gryson M</span>
+                    <span type="button" class="btn jumbo-2" title="Title of this sermon/item"
+                          onclick="ru.lila.seeker.manusermo(this, 'title');">Title</span>
+                    <span type="button" class="btn jumbo-2" title="Attributed author"
+                          onclick="ru.lila.seeker.manusermo(this, 'author');">Author</span>
+                    <span type="button" class="btn jumbo-2" title="Incipit"
+                          onclick="ru.lila.seeker.manusermo(this, 'incipit');">Inc</span>
+                    <span type="button" class="btn jumbo-2" title="Explicit"
+                          onclick="ru.lila.seeker.manusermo(this, 'explicit');">Exc</span>
+                    <span type="button" class="btn jumbo-1" title="Note"
+                          onclick="ru.lila.seeker.manusermo(this, 'note');">Note</span>
+                    <span type="button" class="btn jumbo-1" title="Kewords attached to the Super Sermon Gold"
+                          onclick="ru.lila.seeker.manusermo(this, 'kw-auto');">Keywords A</span>
+                    <span type="button" class="btn jumbo-1" title="Kewords manually attached to this sermon"
+                          onclick="ru.lila.seeker.manusermo(this, 'kw-manual');">Keywords M</span>
+                    <span type="button" class="btn jumbo-1" title="Historical Collection(s) associated with this sermon manifestation"
+                          onclick="ru.lila.seeker.manusermo(this, 'hc');">HC</span>
+                  </span>
+
+                </th>
+                <th class="tdnowrap">
+                  {% if is_app_editor %}
+                    <span>
+                      <a mode="restore" class="edit-mode btn btn-xs jumbo-1 hidden" 
+                         onclick="ru.lila.seeker.manuscript('restore');">
+                        <span class="glyphicon glyphicon-arrow-left" title="Restore to the original sermon hierarchy"></span>
+                      </a>
+                    </span>
+                    <span>
+                      <a mode="save" class="edit-mode btn btn-xs jumbo-2 hidden" 
+                         onclick="ru.lila.seeker.manuscript('save', this);"
+                         targetid=""
+                         targeturl="{% if manuForm.instance.id %}{% url 'manuscript_details' manuForm.instance.id %}{% endif %}" >
+                        <span class="glyphicon glyphicon-ok" title="Save this sermon hierarchy"></span>
+                        Save
+                      </a>
+                    </span>
+                    <span class="hidden waiting">
+                      <span>Processing changes...</span><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+                    </span>
+                  {% endif %}
+                  <span>
+                    <a mode="expand" role="button" class="btn btn-xs jumbo-1" 
+                         onclick="ru.lila.seeker.manuscript('expand');">
+                        <span class="glyphicon glyphicon-collapse-down" title="Expand the whole hierarchy"></span>
+                    </a>
+                  </span>
+                  <span>
+                    <a mode="collapse" role="button" class="btn btn-xs jumbo-1" 
+                         onclick="ru.lila.seeker.manuscript('collapse');">
+                        <span class="glyphicon glyphicon-collapse-up" title="Collapse the whole hierarchy"></span>
+                    </a>
+                  </span>
+                </th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+        <!-- This is where the sermon hierarchy is put-->
+        <div id="sermon_tree_main">
+          {% for msitem in canwit_list %}
+            {% if msitem.childof == 1 %}
+              {% include 'seeker/sermon_one.html' with msitem=msitem canwit_list=canwit_list level=1 %}
+            {% endif %}
+          {% endfor %}
+        </div>
+
+        <!-- Possible start of a new codicological unit -->
+        {% for codi in codi_empty_list %}
+          <div class="tree codi-start {% if is_app_editor and codi.order > 1 %}draggable{% endif %} " 
+               id="codi_{{codi.id}}" sermonid="" sermontype="codi"
+               targetid="{{codi.id}}" order="{{codi.order}}"
+               {% if is_app_editor and codi.order > 1 %}
+                  draggable="true"
+                  ondragstart="ru.lila.seeker.sermon_drag(event);"             
+               {% endif %}><hr /></div>
+        {% endfor %}
+
+      </div>
+
+
+      {% if is_app_editor %}
+        <!-- Hidden sermon hierarchy element -->
+        <div sermonid="" id="sermon_hierarchy_element" class="tree hidden" sermontype="new">
+          <table class="func-view sermons" style="width: 100%;">
+            <tbody>
+              <!-- Horizontal ruler that can be expanded -->
+              <tr style="font-size: 1px;" class="">
+                <td colspan="2" class="ruler ruler_white"
+                    ondragover="ru.lila.seeker.sermon_dragenter(event);" ondragenter="ru.lila.seeker.sermon_dragenter(event);" 
+                    ondragleave="ru.lila.seeker.sermon_dragleave(event);" ondrop="ru.lila.seeker.sermon_drop(event);" ></td>
+                <td colspan="2" style="background-color: white;"></td>
+              </tr>
+              <!-- Actual line-->
+              <tr>
+                <!-- empty space -->
+                <td valign="top" class="sermonbutton"><span>&nbsp;</span></td>
+
+                <!-- The number of the sermon in our current hierarchy -->
+                <td valign="top" class="sermonnumber tdnowrap" onclick="ru.lila.seeker.sermon_selection(this);">
+                  <span>*</span>
+                </td>
+
+                <!-- The *LOCUS* of the sermon that serves as drag point -->
+                <td valign="top" class="tdnowrap " style="background-color: white;"
+                    ondragover="ru.lila.seeker.sermon_dragenter(event);" ondragenter="ru.lila.seeker.sermon_dragenter(event);" 
+                    ondragleave="ru.lila.seeker.sermon_dragleave(event);" ondrop="ru.lila.seeker.sermon_drop(event);" >
+                  <code draggable="true" class="draggable" ondragstart="ru.lila.seeker.sermon_drag(event);">Hierarchy</code>
+                </td>
+
+                <!-- The sermon itself -->
+                <td valign="top" class="td clickable" style="width: 100%;">
+                  <div class="sermon-new-head" draggable="false" targeturl="">
+                    <!-- THis is where the structural elements (contenteditable) will appear -->
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+
+      <!-- Copy of the tree -->
+      <div id="sermon_tree_copy" class="hidden"></div>
+
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  ru.lila.seeker.manuscript('init');
+</script>
+

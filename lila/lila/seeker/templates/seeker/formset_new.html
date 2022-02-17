@@ -1,0 +1,76 @@
+﻿{% load i18n %}
+
+<table class="func-view" style="width: 100%;">
+  <!-- Need to have the management stuff for 'gkw' -->
+  {{ this_formset.management_form }}
+
+  <tbody>
+    {% for frm in this_formset %}
+      <tr class="form-row">
+        <!-- A 1-based counter for the forms in this set-->
+        <td style="min-width: 20px; width: 20px;"><span>{{forloop.counter}}</span></td>
+
+        <!-- Hidden but essential: the ID field of this form -->
+        <td class="hidden">{{frm.id}}</td>
+
+        <!-- Hidden but essential: the target -->
+        <td class="hidden">
+          <input id="id_{{prefix}}-{{forloop.counter0}}-{{linkfield}}" name="{{prefix}}-{{forloop.counter0}}-{{linkfield}}" value="{{instance.id}}" />
+        </td>
+
+        <!-- Iterate over the remaining fields -->
+        {% for field in frm %}
+          {% if field.help_text == "editable" %}
+            <td class="tdnowrap {% if unique %}unique-field{% endif %}"
+                {% if "tdstyle" in field.widget.attrs %}style="{{field.widget.attrs.tdstyle}}"{% endif %}
+                >{{field}}</td>
+          {% endif %}
+        {% endfor %}
+        {% if frm.errors %}
+          <td>
+            {% for error in frm.non_field_errors %}
+              <div class="alert alert-danger"><strong>{{error|escape}}</strong></div>
+            {% endfor %}
+          </td>
+        {% endif %}
+
+        <!-- A delete button -->
+        <td title="Delete this item" style="vertical-align: middle; width: 20px" class="clickable">
+          <a class="delete-row" extra="{{prefix}}" counter="true" onclick="ru.basic.tabular_deleterow(this);">
+            <span class="glyphicon glyphicon-remove">&nbsp;</span>
+          </a>
+        </td>
+
+      </tr>
+    {% endfor %}
+
+    <!-- Empty row with specifications -->
+    <tr class="form-row empty-form">
+      <!-- A 1-based counter for the forms in this set-->
+      <td style="min-width: 20px; width: 20px;"><span>__counter__</span></td>
+
+      <!-- Hidden but essential: the target -->
+      <td class="hidden" defaultvalue="{{linkid}}">
+        <input id="id_{{prefix}}-__counter__-{{linkfield}}" name="{{prefix}}-__counter__-{{linkfield}}" />
+      </td>
+
+      <!-- Iterate over the remaining fields -->
+      {% for field in this_formset.empty_form %}
+        {% if field.help_text == "editable" %}
+          <td class="tdnowrap {% if unique %}unique-field{% endif %}" xxx="{{field.widget.attrs}}" yyy="{{this_formset.empty_form.widths}}"
+              {% if "tdstyle" in field.widget.attrs %}style="{{field.widget.attrs.tdstyle}}"{% endif %} >
+            {{field}}
+          </td>
+        {% endif %}
+      {% endfor %}
+
+      <!-- A delete button -->
+      <td title="Delete this item" style="vertical-align: middle; width: 20px" class="clickable">
+        <a class="delete-row" extra="{{prefix}}" counter="true"  onclick="ru.basic.tabular_deleterow(this);">
+          <span class="glyphicon glyphicon-remove">&nbsp;</span>
+        </a>
+      </td>
+    </tr>
+
+  </tbody>
+</table>

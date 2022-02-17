@@ -1,0 +1,130 @@
+{% load staticfiles %}
+
+    <div class="navbar navbar-custom navbar-fixed-top">
+        <div class="container" url_home="{% url 'home' %}">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a href="{% url 'home' %}" class="navbar-brand">Lilac
+                [{% if user.is_authenticated %} {{user.username}} {% else %} (not logged in) {% endif %}]                
+                </a>
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    {% if user.is_superuser %}
+                    <li><a href="{% url 'definitions' %}">Definitions</a></li>
+                    {% endif %}
+
+                    {% if user.is_authenticated %}
+                      <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" 
+                           aria-haspopup="true" aria-expanded="false">Search<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                          <!-- Relevant listviews -->
+                          <li><a href="{% url 'manuscript_list' %}">Manuscript</a></li>
+                          <li><a href="{% url 'colwit_list' %}">Collection witness</a></li>
+                          <li><a href="{% url 'canwit_list' %}">Canon witness</a></li>
+                          <li><a href="{% url 'austat_list' %}">Authority statement</a></li>
+                          <li role="separator" class="divider"></li>
+                          <li><a href="{% url 'collhist_list' %}" title="List and search (historical) collections">Collection</a></li>
+                          <li><a href="{% url 'library_list' %}">Library</a></li>
+                          <li><a href="{% url 'author_list' %}">Author</a></li>
+                        </ul>
+                      </li>
+
+                      <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" 
+                           aria-haspopup="true" aria-expanded="false">Tools<span class="caret"></span></a>
+                        
+                       <ul class="dropdown-menu">
+                          <li><a href="{% url 'mylila' %}" title="Personal Research Environment">My lila</a></li>
+                          <li><a href="{% url 'literature_list' %}" title="Bibliography">Bibliography</a></li> 
+                          <li role="separator" class="divider"></li>
+                          <li><a href="{% url 'collpriv_list' %}" title="My own datasets">My Datasets</a></li>
+                          <li><a href="{% url 'collpubl_list' %}" title="Public datasets">Public Datasets</a></li>
+
+                          {% if is_app_editor %}
+                            <li><a href="{% url 'template_list' %}" title="List of available manuscript templates">Templates</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="{% url 'sync_lila' %}" title="Synchronization of Zotero and other items">Synchronization...</a></li>
+                            
+                          {% endif %}
+                          <li role="separator" class="divider"></li>
+                          <li><a href="{% url 'keyword_list' %}" title="Keywords">Keywords</a></li> 
+                          <li><a href="{% url 'location_list' %}" title="List of source information">Locations</a></li>
+                          <li><a href="{% url 'feast_list' %}" title="List of Feasts">Feasts</a></li>
+                          {% if is_app_editor %}
+                            <li role="separator" class="divider"></li>
+                            <li><a href="{% url 'provenance_list' %}" title="List of provenances">Provenances</a></li>
+                            <li><a href="{% url 'bibrange_list' %}" title="List of Bible references">Bible references</a></li>
+                            <li><a href="{% url 'origin_list' %}" title="List of defined manuscript origins">Origins</a></li>
+                            <li><a href="{% url 'report_list' %}" title="List reports of uploading etc.">Reports</a></li>
+                            <li><a href="{% url 'source_list' %}" title="List of source information">Sources</a></li>
+                            <li><a href="{% url 'userkeyword_list' %}" title="User Keywords">User Keywords</a></li> 
+                            <li><a href="{% url 'comment_list' %}" title="User Comments">User Comments</a></li> 
+                          {% endif %}
+                          {% if is_app_uploader %}
+                            <li role="separator" class="divider"></li>
+                            <li><a href="{% url 'project_list' %}" title="Projects">Projects</a></li>  
+                          {% endif %}
+                          {% if is_app_moderator %}
+                            <li role="separator" class="divider"></li>
+                            <li><a href="{% url 'profile_list' %}" title="Projects">User profiles</a></li> 
+                          {% endif %}
+                        </ul>
+                      </li>
+
+                      {% if is_app_uploader %}
+                        <li class="dropdown">
+                          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" 
+                             aria-haspopup="true" aria-expanded="false">Developers<span class="caret"></span></a>
+                        
+                         <ul class="dropdown-menu">
+                            <li><a href_was="#" href="{% url 'create_pdf_lit' %}" title="Create PDF with literature references">Create PDF with literature references</a></li> 
+                            
+                            <li role="separator" class="divider"></li>
+                            <li><a href_was="#" href="{% url 'create_pdf_edi' %}" title="Create PDF with edition references">Create PDF with edition references</a></li> 
+                            
+                            <li role="separator" class="divider"></li>
+                            <li><a href_was="#" href="{% url 'create_pdf_manu' %}" title="Create PDF with all manuscripts in lila">Create PDF with all manuscripts in lila</a></li> 
+
+
+                          </ul>
+                        </li>
+                      {% endif %}
+
+                    {% endif %}
+                </ul>
+
+                {% if user.is_authenticated %}
+                  <form id="logoutForm" action="{% url 'logout' %}" method="post" class="navbar-right">
+                      {% csrf_token %}
+                  </form>
+                {% endif %}
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" 
+                         aria-haspopup="true" aria-expanded="false">Extra... <span class="caret"></span></a>
+                      <ul class="dropdown-menu">
+                        <li><a href="{% url 'about' %}">About</a></li>
+                        <li><a href="{% url 'technical' %}">Technical</a></li>
+                        <li><a href="{% url 'guide' %}">Guide</a></li>
+                        <li><a href="{% url 'contact' %}">Contact</a></li>
+                        <li role="separator" class="divider"></li>
+                        {% if user.is_authenticated %}
+                          <li><a href="javascript:document.getElementById('logoutForm').submit()">Log off</a></li>
+                          <li><a href="{% url 'admin:password_change' %}">Change password</a></li>
+                        {% else %}
+                          <li><a href="{% url 'login' %}"><span class="glyphicon glyphicon-user" aria-hidden="true"></span>Log in</a></li>
+                          <li><a href="{% url 'signup' %}">Sign up</a></li>
+                        {% endif %}
+                      </ul>
+                    </li>
+                </ul>
+
+            </div>
+        </div>
+    </div>

@@ -1,0 +1,43 @@
+
+<a class="btn btn-xs jumbo-3 dropdown-toggle" data-toggle="dropdown">
+  <span class="glyphicon glyphicon-plus"></span>Add a new Dataset <span class="caret"></span>
+</a>
+<ul class="dropdown-menu" role="menu" style="position: relative;">
+  <li><a onclick="document.getElementById('create_new_coll_m').submit();">Manuscript</a></li>
+  <li><a onclick="document.getElementById('create_new_coll_s').submit();">Sermon</a></li>
+  {% if prefix != "priv" %}
+    <!-- Note: no SG private dataset-->
+    <li><a onclick="document.getElementById('create_new_coll_sg').submit();">Sermon Gold</a></li>
+  {% endif %}
+  <li><a onclick="document.getElementById('create_new_coll_ssg').submit();">Authority File</a></li>
+</ul>
+
+<div class="hidden" >
+  <form action="{% url 'collpriv_details' %}" method="post" id="create_new_coll_m">
+    {% csrf_token %}
+    <input id="id_datasettype" name="datasettype" value="manu" />
+  </form>
+</div>
+
+<div class="hidden" >
+  <form action="{% url 'collpriv_details' %}" method="post" id="create_new_coll_s">
+    {% csrf_token %}
+    <input id="id_datasettype" name="datasettype" value="sermo" />
+  </form>
+</div>
+
+{% if prefix != "priv" %}
+  <div class="hidden" >
+    <form action="{% url 'collpriv_details' %}" method="post" id="create_new_coll_sg">
+      {% csrf_token %}
+      <input id="id_datasettype" name="datasettype" value="gold" />
+    </form>
+  </div>
+{% endif %}
+
+<div class="hidden" >
+  <form action="{% url 'collpriv_details' %}" method="post" id="create_new_coll_ssg">
+    {% csrf_token %}
+    <input id="id_datasettype" name="datasettype" value="super" />
+  </form>
+</div>
