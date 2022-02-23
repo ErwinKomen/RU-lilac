@@ -25,7 +25,6 @@ from django.views.generic import ListView, View
 from django.views.decorators.csrf import csrf_exempt
 
 import requests
-import demjson
 
 
 # ======= imports from my own application ======

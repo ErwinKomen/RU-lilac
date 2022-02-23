@@ -44,17 +44,10 @@ if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR or "c:" in WRITABLE_DIR or "C:" 
     # Specific differentiation
     if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
         USE_REDIS = True
-elif "131.174" in hst:
-    # Configuration within the Radboud University environment (AppleJack)
+elif "131.174" in hst or "/var/www" in WRITABLE_DIR:
+    # Configuration within the Radboud University environment (Lightning)
     APP_PREFIX = ""             # Was: "lila/"
-    #admin.site.site_url = '/'   # Was: '/lila'
     ADMIN_SITE_URL = "/"
-    USE_REDIS = True
-elif "/var/www" in WRITABLE_DIR:
-    # New configuration of http://corpus-studio-web.cttnww-meertens.surf-hosted.nl/lila
-    APP_PREFIX = "lila/"
-    #admin.site.site_url = '/lila'
-    ADMIN_SITE_URL = "/lila"
     USE_REDIS = True
 else:
     APP_PREFIX = "dd/"
@@ -87,7 +80,7 @@ SECRET_KEY = '561c5400-4ebf-4e45-a2ec-12d856638e45'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', 'applejack.science.ru.nl', 'lila.rich.ru.nl', 'testserver', '131.174.114.236' ]
+ALLOWED_HOSTS = ['localhost', 'lilac.rich.ru.nl', 'testserver' ]
 
 # Caching
 if USE_REDIS:
@@ -214,3 +207,10 @@ if ("/var/www" in WRITABLE_DIR and not bUseTunnel):
     STATIC_URL = "/" + APP_PREFIX + "static/"
 
 STATIC_ROOT = os.path.abspath(os.path.join("/", posixpath.join(*(BASE_DIR.split(os.path.sep) + ['static']))))
+
+# ========= DEBUGGING =================
+print("WRITABLE = {}".format(WRITABLE_DIR))
+print("APP_PREFIX = {}".format(APP_PREFIX))
+print("STSTIC_ROOT = {}".format(STATIC_ROOT))
+
+

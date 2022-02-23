@@ -39,7 +39,6 @@ import copy
 import json
 import csv, re
 import requests
-import demjson
 import openpyxl
 from openpyxl.utils.cell import get_column_letter
 import sqlite3
