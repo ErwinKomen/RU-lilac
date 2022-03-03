@@ -3067,7 +3067,8 @@ class CodicoForm(lilaModelForm):
                 instance = kwargs['instance']
 
                 # Look after origin
-                origin = instance.origin
+                origin = instance.origins.first()
+
                 self.fields['origin_ta'].initial = "" if origin == None else origin.name
                 self.fields['origone'].initial = None if origin == None else origin.id
                 self.fields['kwlist'].initial = [x.pk for x in instance.keywords.all().order_by('name')]

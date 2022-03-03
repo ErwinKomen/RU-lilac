@@ -5157,9 +5157,9 @@ class Daterange(models.Model):
         return sBack
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
-        # Fill in manuscript, if not yet given
-        if self.codico_id != None and self.codico != None and self.manuscript_id == None or self.manuscript == None:
-            self.manuscript = self.codico.manuscript
+        ## Fill in manuscript, if not yet given
+        #if self.codico_id != None and self.codico != None and self.manuscript_id == None or self.manuscript == None:
+        #    self.manuscript = self.codico.manuscript
         # Perform the actual saving
         response = super(Daterange, self).save(force_insert, force_update, using, update_fields)
         # Possibly adapt the dates of the related manuscript
