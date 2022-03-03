@@ -58,10 +58,6 @@ from lila.basic.views import BasicList, BasicDetails, BasicPart
 
 # =================== This is imported by seeker/views.py ===============
 reader_uploads = [
-    {"title": "ecodex", "label": "e-codices", "url": "import_ecodex", "type": "multiple",
-     "msg": "Upload e-codices XML files (n), using default project assignment defined in Mylila"},
-    {"title": "ead",    "label": "EAD",       "url": "import_ead",    "type": "multiple",
-     "msg": "Upload 'Archives et Manuscripts' XML files, using default project assignment defined in Mylila"}
     ]
 # Global debugging 
 bDebug = False

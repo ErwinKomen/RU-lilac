@@ -48,6 +48,9 @@
     <Compile Include="lila\seeker\views_main.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="lila\seeker\views_utils.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="manage.py" />
     <Compile Include="lila\basic\admin.py" />
     <Compile Include="lila\basic\apps.py" />

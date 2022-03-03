@@ -67,6 +67,8 @@ app_uploader = "{}_uploader".format(PROJECT_NAME.lower())
 app_editor = "{}_editor".format(PROJECT_NAME.lower())
 app_userplus = "{}_userplus".format(PROJECT_NAME.lower())
 app_moderator = "{}_moderator".format(PROJECT_NAME.lower())
+app_developer = "{}_developer".format(PROJECT_NAME.lower())
+
 
 def user_is_authenticated(request):
     # Is this user authenticated?

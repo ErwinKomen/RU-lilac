@@ -248,8 +248,7 @@ urlpatterns = [
     url(r'^sync/zotero/$', lila.seeker.views_api.redo_zotero, name='sync_zotero'),
      
     # ================ Any READER APP URLs should come here =======================================
-    # url(r'^reader/import/ecodex/$', ReaderEcodex.as_view(), name='import_ecodex'),
-    # url(r'^reader/import/ead/$', ReaderEad.as_view(), name='import_ead'),
+
 
     # =============================================================================================
 

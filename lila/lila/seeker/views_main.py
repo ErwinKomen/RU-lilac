@@ -24,6 +24,9 @@ from django.views.generic.base import RedirectView
 from django.views.generic import ListView, View
 from django.views.decorators.csrf import csrf_exempt
 
+# Other basic imports
+import json
+
 
 # ======= imports from my own application ======
 from lila.utils import ErrHandle
@@ -53,9 +56,15 @@ from lila.seeker.forms import SearchCollectionForm, SearchManuscriptForm, Search
     TemplateForm, TemplateImportForm, ManuReconForm,  ManuscriptProjectForm, \
     CodicoForm, CodicoProvForm, ProvenanceCodForm, OriginCodForm, CodicoOriginForm
 from lila.reader.views import reader_uploads
+# from lila.seeker.views import lila_action_add, lila_get_history, may_edit_project
+from lila.seeker.views import get_usercomments
+from lila.seeker.views_utils import lila_action_add, lila_get_history
+from lila.seeker.adaptations import listview_adaptations
 
 # ======= from RU-Basic ========================
-from lila.basic.views import BasicPart, BasicList, BasicDetails, make_search_list, add_rel_item, adapt_search
+from lila.basic.views import BasicPart, BasicList, BasicDetails, make_search_list, add_rel_item, adapt_search, \
+   user_is_ingroup, app_developer, app_editor, user_is_authenticated, user_is_superuser, \
+   adapt_m2m, adapt_m2o
 
 
 def adapt_regex_incexp(value):
@@ -71,6 +80,107 @@ def adapt_regex_incexp(value):
         value = value.replace("ae", "e").replace("e", "a?e").translate(oTranslation)
 
     return value
+
+def get_non_editable_projects(profile, projects):
+    """Get the number of projects that I do not have editing rights for"""
+
+    oErr = ErrHandle()
+    iCount = 0
+    try:
+        id_list = []
+        current_project_ids = [x['id'] for x in projects.values('id')]
+        profile_project_ids = [x['id'] for x in profile.projects.all().values('id')]
+        # Walk all the projects I need to evaluate
+        for prj_id in current_project_ids:
+            if not prj_id in profile_project_ids:
+                # I have*NO*  editing rights for this one
+                id_list.append(prj_id)
+        iCount = len(id_list)
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("get_non_editable_projects")
+        iCount = 0
+
+    return iCount
+
+def evaluate_projlist(profile, instance, projlist, sText):
+    bBack = True
+    msg = ""
+    try:
+        if projlist is None or len(projlist) == 0:
+            # Check how many projects the user does *NOT* have rights for
+            non_editable_projects = get_non_editable_projects(profile, instance.projects.all())
+            if non_editable_projects == 0:
+                # The user has not selected a project (yet): try default assignment
+                user_projects = profile.projects.all()
+                if user_projects.count() != 1:
+                    # We cannot assign the default project
+                    bBack = False
+                    msg = "Make sure to assign this {} to one project before saving it".format(sText)
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("evaluate_projlist")
+        bBack = False
+    return bBack, msg
+
+def may_edit_project(request, profile, instance):
+    """Check if the user is allowed to edit this project"""
+
+    bBack = False
+    # Is the user an editor?
+    if user_is_ingroup(request, app_editor):
+        # Get the projects this user has authority for
+        user_projects = profile.get_project_ids()
+        if len(user_projects) > 0:
+            # True: the user may indeed edit *some* projects
+            bBack = True
+
+            # The following is now superfluous
+            use_superfluous = False
+            if use_superfluous:
+                # Get the projects associated with [instance']
+                project_ids = [x['id'] for x in instance.projects.all().values('id')]
+                # See if there is any match
+                for project_id in user_projects:
+                    if project_id in project_ids:
+                        bBack = True
+                        break
+    return bBack
+
+def project_dependant_delete(request, to_be_deleted):
+    """Delete items from the linktable, provided the user has the right to"""
+
+    oErr = ErrHandle()
+    bBack = True
+    try:
+        # Find out who this is
+        profile = Profile.get_user_profile(request.user.username)
+        # Get the editing rights for this person
+        project_id = [x['id'] for x in profile.projects.all().values("id")]
+
+        # CHeck all deletables
+        delete = []
+        for obj in to_be_deleted:
+            # Get the project id of the deletables
+            obj_id = obj.id
+            prj_id = obj.project.id
+            if prj_id in project_id:
+                # The user may delete this project relation
+                # Therefore: delete the OBJ that holde this relation!
+                delete.append(obj_id)
+        # Is anything left?
+        if len(delete) > 0:
+            # Get the class of the deletables
+            cls = to_be_deleted[0].__class__
+            # Delete all that need to be deleted
+            cls.objects.filter(id__in=delete).delete()
+
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("project_dependant_delete")
+        bBack = False
+    return bBack
+
 
 
 
@@ -405,29 +515,29 @@ class ManuscriptEdit(BasicDetails):
                 cleaned = form.cleaned_data
                 # Action depends on prefix
 
-                if prefix == "mdr":
-                    # Processing one daterange
-                    newstart = cleaned.get('newstart', None)
-                    newfinish = cleaned.get('newfinish', None)
-                    oneref = cleaned.get('oneref', None)
-                    newpages = cleaned.get('newpages', None)
+                #if prefix == "mdr":
+                #    # Processing one daterange
+                #    newstart = cleaned.get('newstart', None)
+                #    newfinish = cleaned.get('newfinish', None)
+                #    oneref = cleaned.get('oneref', None)
+                #    newpages = cleaned.get('newpages', None)
 
-                    if newstart:
-                        # Possibly set newfinish equal to newstart
-                        if newfinish == None or newfinish == "":
-                            newfinish = newstart
-                        # Double check if this one already exists for the current instance
-                        obj = instance.manuscript_dateranges.filter(yearstart=newstart, yearfinish=newfinish).first()
-                        if obj == None:
-                            form.instance.yearstart = int(newstart)
-                            form.instance.yearfinish = int(newfinish)
-                        # Do we have a reference?
-                        if oneref != None:
-                            form.instance.reference = oneref
-                            if newpages != None:
-                                form.instance.pages = newpages
-                        # Note: it will get saved with formset.save()
-                elif prefix == "mcol":
+                #    if newstart:
+                #        # Possibly set newfinish equal to newstart
+                #        if newfinish == None or newfinish == "":
+                #            newfinish = newstart
+                #        # Double check if this one already exists for the current instance
+                #        obj = instance.manuscript_dateranges.filter(yearstart=newstart, yearfinish=newfinish).first()
+                #        if obj == None:
+                #            form.instance.yearstart = int(newstart)
+                #            form.instance.yearfinish = int(newfinish)
+                #        # Do we have a reference?
+                #        if oneref != None:
+                #            form.instance.reference = oneref
+                #            if newpages != None:
+                #                form.instance.pages = newpages
+                #        # Note: it will get saved with formset.save()
+                if prefix == "mcol":
                     # Collection processing
                     newcol = cleaned.get('newcol', None)
                     if newcol != None:
@@ -1103,12 +1213,7 @@ class ManuscriptListView(BasicList):
             ]}
          ]
     uploads = reader_uploads
-    downloads = [{"label": "Ead:Excel", "dtype": "xlsx", "url": 'ead_results'},
-                 {"label": "Ead:csv (tab-separated)", "dtype": "csv", "url": 'ead_results'},
-                 {"label": None},
-                 {"label": "Ead:json", "dtype": "json", "url": 'ead_results'}]
-    custombuttons = [{"name": "search_ecodex", "title": "Convert e-codices search results into a list", 
-                      "icon": "music", "template_name": "seeker/search_ecodices.html" }]
+    custombuttons = []
 
     def initializations(self):
         # Possibly add to 'uploads'
@@ -1232,10 +1337,11 @@ class ManuscriptListView(BasicList):
             # html.append("{}".format(instance.manusermons.count()))
             html.append("{}".format(instance.get_sermon_count()))
         elif custom == "from":
-            for item in instance.manuscript_dateranges.all():
+            # Walk all codico's
+            for item in Daterange.objects.filter(codico__manuscript=instance):
                 html.append("<div>{}</div>".format(item.yearstart))
         elif custom == "until":
-            for item in instance.manuscript_dateranges.all():
+            for item in Daterange.objects.filter(codico__manuscript=instance):
                 html.append("<div>{}</div>".format(item.yearfinish))
         elif custom == "status":
             # html.append("<span class='badge'>{}</span>".format(instance.stype[:1]))
@@ -1428,13 +1534,13 @@ class ManuscriptDownload(BasicPart):
 
     def get_func(self, instance, path, profile, username, team_group):
         sBack = ""
-        if path == "dateranges":
-            qs = instance.manuscript_dateranges.all().order_by('yearstart')
-            dates = []
-            for obj in qs:
-                dates.append(obj.__str__())
-            sBack = ", ".join(dates)
-        elif path == "keywords":
+        #if path == "dateranges":
+        #    qs = instance.manuscript_dateranges.all().order_by('yearstart')
+        #    dates = []
+        #    for obj in qs:
+        #        dates.append(obj.__str__())
+        #    sBack = ", ".join(dates)
+        if path == "keywords":
             sBack = instance.get_keywords_markdown(plain=True)
         elif path == "keywordsU":
             sBack =  instance.get_keywords_user_markdown(profile, plain=True)

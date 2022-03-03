@@ -1098,7 +1098,7 @@ class SearchManuscriptForm(forms.Form):
                            widget=forms.TextInput(attrs={'class': 'input-sm searching', 'placeholder': 'Name or title...',  'style': 'width: 100%;'}))
     idno = forms.CharField(label=_("Idno"), required=False, 
                            widget=forms.TextInput(attrs={'class': 'typeahead searching manuidnos input-sm', 'placeholder': 'Shelfmark...',  'style': 'width: 100%;'}))
-    typeaheads = ["countries", "cities", "libraries", "signatures", "manuidnos", "gldsiggrysons", "gldsigclavises"]
+    typeaheads = ["countries", "cities", "libraries", "signatures", "manuidnos"]
 
 
 class SearchManuForm(lilaModelForm):
@@ -1158,43 +1158,28 @@ class SearchManuForm(lilaModelForm):
     collist_hist =  ModelMultipleChoiceField(queryset=None, required=False)
     collist_m =  ModelMultipleChoiceField(queryset=None, required=False)
     collist_s =  ModelMultipleChoiceField(queryset=None, required=False)
-    collist_sg =  ModelMultipleChoiceField(queryset=None, required=False)
     collist_ssg =  ModelMultipleChoiceField(queryset=None, required=False)
     collection_m = forms.CharField(label=_("Collection m"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching collections input-sm', 'placeholder': 'Collection(s)...', 'style': 'width: 100%;'}))
     collection_s = forms.CharField(label=_("Collection s"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching collections input-sm', 'placeholder': 'Collection(s)...', 'style': 'width: 100%;'}))
-    collection_sg = forms.CharField(label=_("Collection sg"), required=False,
-                widget=forms.TextInput(attrs={'class': 'typeahead searching collections input-sm', 'placeholder': 'Collection(s)...', 'style': 'width: 100%;'}))
     collection_ssg = forms.CharField(label=_("Collection ssg"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching collections input-sm', 'placeholder': 'Collection(s)...', 'style': 'width: 100%;'}))
     collone     = ModelChoiceField(queryset=None, required=False) #, 
-                # widget=CollOneManuWidget(attrs={'data-placeholder': 'Select one collection...', 'style': 'width: 100%;', 'class': 'searching'}))
-    #overlap_org     = forms.IntegerField(label=_("percentage overlap"), required=False,
-    #            widget=NumberInput(attrs={'placeholder': 'Overlap at least...', 'type': 'range', 'min': '1', 'max': '100', # 'value': '10', 
-    #                                      'step': '1', 'style': 'width: 30%;', 'class': 'searching'}))
     overlap    = forms.IntegerField(label=_("percentage overlap"), required=False, 
                 widget=RangeSlider(attrs={'style': 'width: 30%;', 'class': 'searching', 'min': '0', 'max': '100', 'step': '1'}))
     typeaheads = ["countries", "cities", "libraries", "origins", "locations", "signatures", "keywords", "collections", 
-                  "manuidnos", "gldsiggrysons", "gldsigclavises"]
+                  "manuidnos"]
 
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = Manuscript
-        # OLD (issue #372) 
-        # fields = ['name', 'library', 'idno', 'origin', 'url', 'support', 'extent', 'format', 'stype'] # , 'yearstart', 'yearfinish'
         fields = ['name', 'library', 'idno', 'url', 'stype'] 
         widgets={'library':     forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
                  'name':        forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
                  'idno':        forms.TextInput(attrs={'class': 'typeahead searching manuidnos input-sm', 'placeholder': 'Shelfmarks using wildcards...',  'style': 'width: 100%;'}),
                  'url':         forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
-                 #'yearstart':   forms.TextInput(attrs={'style': 'width: 40%;', 'class': 'searching'}),
-                 #'yearfinish':  forms.TextInput(attrs={'style': 'width: 40%;', 'class': 'searching'}),
-                 # (#372) 'origin':      forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
-                 # (#372) 'format':      forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
-                 # (#372) 'extent':      forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 'class': 'searching'}),
-                 # (#372) 'support':     forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 'class': 'searching'}),
                  'stype':       forms.Select(attrs={'style': 'width: 100%;'})
                  }
 
@@ -1212,7 +1197,6 @@ class SearchManuForm(lilaModelForm):
             self.fields['manuidlist'].queryset = Manuscript.objects.exclude(mtype='tem').order_by('idno')
             self.fields['cmpmanuidlist'].queryset = Manuscript.objects.exclude(mtype='tem').order_by('idno')
             self.fields['kwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
-            # self.fields['prjlist'].queryset = Project.objects.all().order_by('name')
             self.fields['projlist'].queryset = Project.objects.all().order_by('name')
             self.fields['srclist'].queryset = SourceInfo.objects.all()
             self.fields['stypelist'].queryset = FieldChoice.objects.filter(field=STATUS_TYPE).order_by("english_name")
@@ -1382,14 +1366,11 @@ class CanwitForm(lilaModelForm):
 
     collist_m =  ModelMultipleChoiceField(queryset=None, required=False)
     collist_s =  ModelMultipleChoiceField(queryset=None, required=False)
-    collist_sg =  ModelMultipleChoiceField(queryset=None, required=False)
     collist_ssg =  ModelMultipleChoiceField(queryset=None, required=False)
     collist_hist =  ModelMultipleChoiceField(queryset=None, required=False)
     collection_m = forms.CharField(label=_("Collection m"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching collections input-sm', 'placeholder': 'Collection(s)...', 'style': 'width: 100%;'}))
     collection_s = forms.CharField(label=_("Collection s"), required=False,
-                widget=forms.TextInput(attrs={'class': 'typeahead searching collections input-sm', 'placeholder': 'Collection(s)...', 'style': 'width: 100%;'}))
-    collection_sg = forms.CharField(label=_("Collection sg"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching collections input-sm', 'placeholder': 'Collection(s)...', 'style': 'width: 100%;'}))
     collection_ssg = forms.CharField(label=_("Collection ssg"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching collections input-sm', 'placeholder': 'Collection(s)...', 'style': 'width: 100%;'}))
@@ -1419,7 +1400,7 @@ class CanwitForm(lilaModelForm):
     date_until  = forms.IntegerField(label=_("Date until"), required = False,
                     widget=forms.TextInput(attrs={'placeholder': 'Until (including)...',  'style': 'width: 30%;', 'class': 'searching'}))
     typeaheads = ["authors", "manuidnos", "signatures", "keywords", "countries", "cities", "libraries", "origins", 
-                  "locations", "srmincipits", "srmexplicits", "gldsiggrysons", "gldsigclavises"]
+                  "locations", "srmincipits", "srmexplicits"]
 
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
@@ -2267,8 +2248,6 @@ class SuperSermonGoldForm(lilaModelForm):
                 widget=forms.TextInput(attrs={'class': 'typeahead searching collections input-sm', 'placeholder': 'Collection(s)...', 'style': 'width: 100%;'}))
     collection_s = forms.CharField(label=_("Collection s"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching collections input-sm', 'placeholder': 'Collection(s)...', 'style': 'width: 100%;'}))
-    collection_sg = forms.CharField(label=_("Collection sg"), required=False,
-                widget=forms.TextInput(attrs={'class': 'typeahead searching collections input-sm', 'placeholder': 'Collection(s)...', 'style': 'width: 100%;'}))
     collection_ssg = forms.CharField(label=_("Collection ssg"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching collections input-sm', 'placeholder': 'Collection(s)...', 'style': 'width: 100%;'}))
     collone     = ModelChoiceField(queryset=None, required=False) #, 
@@ -2281,8 +2260,7 @@ class SuperSermonGoldForm(lilaModelForm):
 
         model = Austat
         fields = ['author', 'incipit', 'explicit', 'code', 'number', 'stype']
-        widgets={# 'author':      AuthorOneWidget(attrs={'data-placeholder': 'Select one author...', 'style': 'width: 100%;', 'class': 'searching'}),
-                 'code':        forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 
+        widgets={'code':        forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 
                                                        'placeholder': 'lila code. Use wildcards, e.g: *002.*, *003'}),
                  'number':      forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'data-placeholder': 'Author number'}),
                  'incipit':     forms.TextInput(attrs={'class': 'typeahead searching gldincipits input-sm', 'placeholder': 'Incipit...', 'style': 'width: 100%;'}),
@@ -3262,23 +3240,17 @@ class ManuscriptForm(lilaModelForm):
                 self.fields['projlist'].initial = [x.pk for x in instance.projects.all().order_by('name')] 
                 self.fields['ukwlist'].initial = [x.keyword.pk for x in instance.manu_userkeywords.filter(profile=profile).order_by('keyword__name')]
 
-                #self.fields['provlist'].initial = [x.pk for x in instance.provenances.all()]
-                # issue #289 - below was innovation, but that is now turned back. Above is current
-                # self.fields['provlist'].initial = [x.pk for x in instance.manuprovenances.all()]
-      
                 self.fields['mprovlist'].initial = [x.pk for x in instance.manuscripts_provenances.all()]
                 self.fields['extlist'].initial = [x.pk for x in instance.manuscriptexternals.all()]
-                self.fields['datelist'].initial = [x.pk for x in instance.manuscript_dateranges.all()]
+                self.fields['datelist'].initial = [x.pk for x in Daterange.objects.filter(codico__manuscript=instance)]
                 
 
                 # The manuscriptext and the provenance should *just* contain what they have (no extension here)
-                #self.fields['provlist'].queryset = Provenance.objects.filter(id__in=self.fields['provlist'].initial)
                 self.fields['mprovlist'].queryset = ProvenanceMan.objects.filter(id__in=self.fields['mprovlist'].initial)
                 self.fields['extlist'].queryset = ManuscriptExt.objects.filter(id__in=self.fields['extlist'].initial)
                 self.fields['datelist'].queryset = Daterange.objects.filter(id__in=self.fields['datelist'].initial)
 
 
-                #self.fields['provlist'].widget.manu = instance
                 self.fields['mprovlist'].widget.manu = instance
 
         except:
