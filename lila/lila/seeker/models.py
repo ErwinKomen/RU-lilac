@@ -3848,7 +3848,7 @@ class Manuscript(models.Model):
     def get_dates(self):
         lhtml = []
         # Get all the date ranges in the correct order
-        qs = self.manuscript_dateranges.all().order_by('yearstart')
+        qs = Daterange.objects.filter(codico__manuscript=self).order_by('yearstart')
         # Walk the date range objects
         for obj in qs:
             # Determine the output for this one daterange
@@ -3872,7 +3872,7 @@ class Manuscript(models.Model):
 
         lhtml = []
         # Get all the date ranges in the correct order
-        qs = self.manuscript_dateranges.all().order_by('yearstart')
+        qs = Daterange.objects.filter(codico__manuscript=self).order_by('yearstart')
         # Walk the date range objects
         for obj in qs:
             # Determine the output for this one daterange
@@ -5182,9 +5182,13 @@ class Daterange(models.Model):
             manu_finish = self.manuscript.yearfinish
             current_start = 3000
             current_finish = 0
-            for dr in self.manuscript.manuscript_dateranges.all():
+            #for dr in self.manuscript.manuscript_dateranges.all():
+            #    if dr.yearstart < current_start: current_start = dr.yearstart
+            #    if dr.yearfinish > current_finish: current_finish = dr.yearfinish
+            for dr in self.codico_dateranges.all():
                 if dr.yearstart < current_start: current_start = dr.yearstart
                 if dr.yearfinish > current_finish: current_finish = dr.yearfinish
+
 
             # Need any changes in *MANUSCRIPT*?
             bNeedSaving = False
@@ -6924,7 +6928,7 @@ class Canwit(models.Model):
             username = kwargs.get("username")
             team_group = kwargs.get("team_group")
             if path == "dateranges":
-                qs = self.manuscript_dateranges.all().order_by('yearstart')
+                qs = Daterange.objects.filter(codico__manuscript=self).order_by('yearstart')
                 dates = []
                 for obj in qs:
                     dates.append(obj.__str__())

@@ -153,7 +153,6 @@ var ru = (function ($, ru) {
             i = 0,
             lst_options = ["countries", "cities", "libraries", "origins", "locations", "litrefs", "authors",
                            "gldincipits", "srmincipits", "gldexplicits", "srmexplicits",
-                           "signatures", "gldsiggrysons", "gldsigclavises", "srmsignatures", "siggrysons", "sigclavises",
                            "manuidnos", "editions", "keywords", "collections"],
             item = "";
 
@@ -363,61 +362,6 @@ var ru = (function ($, ru) {
                     }
                   });
                   break;
-                case "signatures":
-                  // Bloodhound: SIGNATURE - SermonGold
-                  loc_signature = new Bloodhound({
-                    datumTokenizer: function (myObj) {
-                      return myObj;
-                    },
-                    queryTokenizer: function (myObj) {
-                      return myObj;
-                    },
-                    // loc_countries will be an array of countries
-                    local: loc_signatureL,
-                    prefetch: { url: base_url + 'api/gldsignatures/', cache: true },
-                    remote: {
-                      url: base_url + 'api/gldsignatures/?name=',
-                      replace: function (url, uriEncodedQuery) {
-                        url += encodeURIComponent(uriEncodedQuery);
-                        return url;
-                      }
-                    }
-                  });
-                  break;
-                case "gldsiggrysons":
-                  // Bloodhound: SRMSIGGRYSON - Canwit
-                  loc_gldsiggryson = new Bloodhound({
-                    datumTokenizer: function (myObj) { return myObj; },
-                    queryTokenizer: function (myObj) { return myObj; },
-                    // loc_countries will be an array of countries
-                    local: loc_gldsiggrysonL,
-                    prefetch: { url: base_url + 'api/gldsignatures/', cache: true },
-                    remote: {
-                      url: base_url + 'api/gldsignatures/?type=gr&name=',
-                      replace: function (url, uriEncodedQuery) {
-                        url += encodeURIComponent(uriEncodedQuery);
-                        return url;
-                      }
-                    }
-                  });
-                  break;
-                case "gldsigclavises":
-                  // Bloodhound: SRMSIGCLAVIS - Canwit
-                  loc_gldsigclavis = new Bloodhound({
-                    datumTokenizer: function (myObj) { return myObj; },
-                    queryTokenizer: function (myObj) { return myObj; },
-                    // loc_countries will be an array of countries
-                    local: loc_gldsigclavisL,
-                    prefetch: { url: base_url + 'api/gldsignatures/', cache: true },
-                    remote: {
-                      url: base_url + 'api/gldsignatures/?type=cl&name=',
-                      replace: function (url, uriEncodedQuery) {
-                        url += encodeURIComponent(uriEncodedQuery);
-                        return url;
-                      }
-                    }
-                  });
-                  break;
                 case "srmsignatures":
                   // Bloodhound: SRMSIGNATURE - SermonGold
                   loc_srmsignature = new Bloodhound({
@@ -580,28 +524,11 @@ var ru = (function ($, ru) {
           $(".typeahead.gldexplicits").typeahead('destroy');
           $(".typeahead.srmincipits").typeahead('destroy');
           $(".typeahead.srmexplicits").typeahead('destroy');
-          $(".typeahead.signatures").typeahead('destroy');
-          $(".typeahead.gldsiggrysons").typeahead('destroy');
-          $(".typeahead.gldsigclavises").typeahead('destroy');
-          $(".typeahead.srmsignatures").typeahead('destroy');
-          $(".typeahead.siggrysons").typeahead('destroy');
-          $(".typeahead.sigclavises").typeahead('destroy');
           $(".typeahead.editions").typeahead('destroy');
           $(".typeahead.keywords").typeahead('destroy');
           $(".typeahead.collections").typeahead('destroy');
           $(".typeahead.manuidnos").typeahead('destroy');
 
-          // Make sure the signature types (gryson/clavis) are set correctly
-          $(".editype-gr .signaturetype").each(function () {
-            $(this).removeClass("signaturetype");
-            $(this).addClass("gldsiggrysons");
-            $(this).attr("placeholder", "Gryson code...");
-          });
-          $(".editype-cl .signaturetype").each(function () {
-            $(this).removeClass("signaturetype");
-            $(this).addClass("gldsigclavises");
-            $(this).attr("placeholder", "Clavis code...");
-          });
 
           // Explicitly clear them
           // loc_litrefs.clear();
@@ -787,113 +714,6 @@ var ru = (function ($, ru) {
             $(this).closest("td").find(".srmexplicit-key input").last().val("");
           });
 
-          // Type-ahead: SIGNATURE (SermonGold) -- NOTE: not in a form-row, but in a normal 'row'
-          $("tr:not(.empty-form) .typeahead.signatures, .manuscript-details .typeahead.signatures").typeahead(
-            { hint: true, highlight: true, minLength: 1 },
-            {
-              name: 'signatures', source: loc_signature, limit: 25, displayKey: "name",
-              templates: {
-                empty: '<p>Use the wildcard * to mark inexact code</p>',
-                suggestion: function (item) {
-                  return '<div>' + item.name + '</div>';
-                }
-              }
-            }
-          ).on('typeahead:selected typeahead:autocompleted', function (e, suggestion, name) {
-            $(this).closest("td").find(".signature-key input").last().val(suggestion.id);
-          }).on('typeahead:open', function (e) {
-            $(this).closest("td").find(".signature-key input").last().val("");
-          });
-
-          // Type-ahead: Gld Gryson Signature
-          $(".row .typeahead.gldsiggrysons, tr:not(.empty-form) .typeahead.gldsiggrysons").typeahead(
-            { hint: true, highlight: true, minLength: 1 },
-            {
-              name: 'gldsiggrysons', source: loc_gldsiggryson, limit: 25, displayKey: "name",
-              templates: {
-                empty: '<p>Use the wildcard * to mark inexact code</p>',
-                suggestion: function (item) {
-                  return '<div>' + item.name + '</div>';
-                }
-              }
-            }
-          ).on('typeahead:selected typeahead:autocompleted', function (e, suggestion, name) {
-            $(this).closest("td").find(".gldsiggryson-key input").last().val(suggestion.id);
-          }).on('typeahead:open', function (e) {
-            $(this).closest("td").find(".gldsiggryson-key input").last().val("");
-          });
-
-          // Type-ahead: Srm Clavis Signature
-          $(".row .typeahead.gldsigclavises, tr:not(.empty-form) .typeahead.gldsigclavises").typeahead(
-            { hint: true, highlight: true, minLength: 1 },
-            {
-              name: 'gldsigclavises', source: loc_gldsigclavis, limit: 25, displayKey: "name",
-              templates: {
-                empty: '<p>Use the wildcard * to mark inexact code</p>',
-                suggestion: function (item) {
-                  return '<div>' + item.name + '</div>';
-                }
-              }
-            }
-          ).on('typeahead:selected typeahead:autocompleted', function (e, suggestion, name) {
-            $(this).closest("td").find(".gldsigclavis-key input").last().val(suggestion.id);
-          }).on('typeahead:open', function (e) {
-            $(this).closest("td").find(".gldsigclavis-key input").last().val("");
-          });
-
-          // Type-ahead: SRMSIGNATURE (Canwit) -- NOTE: not in a form-row, but in a normal 'row'
-          $(".row .typeahead.srmsignatures, tr:not(.empty-form) .typeahead.srmsignatures").typeahead(
-            { hint: true, highlight: true, minLength: 1 },
-            {
-              name: 'srmsignatures', source: loc_srmsignature, limit: 25, displayKey: "name",
-              templates: {
-                empty: '<p>Use the wildcard * to mark inexact code</p>',
-                suggestion: function (item) {
-                  return '<div>' + item.name + '</div>';
-                }
-              }
-            }
-          ).on('typeahead:selected typeahead:autocompleted', function (e, suggestion, name) {
-            $(this).closest("td").find(".srmsignature-key input").last().val(suggestion.id);
-          }).on('typeahead:open', function (e) {
-            $(this).closest("td").find(".srmsignature-key input").last().val("");
-          });
-
-          // Type-ahead: Srm Gryson Signature
-          $(".row .typeahead.siggrysons, tr:not(.empty-form) .typeahead.siggrysons").typeahead(
-            { hint: true, highlight: true, minLength: 1 },
-            {
-              name: 'siggrysons', source: loc_srmsiggryson, limit: 25, displayKey: "name",
-              templates: {
-                empty: '<p>Use the wildcard * to mark inexact code</p>',
-                suggestion: function (item) {
-                  return '<div>' + item.name + '</div>';
-                }
-              }
-            }
-          ).on('typeahead:selected typeahead:autocompleted', function (e, suggestion, name) {
-            $(this).closest("td").find(".siggryson-key input").last().val(suggestion.id);
-          }).on('typeahead:open', function (e) {
-            $(this).closest("td").find(".siggryson-key input").last().val("");
-          });
-
-          // Type-ahead: Srm Clavis Signature
-          $(".row .typeahead.sigclavises, tr:not(.empty-form) .typeahead.sigclavises").typeahead(
-            { hint: true, highlight: true, minLength: 1 },
-            {
-              name: 'sigclavises', source: loc_srmsigclavis, limit: 25, displayKey: "name",
-              templates: {
-                empty: '<p>Use the wildcard * to mark inexact code</p>',
-                suggestion: function (item) {
-                  return '<div>' + item.name + '</div>';
-                }
-              }
-            }
-          ).on('typeahead:selected typeahead:autocompleted', function (e, suggestion, name) {
-            $(this).closest("td").find(".sigclavis-key input").last().val(suggestion.id);
-          }).on('typeahead:open', function (e) {
-            $(this).closest("td").find(".sigclavis-key input").last().val("");
-          });
 
           // Type-ahead: EDITION -- NOTE: not in a form-row, but in a normal 'row'
           $(".row .typeahead.editions, tr .typeahead.editions").typeahead(

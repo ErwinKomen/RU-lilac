@@ -209,8 +209,8 @@ if ("/var/www" in WRITABLE_DIR and not bUseTunnel):
 STATIC_ROOT = os.path.abspath(os.path.join("/", posixpath.join(*(BASE_DIR.split(os.path.sep) + ['static']))))
 
 # ========= DEBUGGING =================
-print("WRITABLE = {}".format(WRITABLE_DIR))
-print("APP_PREFIX = {}".format(APP_PREFIX))
-print("STSTIC_ROOT = {}".format(STATIC_ROOT))
+# print("WRITABLE = {}".format(WRITABLE_DIR))
+# print("APP_PREFIX = {}".format(APP_PREFIX))
+# print("STATIC_ROOT = {}".format(STATIC_ROOT))
 
 

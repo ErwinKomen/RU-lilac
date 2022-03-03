@@ -760,9 +760,9 @@ body > div > footer {
   z-index: 100;
 }
 body > div > footer a {
-  color: #355e3b;
-  position: relative;
-  z-index: 1000;
+    color: #c4dce8; /* #355e3b; */
+    position: relative;
+    z-index: 1000;
 }
 
 .citation {

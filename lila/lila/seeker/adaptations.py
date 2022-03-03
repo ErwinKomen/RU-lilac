@@ -221,13 +221,6 @@ def add_codico_to_manuscript(manu):
                     obj = CodicoKeyword.objects.create(
                         codico=codi, keyword=mk.keyword)
 
-        # Copy date ranges
-        if codi.codico_dateranges.count() == 0:
-            for md in manu.manuscript_dateranges.all():
-                if md.codico_id == None or md.codico_id == 0 or md.codico == None or md.codic.id != codi.id:
-                    md.codico = codi
-                    md.save()
-
         # Tie all MsItems that need be to the Codico
         for msitem in manu.manuitems.all().order_by('order'):
             if msitem.codico_id == None or msitem.codico == None or msitem.codico.id != codi.id:

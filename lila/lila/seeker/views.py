@@ -87,6 +87,7 @@ from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_
 from lila.reader.views import reader_uploads
 from lila.bible.models import Reference
 from lila.seeker.adaptations import listview_adaptations, adapt_codicocopy, add_codico_to_manuscript
+from lila.seeker.views_utils import lila_action_add, lila_get_history
 
 # ======= from RU-Basic ========================
 from lila.basic.views import BasicPart, BasicList, BasicDetails, make_search_list, add_rel_item, adapt_search
@@ -122,7 +123,6 @@ app_editor = "{}_editor".format(PROJECT_NAME.lower())
 app_userplus = "{}_userplus".format(PROJECT_NAME.lower())
 app_developer = "{}_developer".format(PROJECT_NAME.lower())
 app_moderator = "{}_moderator".format(PROJECT_NAME.lower())
-enrich_editor = "enrich_editor"
 
 def get_usercomments(type, instance, profile):
     """Get a HTML list of comments made by this user and possible users in the same group"""
@@ -144,7 +144,6 @@ def get_usercomments(type, instance, profile):
 def get_application_context(request, context):
     context['is_app_uploader'] = user_is_ingroup(request, app_uploader)
     context['is_app_editor'] = user_is_ingroup(request, app_editor)
-    context['is_enrich_editor'] = user_is_ingroup(request, enrich_editor)
     context['is_app_moderator'] = user_is_superuser(request) or user_is_ingroup(request, app_moderator)
     return context
 
@@ -289,106 +288,6 @@ def adapt_m2o_sig(instance, qs):
     except:
         msg = errHandle.get_error_message()
         return False
-
-def project_dependant_delete(request, to_be_deleted):
-    """Delete items from the linktable, provided the user has the right to"""
-
-    oErr = ErrHandle()
-    bBack = True
-    try:
-        # Find out who this is
-        profile = Profile.get_user_profile(request.user.username)
-        # Get the editing rights for this person
-        project_id = [x['id'] for x in profile.projects.all().values("id")]
-
-        # CHeck all deletables
-        delete = []
-        for obj in to_be_deleted:
-            # Get the project id of the deletables
-            obj_id = obj.id
-            prj_id = obj.project.id
-            if prj_id in project_id:
-                # The user may delete this project relation
-                # Therefore: delete the OBJ that holde this relation!
-                delete.append(obj_id)
-        # Is anything left?
-        if len(delete) > 0:
-            # Get the class of the deletables
-            cls = to_be_deleted[0].__class__
-            # Delete all that need to be deleted
-            cls.objects.filter(id__in=delete).delete()
-
-    except:
-        msg = oErr.get_error_message()
-        oErr.DoError("project_dependant_delete")
-        bBack = False
-    return bBack
-
-def get_non_editable_projects(profile, projects):
-    """Get the number of projects that I do not have editing rights for"""
-
-    oErr = ErrHandle()
-    iCount = 0
-    try:
-        id_list = []
-        current_project_ids = [x['id'] for x in projects.values('id')]
-        profile_project_ids = [x['id'] for x in profile.projects.all().values('id')]
-        # Walk all the projects I need to evaluate
-        for prj_id in current_project_ids:
-            if not prj_id in profile_project_ids:
-                # I have*NO*  editing rights for this one
-                id_list.append(prj_id)
-        iCount = len(id_list)
-    except:
-        msg = oErr.get_error_message()
-        oErr.DoError("get_non_editable_projects")
-        iCount = 0
-
-    return iCount
-
-def evaluate_projlist(profile, instance, projlist, sText):
-    bBack = True
-    msg = ""
-    try:
-        if projlist is None or len(projlist) == 0:
-            # Check how many projects the user does *NOT* have rights for
-            non_editable_projects = get_non_editable_projects(profile, instance.projects.all())
-            if non_editable_projects == 0:
-                # The user has not selected a project (yet): try default assignment
-                user_projects = profile.projects.all()
-                if user_projects.count() != 1:
-                    # We cannot assign the default project
-                    bBack = False
-                    msg = "Make sure to assign this {} to one project before saving it".format(sText)
-    except:
-        msg = oErr.get_error_message()
-        oErr.DoError("evaluate_projlist")
-        bBack = False
-    return bBack, msg
-
-def may_edit_project(request, profile, instance):
-    """Check if the user is allowed to edit this project"""
-
-    bBack = False
-    # Is the user an editor?
-    if user_is_ingroup(request, app_editor):
-        # Get the projects this user has authority for
-        user_projects = profile.get_project_ids()
-        if len(user_projects) > 0:
-            # True: the user may indeed edit *some* projects
-            bBack = True
-
-            # The following is now superfluous
-            use_superfluous = False
-            if use_superfluous:
-                # Get the projects associated with [instance']
-                project_ids = [x['id'] for x in instance.projects.all().values('id')]
-                # See if there is any match
-                for project_id in user_projects:
-                    if project_id in project_ids:
-                        bBack = True
-                        break
-    return bBack
 
 def is_empty_form(form):
     """Check if the indicated form has any cleaned_data"""
@@ -748,88 +647,88 @@ def get_short_edit(short):
         result = arResult[0].strip()
     return result
 
-def lila_action_add(view, instance, details, actiontype):
-    """User can fill this in to his/her liking"""
+#def lila_action_add(view, instance, details, actiontype):
+#    """User can fill this in to his/her liking"""
 
-    oErr = ErrHandle()
-    try:
-        # Check if this needs processing
-        stype_edi_fields = getattr(view, "stype_edi_fields", None)
-        if stype_edi_fields and not instance is None:
-            # Get the username: 
-            username = view.request.user.username
-            # Process the action
-            cls_name = instance.__class__.__name__
-            Action.add(username, cls_name, instance.id, actiontype, json.dumps(details))
+#    oErr = ErrHandle()
+#    try:
+#        # Check if this needs processing
+#        stype_edi_fields = getattr(view, "stype_edi_fields", None)
+#        if stype_edi_fields and not instance is None:
+#            # Get the username: 
+#            username = view.request.user.username
+#            # Process the action
+#            cls_name = instance.__class__.__name__
+#            Action.add(username, cls_name, instance.id, actiontype, json.dumps(details))
 
-            # -------- DEBGGING -------
-            # print("lila_action_add type={}".format(actiontype))
-            # -------------------------
+#            # -------- DEBGGING -------
+#            # print("lila_action_add type={}".format(actiontype))
+#            # -------------------------
 
-            # Check the details:
-            if 'changes' in details:
-                changes = details['changes']
-                if 'stype' not in changes or len(changes) > 1:
-                    # Check if the current STYPE is *not* 'Edited*
-                    stype = getattr(instance, "stype", "")
-                    if stype != STYPE_EDITED:
-                        bNeedSaving = False
-                        key = ""
-                        if 'model' in details:
-                            bNeedSaving = details['model'] in stype_edi_fields
-                        if not bNeedSaving:
-                            # We need to do stype processing, if any of the change fields is in [stype_edi_fields]
-                            for k,v in changes.items():
-                                if k in stype_edi_fields:
-                                    bNeedSaving = True
-                                    key = k
-                                    break
+#            # Check the details:
+#            if 'changes' in details:
+#                changes = details['changes']
+#                if 'stype' not in changes or len(changes) > 1:
+#                    # Check if the current STYPE is *not* 'Edited*
+#                    stype = getattr(instance, "stype", "")
+#                    if stype != STYPE_EDITED:
+#                        bNeedSaving = False
+#                        key = ""
+#                        if 'model' in details:
+#                            bNeedSaving = details['model'] in stype_edi_fields
+#                        if not bNeedSaving:
+#                            # We need to do stype processing, if any of the change fields is in [stype_edi_fields]
+#                            for k,v in changes.items():
+#                                if k in stype_edi_fields:
+#                                    bNeedSaving = True
+#                                    key = k
+#                                    break
 
-                        if bNeedSaving:
-                            # Need to set the stype to EDI
-                            instance.stype = STYPE_EDITED
-                            # Adapt status note
-                            snote = json.loads(instance.snote)
-                            snote.append(dict(date=get_crpp_date(get_current_datetime()), username=username, status=STYPE_EDITED, reason=key))
-                            instance.snote = json.dumps(snote)
-                            # Save it
-                            instance.save()
-    except:
-        msg = oErr.get_error_message()
-        oErr.DoError("lila_action_add")
-    # Now we are ready
-    return None
+#                        if bNeedSaving:
+#                            # Need to set the stype to EDI
+#                            instance.stype = STYPE_EDITED
+#                            # Adapt status note
+#                            snote = json.loads(instance.snote)
+#                            snote.append(dict(date=get_crpp_date(get_current_datetime()), username=username, status=STYPE_EDITED, reason=key))
+#                            instance.snote = json.dumps(snote)
+#                            # Save it
+#                            instance.save()
+#    except:
+#        msg = oErr.get_error_message()
+#        oErr.DoError("lila_action_add")
+#    # Now we are ready
+#    return None
 
-def lila_get_history(instance):
-    lhtml= []
-    lhtml.append("<table class='table'><thead><tr><td><b>User</b></td><td><b>Date</b></td><td><b>Description</b></td></tr></thead><tbody>")
-    # Get the history for this item
-    lHistory = Action.get_history(instance.__class__.__name__, instance.id)
-    for obj in lHistory:
-        description = ""
-        if obj['actiontype'] == "new":
-            description = "Create New"
-        elif obj['actiontype'] == "add":
-            description = "Add"
-        elif obj['actiontype'] == "delete":
-            description = "Delete"
-        elif obj['actiontype'] == "change":
-            description = "Changes"
-        elif obj['actiontype'] == "import":
-            description = "Import Changes"
-        if 'changes' in obj:
-            lchanges = []
-            for key, value in obj['changes'].items():
-                lchanges.append("<b>{}</b>=<code>{}</code>".format(key, value))
-            changes = ", ".join(lchanges)
-            if 'model' in obj and obj['model'] != None and obj['model'] != "":
-                description = "{} {}".format(description, obj['model'])
-            description = "{}: {}".format(description, changes)
-        lhtml.append("<tr><td>{}</td><td>{}</td><td>{}</td></tr>".format(obj['username'], obj['when'], description))
-    lhtml.append("</tbody></table>")
+#def lila_get_history(instance):
+#    lhtml= []
+#    lhtml.append("<table class='table'><thead><tr><td><b>User</b></td><td><b>Date</b></td><td><b>Description</b></td></tr></thead><tbody>")
+#    # Get the history for this item
+#    lHistory = Action.get_history(instance.__class__.__name__, instance.id)
+#    for obj in lHistory:
+#        description = ""
+#        if obj['actiontype'] == "new":
+#            description = "Create New"
+#        elif obj['actiontype'] == "add":
+#            description = "Add"
+#        elif obj['actiontype'] == "delete":
+#            description = "Delete"
+#        elif obj['actiontype'] == "change":
+#            description = "Changes"
+#        elif obj['actiontype'] == "import":
+#            description = "Import Changes"
+#        if 'changes' in obj:
+#            lchanges = []
+#            for key, value in obj['changes'].items():
+#                lchanges.append("<b>{}</b>=<code>{}</code>".format(key, value))
+#            changes = ", ".join(lchanges)
+#            if 'model' in obj and obj['model'] != None and obj['model'] != "":
+#                description = "{} {}".format(description, obj['model'])
+#            description = "{}: {}".format(description, changes)
+#        lhtml.append("<tr><td>{}</td><td>{}</td><td>{}</td></tr>".format(obj['username'], obj['when'], description))
+#    lhtml.append("</tbody></table>")
 
-    sBack = "\n".join(lhtml)
-    return sBack
+#    sBack = "\n".join(lhtml)
+#    return sBack
 
 def get_pie_data():
     """Fetch data for a particular type of pie-chart for the home page
@@ -898,7 +797,6 @@ def home(request, errortype=None):
                 'site_url': admin.site.site_url}
     context['is_app_uploader'] = user_is_ingroup(request, app_uploader)
     context['is_app_editor'] = user_is_ingroup(request, app_editor)
-    context['is_enrich_editor'] = user_is_ingroup(request, enrich_editor)
     context['is_app_moderator'] = user_is_superuser(request) or user_is_ingroup(request, app_moderator)
 
     # Process this visit
@@ -971,7 +869,6 @@ def technical(request):
                 'site_url': admin.site.site_url}
     context['is_app_uploader'] = user_is_ingroup(request, app_uploader)
     context['is_app_editor'] = user_is_ingroup(request, app_editor)
-    context['is_enrich_editor'] = user_is_ingroup(request, enrich_editor)
     context['is_app_moderator'] = user_is_superuser(request) or user_is_ingroup(request, app_moderator)
 
     # Process this visit
@@ -990,7 +887,6 @@ def guide(request):
                 'site_url': admin.site.site_url}
     context['is_app_uploader'] = user_is_ingroup(request, app_uploader)
     context['is_app_editor'] = user_is_ingroup(request, app_editor)
-    context['is_enrich_editor'] = user_is_ingroup(request, enrich_editor)
     context['is_app_moderator'] = user_is_superuser(request) or user_is_ingroup(request, app_moderator)
 
     # Process this visit
@@ -2262,8 +2158,8 @@ class BibRangeListView(BasicList):
             {'filter': 'library',       'fkfield': 'sermon__msitem__manu__library',           'keyS': 'libname_ta',   'keyId': 'library',     'keyFk': "name"},
             {'filter': 'origin',        'fkfield': 'sermon__msitem__manu__origin',            'keyS': 'origin_ta',    'keyId': 'origin',      'keyFk': "name"},
             {'filter': 'provenance',    'fkfield': 'sermon__msitem__manu__provenances',       'keyS': 'prov_ta',      'keyId': 'prov',        'keyFk': "name"},
-            {'filter': 'datestart',     'dbfield': 'sermon__msitem__manu__manuscript_dateranges__yearstart__gte',    'keyS': 'date_from'},
-            {'filter': 'datefinish',    'dbfield': 'sermon__msitem__manu__manuscript_dateranges__yearfinish__lte',   'keyS': 'date_until'},
+            {'filter': 'datestart',     'dbfield': 'sermon__msitem__codico__codico_dateranges__yearstart__gte',    'keyS': 'date_from'},
+            {'filter': 'datefinish',    'dbfield': 'sermon__msitem__codico__codico_dateranges__yearfinish__lte',   'keyS': 'date_until'},
             ]},
         {'section': 'other', 'filterlist': [
             {'filter': 'bibref',     'dbfield': 'id',    'keyS': 'bibref'}
@@ -2492,8 +2388,8 @@ class FeastListView(BasicList):
             {'filter': 'library',       'fkfield': 'feastsermons__msitem__manu__library',           'keyS': 'libname_ta',   'keyId': 'library',     'keyFk': "name"},
             {'filter': 'origin',        'fkfield': 'feastsermons__msitem__manu__origin',            'keyS': 'origin_ta',    'keyId': 'origin',      'keyFk': "name"},
             {'filter': 'provenance',    'fkfield': 'feastsermons__msitem__manu__provenances',       'keyS': 'prov_ta',      'keyId': 'prov',        'keyFk': "name"},
-            {'filter': 'datestart',     'dbfield': 'feastsermons__msitem__manu__manuscript_dateranges__yearstart__gte',    'keyS': 'date_from'},
-            {'filter': 'datefinish',    'dbfield': 'feastsermons__msitem__manu__manuscript_dateranges__yearfinish__lte',   'keyS': 'date_until'},
+            {'filter': 'datestart',     'dbfield': 'feastsermons__msitem__codico__codico_dateranges__yearstart__gte',    'keyS': 'date_from'},
+            {'filter': 'datefinish',    'dbfield': 'feastsermons__msitem__codico__codico_dateranges__yearfinish__lte',   'keyS': 'date_until'},
             ]}
         ]
 
