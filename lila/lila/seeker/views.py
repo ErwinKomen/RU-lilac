@@ -1265,7 +1265,7 @@ class OriginListView(BasicList):
         if custom == "manulink":
             # Link to manuscripts in this project
             count = instance.origin_manuscripts.all().count()
-            url = reverse('search_manuscript')
+            url = reverse('manuscript_list')
             if count > 0:
                 html.append("<a href='{}?manu-origin={}'><span class='badge jumbo-3 clickable' title='{} manuscripts with this origin'>{}</span></a>".format(
                     url, instance.id, count, count))
@@ -1480,7 +1480,7 @@ class KeywordListView(BasicList):
                 html.append("<span class='badge jumbo-1 clickable' title='Frequency in manifestation sermons'>{}</span></a>".format(number))
             number = instance.freqmanu()
             if number > 0:
-                url = reverse('search_manuscript')
+                url = reverse('manuscript_list')
                 html.append("<a href='{}?manu-kwlist={}'>".format(url, instance.id))
                 html.append("<span class='badge jumbo-3 clickable' title='Frequency in manuscripts'>{}</span></a>".format(number))
             number = instance.freqsuper()
@@ -2848,7 +2848,7 @@ class ProjectListView(BasicList):
             if custom == "manulink":
                 # Link to the manuscripts in this project
                 count = instance.project_manuscripts.exclude(mtype="tem").count()
-                url = reverse('search_manuscript')
+                url = reverse('manuscript_list')
                 if count > 0:
                  #   html.append("<a href='{}?manu-prjlist={}'><span class='badge jumbo-3 clickable' title='{} manuscripts in this project'>{}</span></a>".format(
                  #       url, instance.id, count, count)) 
@@ -3358,7 +3358,7 @@ class LibraryListView(BasicList):
                 html = []
                 html.append("<span>{}</span>".format(count))
                 # Create the URL
-                url = "{}?manu-library={}".format(reverse('search_manuscript'), instance.id)
+                url = "{}?manu-library={}".format(reverse('manuscript_list'), instance.id)
                 # Add a link to them
                 html.append('<a role="button" class="btn btn-xs jumbo-3" title="Go to these manuscripts" ')
                 html.append(' href="{}"><span class="glyphicon glyphicon-chevron-right"></span></a>'.format(url))

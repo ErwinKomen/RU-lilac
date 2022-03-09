@@ -6366,7 +6366,7 @@ class CollectionListView(BasicList):
                 html.append("<span class='badge jumbo-1 clickable' title='Frequency in manifestation sermons'>{}</span></a>".format(number))
             number = instance.freqmanu()
             if number > 0:
-                url = reverse('search_manuscript')
+                url = reverse('manuscript_list')
                 html.append("<a href='{}?manu-collist_m={}'>".format(url, instance.id))
                 html.append("<span class='badge jumbo-3 clickable' title='Frequency in manuscripts'>{}</span></a>".format(number))
             number = instance.freqsuper()
