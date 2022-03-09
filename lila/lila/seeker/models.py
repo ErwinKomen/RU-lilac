@@ -5157,9 +5157,9 @@ class Daterange(models.Model):
         return sBack
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
-        # Fill in manuscript, if not yet given
-        if self.codico_id != None and self.codico != None and self.manuscript_id == None or self.manuscript == None:
-            self.manuscript = self.codico.manuscript
+        ## Fill in manuscript, if not yet given
+        #if self.codico_id != None and self.codico != None and self.manuscript_id == None or self.manuscript == None:
+        #    self.manuscript = self.codico.manuscript
         # Perform the actual saving
         response = super(Daterange, self).save(force_insert, force_update, using, update_fields)
         # Possibly adapt the dates of the related manuscript
@@ -5178,14 +5178,17 @@ class Daterange(models.Model):
         oErr = ErrHandle()
         bBack = False
         try:
-            manu_start = self.manuscript.yearstart
-            manu_finish = self.manuscript.yearfinish
+            manuscript = self.codico.manuscript
+            manu_start = manuscript.yearstart
+            manu_finish = manuscript.yearfinish
             current_start = 3000
             current_finish = 0
             #for dr in self.manuscript.manuscript_dateranges.all():
             #    if dr.yearstart < current_start: current_start = dr.yearstart
             #    if dr.yearfinish > current_finish: current_finish = dr.yearfinish
-            for dr in self.codico_dateranges.all():
+            # Look at the CODICO dateranges
+            for dr in Daterange.objects.filter(codico__manuscript=manuscript):
+            # for dr in self.codico_dateranges.all():
                 if dr.yearstart < current_start: current_start = dr.yearstart
                 if dr.yearfinish > current_finish: current_finish = dr.yearfinish
 
@@ -5193,12 +5196,12 @@ class Daterange(models.Model):
             # Need any changes in *MANUSCRIPT*?
             bNeedSaving = False
             if manu_start != current_start:
-                self.manuscript.yearstart = current_start
+                manuscript.yearstart = current_start
                 bNeedSaving = True
             if manu_finish != current_finish:
-                self.manuscript.yearfinish = current_finish
+                manuscript.yearfinish = current_finish
                 bNeedSaving = True
-            if bNeedSaving: self.manuscript.save()
+            if bNeedSaving: manuscript.save()
 
             # Need any changes in *Codico*?
             bNeedSaving = False
