@@ -3676,7 +3676,7 @@ var ru = (function ($, ru) {
 
       /**
        * sermon_locus
-       *    Calculate the locus of this Canhead element
+       *    Calculate the locus of this Codhead element
        * 
        * @param {el} elThis
        * @returns {bool}

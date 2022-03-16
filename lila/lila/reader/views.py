@@ -50,7 +50,7 @@ from lila.settings import APP_PREFIX, MEDIA_DIR, WRITABLE_DIR
 from lila.utils import ErrHandle
 from lila.reader.forms import UploadFileForm, UploadFilesForm
 from lila.seeker.models import Manuscript, Canwit, Status, SourceInfo, ManuscriptExt, Provenance, ProvenanceMan, \
-    Library, Location, CanwitSignature, Author, Feast, Daterange, Comment, Profile, MsItem, Canhead, Origin, \
+    Library, Location, CanwitSignature, Author, Feast, Daterange, Comment, Profile, MsItem, Codhead, Origin, \
     Report, Keyword, ManuscriptKeyword, ManuscriptProject, STYPE_IMPORTED, get_current_datetime
 
 # ======= from RU-Basic ========================

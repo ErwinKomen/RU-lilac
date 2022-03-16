@@ -363,7 +363,7 @@ class AustatLinkAddOnlyWidget(AustatMultiWidget):
 
 class AustatWidget(ModelSelect2Widget):
     model = Austat
-    search_fields = [ 'code__icontains', 'author__name__icontains', 'srcftext__icontains', 'srcftrans__icontains', 'equal_goldsermons__siglist__icontains' ]
+    search_fields = [ 'code__icontains', 'author__name__icontains', 'srchftext__icontains', 'srchftrans__icontains', 'equal_goldsermons__siglist__icontains' ]
     addonly = False
     order = [F('code').asc(nulls_last=True), 'firstsig']
     exclude = None
@@ -879,7 +879,7 @@ class CanwitSuperWidget(ModelSelect2MultipleWidget):
     add_only = False
     search_fields = ['sermon__siglist__icontains',      'sermon__author__name__icontains', 
                      'super__author__name__icontains', 'super__code__icontains',
-                     'super__srcftext__icontains',  'super__srcftrans__icontains' ]
+                     'super__srchftext__icontains',  'super__srchftrans__icontains' ]
 
     def label_from_instance(self, obj):
         # Determine the full text
@@ -937,7 +937,7 @@ class SuperDistWidget(ModelSelect2Widget):
     model = AustatDist
     sermon = None
     search_fields = ['super__code__icontains', 'super__id__icontains', 'super__author__name__icontains', 
-                     'super__srcftext__icontains', 'super__srcftrans__icontains',
+                     'super__srchftext__icontains', 'super__srchftrans__icontains',
                      'super__equal_goldsermons__siglist__icontains']
 
     def label_from_instance(self, obj):
@@ -951,18 +951,18 @@ class SuperDistWidget(ModelSelect2Widget):
         else:
             # Check and possibly re-calculate the set of SSG candidates
             self.sermon.do_distance()
-            if self.sermon.sermonsuperdist.count() == 0:
+            if self.sermon.canwitsuperdist.count() == 0:
                 qs = AustatDist.objects.filter(super__moved__isnull=True).order_by('distance', 'super__code', 'super__author__name', 'id').distinct()
             else:
                 # Get the ordered set of SSG candidates
-                qs = self.sermon.sermonsuperdist.all().order_by('distance', 'super__code', 'super__author__name')
+                qs = self.sermon.canwitsuperdist.all().order_by('distance', 'super__code', 'super__author__name')
         return qs
 
 
 class SuperOneWidget(ModelSelect2Widget):
     model = Austat
     search_fields = ['code__icontains', 'id__icontains', 'author__name__icontains', 
-                     'srcftext__icontains', 'srcftrans__icontains',
+                     'srchftext__icontains', 'srchftrans__icontains',
                      'equal_goldsermons__siglist__icontains']
 
     def label_from_instance(self, obj):
@@ -976,7 +976,7 @@ class SuperOneWidget(ModelSelect2Widget):
         qs = super(SuperOneWidget, self).filter_queryset(term, queryset, **dependent_fields)
         # Adapt
         condition = Q(code__icontains=term) | Q(author__name__icontains=term) | \
-                    Q(srcftext__icontains=term) | Q(srcftrans__icontains=term) | \
+                    Q(srchftext__icontains=term) | Q(srchftrans__icontains=term) | \
                     Q(equal_goldsermons__siglist__icontains=term)
         qs = qs.annotate(
             full_string_order=Case(
@@ -1265,9 +1265,8 @@ class ColwitForm(lilaModelForm):
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = Colwit
-        fields = ['title', 'descr', 'notes']
-        widgets={'title':       forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 'class': 'searching'}),
-                 'descr':       forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 'class': 'searching'}),
+        fields = ['descr', 'notes']
+        widgets={'descr':       forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 'class': 'searching'}),
                  'notes':       forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 'class': 'searching'}),
                  }
 
@@ -1281,7 +1280,6 @@ class ColwitForm(lilaModelForm):
             profile = Profile.get_user_profile(username)
 
             # Some fields are not required
-            self.fields['title'].required = False
             self.fields['descr'].required = False
             self.fields['notes'].required = False
 
@@ -1315,6 +1313,8 @@ class CanwitForm(lilaModelForm):
                     widget=ManuidWidget(attrs={'data-placeholder': 'Select multiple manuscript identifiers...', 'style': 'width: 100%;'}))
     manutype    = forms.ModelChoiceField(queryset=None, required=False, 
                 widget=ManutypeWidget(attrs={'data-placeholder': 'Select a manuscript type...', 'style': 'width: 30%;', 'class': 'searching'}))
+    manu = forms.ModelChoiceField(queryset=None, required=False,
+                widget=ManuidOneWidget(attrs={'data-placeholder': 'Select a manuscript...', 'style': 'width: 30%;', 'class': 'searching'}))
     signature   = forms.CharField(label=_("Signature"), required=False,
                     widget=forms.TextInput(attrs={'class': 'typeahead searching srmsignatures input-sm', 'placeholder': 'Signatures (Gryson, Clavis) using wildcards...', 'style': 'width: 100%;'}))
     signature_a = forms.CharField(label=_("Signature"), required=False,
@@ -1450,6 +1450,7 @@ class CanwitForm(lilaModelForm):
             # Choice field initialization
             self.fields['authortype'].choices = AUTHOR_TYPE
 
+            self.fields['manu'].queryset = Manuscript.objects.all().order_by('idno')
             self.fields['stypelist'].queryset = FieldChoice.objects.filter(field=STATUS_TYPE).order_by("english_name")
             self.fields['manuidlist'].queryset = Manuscript.objects.filter(mtype='man').order_by('idno')
             self.fields['authorlist'].queryset = Author.objects.all().order_by('name')
@@ -1524,13 +1525,13 @@ class CanwitForm(lilaModelForm):
                 self.fields['authorname'].required = False
                 # Set initial values for lists, where appropriate. NOTE: need to have the initial ID values
                 self.fields['kwlist'].initial = [x.pk for x in instance.keywords.all().order_by('name')]
-                self.fields['ukwlist'].initial = [x.keyword.pk for x in instance.sermo_userkeywords.filter(profile=profile).order_by('keyword__name')]
+                self.fields['ukwlist'].initial = [x.keyword.pk for x in instance.canwit_userkeywords.filter(profile=profile).order_by('keyword__name')]
                 self.fields['projlist'].initial = [x.pk for x in instance.projects.all().order_by('name')] 
 
                 # Determine the initial collections
                 self.fields['collist_m'].initial = [x.pk for x in instance.collections.filter(type='manu').order_by('name')]
                 self.fields['collist_s'].initial = [x.pk for x in instance.collections.filter(type='sermo').order_by('name')]
-                self.fields['collist_sg'].initial = [x.pk for x in instance.collections.filter(type='gold').order_by('name')]
+                # self.fields['collist_sg'].initial = [x.pk for x in instance.collections.filter(type='gold').order_by('name')]
                 self.fields['collist_ssg'].initial = [x.pk for x in instance.collections.filter(type='super').order_by('name')]
 
                 # Note: what we *show* are the signatures that have actually been copied -- the SERMON signatures
@@ -1538,12 +1539,12 @@ class CanwitForm(lilaModelForm):
                 self.fields['siglist_m'].initial = [x.pk for x in instance.canwitsignatures.all().order_by('-editype', 'code')]
 
                 # Note: this is the list of links between SermonDesrc-Gold
-                self.fields['superlist'].initial = [x.pk for x in instance.canwit_austat.all().order_by('linktype', 'sermon__author__name', 'sermon__siglist')]
+                self.fields['superlist'].initial = [x.pk for x in instance.canwit_austat.all().order_by('linktype', 'canwit__author__name', 'canwit__siglist')]
 
                 # Make sure the initial superlist captures exactly what we have
                 self.fields['superlist'].queryset = CanwitAustat.objects.filter(Q(id__in = self.fields['superlist'].initial))
 
-                self.fields['bibreflist'].initial = [x.pk for x in instance.sermonbibranges.all()]
+                self.fields['bibreflist'].initial = [x.pk for x in instance.canwitbibranges.all()]
                 self.fields['bibreflist'].queryset = BibRange.objects.filter(id__in=self.fields['bibreflist'].initial)
 
                 self.fields['autype'].initial = instance.autype
@@ -1552,6 +1553,59 @@ class CanwitForm(lilaModelForm):
         except:
             msg = oErr.get_error_message()
             oErr.DoError("CanwitForm-init")
+        return None
+
+
+class CodheadForm(lilaModelForm):
+    # Helper fields for Codhead fields
+    manuidno    = forms.CharField(label=_("Manuscript"), required=False,
+                    widget=forms.TextInput(attrs={'class': 'typeahead searching manuidnos input-sm', 'placeholder': 'Shelfmarks using wildcards...', 'style': 'width: 100%;'}))
+    manuidlist  = ModelMultipleChoiceField(queryset=None, required=False, 
+                    widget=ManuidWidget(attrs={'data-placeholder': 'Select multiple manuscript identifiers...', 'style': 'width: 100%;'}))
+    manu = forms.ModelChoiceField(queryset=None, required=False,
+                widget=ManuidOneWidget(attrs={'data-placeholder': 'Select a manuscript...', 'style': 'width: 30%;', 'class': 'searching'}))
+
+    # Specifically for searching...
+    srch_title = forms.CharField(required=False, 
+                widget=forms.TextInput(attrs={'class': 'searching', 'placeholder': 'Title (use wildcards)...', 'style': 'width: 100%;'}))
+
+    typeaheads = ["manuidnos"]
+
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = Codhead
+        fields = ['title', 'locus']
+        widgets={'title':       forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 'class': 'searching'}),
+                 'locus':       forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'})
+                 }
+
+    def __init__(self, *args, **kwargs):
+        # Start by executing the standard handling
+        super(CodheadForm, self).__init__(*args, **kwargs)
+        oErr = ErrHandle()
+        try:
+            username = self.username
+            team_group = self.team_group
+            profile = Profile.get_user_profile(username)
+
+            # Some fields are not required
+            self.fields['manu'].required = False
+            
+            self.fields['manu'].queryset = Manuscript.objects.all().order_by('idno')
+            self.fields['manuidlist'].queryset = Manuscript.objects.filter(mtype='man').order_by('idno')
+
+            # Get the instance
+            if 'instance' in kwargs:
+                instance = kwargs['instance']
+
+                if instance.get_manuscript():
+                    self.fields['manu'].queryset = Manuscript.objects.filter(id=instance.get_manuscript().id)
+
+                iStop = 1
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CodheadForm-init")
         return None
 
 
@@ -2044,7 +2098,7 @@ class CanwitSignatureForm(forms.ModelForm):
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = CanwitSignature
-        fields = ['sermon', 'code', 'editype']
+        fields = ['canwit', 'code', 'editype']
         widgets={'editype':     forms.Select(attrs={'style': 'width: 100%;'}),
                  'code':        forms.TextInput(attrs={'class': 'typeahead searching signaturetype input-sm', 
                                                        'placeholder': 'Signature...', 'style': 'width: 100%;'})
@@ -2108,16 +2162,12 @@ class CanwitSuperForm(forms.ModelForm):
     newsuper    = forms.CharField(label=_("Sermon Gold"), required=False, help_text="editable", 
                 widget=SuperOneWidget(attrs={'data-placeholder': 'Select links...', 
                                                   'placeholder': 'Select an Authority file...', 'style': 'width: 100%;', 'class': 'searching'}))
-    # For the method "superdist"
-    #newsuperdist= forms.CharField(label=_("Sermon Gold"), required=False, help_text="editable", 
-    #            widget=SuperDistWidget(attrs={'data-placeholder': 'Select links...', 
-    #                                              'placeholder': 'Select a super sermon gold...', 'style': 'width: 100%;', 'class': 'searching'}))
 
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = CanwitAustat
-        fields = ['sermon', 'linktype', 'super' ]
+        fields = ['canwit', 'linktype', 'super' ]
         widgets={'linktype':    forms.Select(attrs={'style': 'width: 100%;'})
                  }
 
@@ -2126,8 +2176,8 @@ class CanwitSuperForm(forms.ModelForm):
         method = "nodistance"   # Alternative: "superdist"
 
         if method == "superdist":
-            # First get out the sermon_id
-            sermon_id = kwargs.pop('sermon_id', None)
+            # First get out the canwit_id
+            canwit_id = kwargs.pop('canwit_id', None)
         # Start by executing the standard handling
         super(CanwitSuperForm, self).__init__(*args, **kwargs)
         # Initialize choices for linktype
@@ -2141,11 +2191,11 @@ class CanwitSuperForm(forms.ModelForm):
 
         if method == "superdist":
             self.fields['newsuperdist'].required = False
-            # NEW: Taking the sermon as starting point and ordering them according to distance
-            sermon = Canwit.objects.filter(id=sermon_id).first()
-            if sermon != None:
-                qs = sermon.sermonsuperdist.all().order_by('distance', 'super__code', 'super__author__name')
-                self.fields['newsuperdist'].widget.sermon = sermon
+            # NEW: Taking the canwit as starting point and ordering them according to distance
+            canwit = Canwit.objects.filter(id=canwit_id).first()
+            if canwit != None:
+                qs = canwit.canwitsuperdist.all().order_by('distance', 'super__code', 'super__author__name')
+                self.fields['newsuperdist'].widget.canwit = canwit
             else:
                 self.fields['newsuperdist'].queryset =  AustatDist.objects.filter(super__moved__isnull=True).order_by('distance', 'super__code', 'super__author__name', 'id').distinct()
         else:
@@ -2185,7 +2235,7 @@ class CanwitKeywordForm(forms.ModelForm):
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = CanwitKeyword
-        fields = ['sermon', 'keyword']
+        fields = ['canwit', 'keyword']
 
     def __init__(self, *args, **kwargs):
         # Start by executing the standard handling
@@ -2524,7 +2574,7 @@ class CanwitCollectionForm(forms.ModelForm):
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = CollectionSerm
-        fields = ['sermon', 'collection']
+        fields = ['canwit', 'collection']
 
     def __init__(self, *args, **kwargs):
         # Start by executing the standard handling

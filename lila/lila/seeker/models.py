@@ -4159,7 +4159,7 @@ class Manuscript(models.Model):
         if self.mtype == "rec":
             method = "codicos"      # NEW: Take codicological unites as a starting point
         else:
-            method = "msitem"       # CURRENT: there is a level of [MsItem] between Manuscript and Canwit/Canhead
+            method = "msitem"       # CURRENT: there is a level of [MsItem] between Manuscript and Canwit/Codhead
 
         try:
             # Create a well sorted list of sermons
@@ -4199,7 +4199,7 @@ class Manuscript(models.Model):
                     oSermon['obj'] = sermon
                     # Now we need to add a reference to the actual Canwit object
                     oSermon['sermon'] = sermon.itemsermons.first()
-                    # And we add a reference to the Canhead object
+                    # And we add a reference to the Codhead object
                     oSermon['shead'] = sermon.itemheads.first()
                 oSermon['nodeid'] = sermon.order + 1
                 oSermon['number'] = idx + 1
@@ -4441,7 +4441,7 @@ class Manuscript(models.Model):
                         head_dst = head_src
                         head_dst.pk = None
                         head_dst.msitem = dst
-                        # NOTE: a Canhead does *not* have an mtype or stype
+                        # NOTE: a Codhead does *not* have an mtype or stype
 
                         # Issue #420: 'locus' also for template creation
                         head_dst.locus = ""
@@ -4478,7 +4478,7 @@ class Manuscript(models.Model):
 
                     ## Issue #315: copy USER keywords - only if there is a profile
                     #if profile != None:
-                    #    for ukw in sermon_src.sermo_userkeywords.all():
+                    #    for ukw in sermon_src.canwit_userkeywords.all():
                     #        # Copy the user-keyword to a new one attached to [sermon_dst]
                     #        keyword = UserKeyword.objects.create(
                     #            keyword=ukw.keyword, sermo=sermon_dst, type=ukw.type, profile=profile)
@@ -4513,7 +4513,7 @@ class Manuscript(models.Model):
         lst_remove = []
         for msitem in self.manuitems.all():
             # Check if this is an orphan
-            if msitem.sermonitems.count() == 0 and msitem.canhead.count() == 0:
+            if msitem.sermonitems.count() == 0 and msitem.codhead.count() == 0:
                 lst_remove.append(msitem.id)
         # Now remove them
         MsItem.objects.filter(id__in=lst_remove).delete()
@@ -4639,6 +4639,25 @@ class Codico(models.Model):
         # Show that this overwriting took place
         details = dict(id=self.id, savetype="change", old={path: old_value}, changes={path: new_value})
         Action.add(username, "Codico", self.id, actiontype, json.dumps(details))
+
+    def check_hierarchy(self):
+        """Double check the hierarchy of MsItem to me"""
+
+        oErr = ErrHandle()
+        try:
+            deletable = []
+            for msitem in self.codicoitems.all():
+                # Does it have either a CanWit or CodHead?
+                count_cw = msitem.itemsermons.count()
+                count_ch = msitem.itemheads.count()
+                if count_cw == 0 and count_ch == 0:
+                    deletable.append(msitem.id)
+            if len(deletable) > 0:
+                MsItem.objects.filter(id__in=deletable).delete()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Codico/check_hierarchy")
+        return True
 
     def custom_add(oCodico, **kwargs):
         """Add a codico according to the specifications provided"""
@@ -5223,40 +5242,6 @@ class Daterange(models.Model):
         return bBack
 
 
-class Colwit(models.Model):
-    """A codicological unit is a physical part (or whole) of a Codicological Unit"""
-
-    # [1] User-supplied Title of the collection witness
-    title = models.CharField("Title", max_length=LONG_STRING, default="SUPPLY A NAME")
-    # [0-1] Description
-    descr = models.TextField("Description", null=True, blank=True)
-    # [0-1] Notes
-    notes = models.TextField("Notes", null=True, blank=True)
-
-    # [1] Every codicological unit has a status - this is *NOT* related to model 'Status'
-    stype = models.CharField("Status", choices=build_abbr_list(STATUS_TYPE), max_length=5, default="man")
-    # [0-1] Status note
-    snote = models.TextField("Status note(s)", default="[]")
-    # [1] And a date: the date of saving this manuscript
-    created = models.DateTimeField(default=get_current_datetime)
-    saved = models.DateTimeField(null=True, blank=True)
-
-    # [0] One codicological unit can only belong to one particular manuscript
-    codico = models.ForeignKey(Codico, on_delete = models.CASCADE, related_name="colwitcodicounits")
-
-    # ============== MANYTOMANY connections
-     # [m] Many-to-many: keywords per Codico
-    keywords = models.ManyToManyField(Keyword, through="ColwitKeyword", related_name="keywords_colwit")
-
-    # Scheme for downloading and uploading
-    specification = [
-        {'name': 'Status',              'type': 'field', 'path': 'stype',     'readonly': True},
-        {'name': 'Title',               'type': 'field', 'path': 'title'},
-        {'name': 'Description',         'type': 'field', 'path': 'descr'},
-        {'name': 'Notes',               'type': 'field', 'path': 'notes'},
-        ]
-
-
 class Author(models.Model):
     """We have a set of authors that are the 'golden' standard"""
 
@@ -5550,10 +5535,10 @@ class Austat(models.Model):
     author = models.ForeignKey(Author, null=True, blank=True, on_delete = models.SET_NULL, related_name="author_austats")
     # [0-1] We would like to know the INCIPIT (first line in Latin)
     incipit = models.TextField("Incipit", null=True, blank=True)
-    srcftext = models.TextField("Incipit (searchable)", null=True, blank=True)
+    srchftext = models.TextField("Incipit (searchable)", null=True, blank=True)
     # [0-1] We would like to know the EXPLICIT (last line in Latin)
     explicit = models.TextField("Explicit", null=True, blank=True)
-    srcftrans = models.TextField("Explicit (searchable)", null=True, blank=True)
+    srchftrans = models.TextField("Explicit (searchable)", null=True, blank=True)
     # [0-1] The 'lila-code' for a sermon - see instructions (16-01-2020 4): [lila aaa.nnnn]
     code = models.CharField("lila code", blank=True, null=True, max_length=lila_CODE_LENGTH, default="ZZZ_DETERMINE")
     # [0-1] The number of this SSG (numbers are 1-based, per author)
@@ -5603,12 +5588,12 @@ class Austat(models.Model):
         oErr = ErrHandle()
         try:
             # Adapt the incipit and explicit - if necessary
-            srcftext = get_searchable(self.incipit)
-            if self.srcftext != srcftext:
-                self.srcftext = srcftext
-            srcftrans = get_searchable(self.explicit)
-            if self.srcftrans != srcftrans:
-                self.srcftrans = srcftrans
+            srchftext = get_searchable(self.incipit)
+            if self.srchftext != srchftext:
+                self.srchftext = srchftext
+            srchftrans = get_searchable(self.explicit)
+            if self.srchftrans != srchftrans:
+                self.srchftrans = srchftrans
 
             # Double check the number and the code
             if self != None and self.author_id != None and self.author != None:
@@ -5717,7 +5702,7 @@ class Austat(models.Model):
     def create_new(self):
         """Create a copy of [self]"""
 
-        fields = ['author', 'incipit', 'srcftext', 'explicit', 'srcftrans', 'number', 'code', 'stype', 'moved']
+        fields = ['author', 'incipit', 'srchftext', 'explicit', 'srchftrans', 'number', 'code', 'stype', 'moved']
         org = Austat()
         for field in fields:
             value = getattr(self, field)
@@ -5757,12 +5742,12 @@ class Austat(models.Model):
 
         if incexp_type == "both":
             parsed = adapt_markdown(self.explicit)
-            search = self.srcftrans
+            search = self.srchftrans
             sBack = "<div>{}</div><div class='searchincexp'>{}</div>".format(parsed, search)
         elif incexp_type == "actual":
             sBack = adapt_markdown(self.explicit)
         elif incexp_type == "search":
-            sBack = adapt_markdown(self.srcftrans)
+            sBack = adapt_markdown(self.srchftrans)
         return sBack
 
     def get_hclist_markdown(self):
@@ -5776,7 +5761,7 @@ class Austat(models.Model):
     def get_incexp_match(self, sMatch=""):
         html = []
         dots = "..." if self.incipit else ""
-        sBack = "{}{}{}".format(self.srcftext, dots, self.srcftrans)
+        sBack = "{}{}{}".format(self.srchftext, dots, self.srchftrans)
         ratio = 0.0
         # Are we matching with something?
         if sMatch != "":
@@ -5788,12 +5773,12 @@ class Austat(models.Model):
         # Perform
         if incexp_type == "both":
             parsed = adapt_markdown(self.incipit)
-            search = self.srcftext
+            search = self.srchftext
             sBack = "<div>{}</div><div class='searchincexp'>{}</div>".format(parsed, search)
         elif incexp_type == "actual":
             sBack = adapt_markdown(self.incipit)
         elif incexp_type == "search":
-            sBack = adapt_markdown(self.srcftext)
+            sBack = adapt_markdown(self.srchftext)
         return sBack
 
     def get_keywords_markdown(self):
@@ -5844,11 +5829,11 @@ class Austat(models.Model):
 
         if do_incexpl:
             # Treat incipit
-            if self.incipit: lHtml.append("{}".format(self.srcftext))
+            if self.incipit: lHtml.append("{}".format(self.srchftext))
             # Treat intermediate dots
             if self.incipit and self.explicit: lHtml.append("...-...")
             # Treat explicit
-            if self.explicit: lHtml.append("{}".format(self.srcftrans))
+            if self.explicit: lHtml.append("{}".format(self.srchftrans))
 
         # Return the results
         return "".join(lHtml)
@@ -6006,11 +5991,11 @@ class Austat(models.Model):
         if self.author:
             lHtml.append(" {} ".format(self.author.name))
         # Treat incipit
-        if self.incipit: lHtml.append(" {}".format(self.srcftext))
+        if self.incipit: lHtml.append(" {}".format(self.srchftext))
         # Treat intermediate dots
         if self.incipit and self.explicit: lHtml.append("...-...")
         # Treat explicit
-        if self.explicit: lHtml.append("{}".format(self.srcftrans))
+        if self.explicit: lHtml.append("{}".format(self.srchftrans))
         # Return the results
         return "".join(lHtml)
 
@@ -6497,8 +6482,8 @@ class Collection(models.Model):
                 # Create a S based on this SSG
                 sermon = Canwit.objects.create(
                     manu=manu, msitem=msitem, author=ssg.author, 
-                    incipit=ssg.incipit, srcftext=ssg.srcftext,
-                    explicit=ssg.explicit, srcftrans=ssg.srcftrans,
+                    incipit=ssg.incipit, srchftext=ssg.srchftext,
+                    explicit=ssg.explicit, srchftrans=ssg.srchftrans,
                     stype="imp", mtype=mtype)
                 # Create a link from the S to this SSG
                 ssg_link = CanwitAustat.objects.create(sermon=sermon, super=ssg, linktype=LINK_UNSPECIFIED)
@@ -6531,7 +6516,7 @@ class MsItem(models.Model):
     # ========================================================================
     # [1] Every MsItem belongs to exactly one manuscript
     #     Note: when a Manuscript is removed, all its associated MsItems are also removed
-    #           and when an MsItem is removed, so is its Canwit or Canhead
+    #           and when an MsItem is removed, so is its Canwit or Codhead
     manu = models.ForeignKey(Manuscript, null=True, on_delete = models.CASCADE, related_name="manuitems")
 
     # [1] Every MsItem also belongs to exactly one Codico (which is part of a manuscript)
@@ -6614,7 +6599,7 @@ class MsItem(models.Model):
         return self.sermon_parent.all().order_by("order")
 
 
-class Canhead(models.Model):
+class Codhead(models.Model):
     """A hierarchical element in the manuscript structure"""
 
     # [0-1] Optional location of this sermon on the manuscript
@@ -6623,13 +6608,29 @@ class Canhead(models.Model):
     # [0-1] The title of this structural element to be shown
     title = models.CharField("Title", null=True, blank=True, max_length=LONG_STRING)
 
-    # [1] Every Canhead belongs to exactly one MsItem
-    #     Note: one [MsItem] will have only one [Canhead], but using an FK is easier for processing (than a OneToOneField)
-    #           when the MsItem is removed, its Canhead is too
+    # [1] Every Canwit has a status - this is *NOT* related to model 'Status'
+    stype = models.CharField("Status", choices=build_abbr_list(STATUS_TYPE), max_length=5, default="man")
+    # [0-1] Status note
+    snote = models.TextField("Status note(s)", default="[]")
+    # [1] And a date: the date of saving this sermon
+    created = models.DateTimeField(default=get_current_datetime)
+
+    # [1] Every Codhead belongs to exactly one MsItem
+    #     Note: one [MsItem] will have only one [Codhead], but using an FK is easier for processing (than a OneToOneField)
+    #           when the MsItem is removed, its Codhead is too
     msitem = models.ForeignKey(MsItem, null=True, on_delete = models.CASCADE, related_name="itemheads")
 
     def get_locus_range(self):
+        """Get the locus range"""
         return get_locus_range(self.locus)
+
+    def get_manuscript(self):
+        """Get the manuscript that links to this canwit"""
+
+        manu = None
+        if self.msitem and self.msitem.manu:
+            manu = self.msitem.manu
+        return manu
 
     def locus_first(self):
         first, last = self.get_locus_range()
@@ -6640,8 +6641,46 @@ class Canhead(models.Model):
         return last
 
 
+class Colwit(models.Model):
+    """A collection witness belongs to exactly one [Codhead] (but not each Codhead is a Colwit)
+    
+    Some fields of a [Colwit] are already available in the Codhead:
+    - locus: the location within the Codicological unit
+    - title: the title of this collection (taken over from the collection to which I link)
+    """
+
+    # [0-1] Description
+    descr = models.TextField("Description", null=True, blank=True)
+    # [0-1] Notes
+    notes = models.TextField("Notes", null=True, blank=True)
+
+    # [1] Every Colwit unit has a status - this is *NOT* related to model 'Status'
+    stype = models.CharField("Status", choices=build_abbr_list(STATUS_TYPE), max_length=5, default="man")
+    # [0-1] Status note
+    snote = models.TextField("Status note(s)", default="[]")
+    # [1] And a date: the date of saving this manuscript
+    created = models.DateTimeField(default=get_current_datetime)
+    saved = models.DateTimeField(null=True, blank=True)
+
+    # [1] One Colwit belongs exactly to one Codhead
+    codhead = models.ForeignKey(Codhead, on_delete = models.CASCADE, related_name="colwitcodheads")
+    # [1] One Colwit must link to exactly one Collection
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name="collectioncolwits")
+
+    # ============== MANYTOMANY connections
+     # [m] Many-to-many: keywords per Codico
+    keywords = models.ManyToManyField(Keyword, through="ColwitKeyword", related_name="keywords_colwit")
+
+    # Scheme for downloading and uploading
+    specification = [
+        {'name': 'Status',              'type': 'field', 'path': 'stype',     'readonly': True},
+        {'name': 'Description',         'type': 'field', 'path': 'descr'},
+        {'name': 'Notes',               'type': 'field', 'path': 'notes'},
+        ]
+
+
 class Canwit(models.Model):
-    """A sermon is part of a manuscript"""
+    """A Canonical Witness is part of a manuscript (via Colwit > MsItem > Codico > Manuscript)"""
 
     # [0-1] Not every sermon might have a title ...
     title = models.CharField("Title", null=True, blank=True, max_length=LONG_STRING)
@@ -6658,7 +6697,7 @@ class Canwit(models.Model):
     author = models.ForeignKey(Author, null=True, blank=True, on_delete = models.SET_NULL, related_name="author_sermons")
     # [1] Every Canwit has a status - this is *NOT* related to model 'Status'
     autype = models.CharField("Author certainty", choices=build_abbr_list(CERTAINTY_TYPE), max_length=5, default="ave")
-    # [0-1] Optional location of this sermon on the manuscript
+    # [0-1] Optional location of this canWit on the manuscript
     locus = models.CharField("Locus", null=True, blank=True, max_length=LONG_STRING)
     # [0-1] We would like to know the FULL TEXT
     ftext = models.TextField("Full text", null=True, blank=True)
@@ -6713,7 +6752,7 @@ class Canwit(models.Model):
     projects = models.ManyToManyField(Project, through="CanwitProject", related_name="project_sermons")
 
     # ========================================================================
-    # [1] Every semondescr belongs to exactly one MsItem
+    # [1] Every COLWIT belongs to exactly one MsItem
     #     Note: one [MsItem] will have only one [Canwit], but using an FK is easier for processing (than a OneToOneField)
     #           when the MsItem is removed, so are we
     msitem = models.ForeignKey(MsItem, null=True, on_delete = models.CASCADE, related_name="itemsermons")
@@ -6809,7 +6848,7 @@ class Canwit(models.Model):
         msg = ""
         try:
             lst_verse = []
-            for obj in self.sermonbibranges.all():
+            for obj in self.canwitbibranges.all():
                 lst_verse.append("{}".format(obj.get_fullref()))
             refstring = "; ".join(lst_verse)
 
@@ -6854,7 +6893,7 @@ class Canwit(models.Model):
             if locus != None and locus != "":
                 # Try retrieve an existing or 
                 if type.lower() == "structural":
-                    obj = Canhead.objects.filter(msitem__manu=manuscript, locus=locus).first()
+                    obj = Codhead.objects.filter(msitem__manu=manuscript, locus=locus).first()
                 else:
                     obj = Canwit.objects.filter(msitem__manu=manuscript, locus=locus, mtype="man").first()
             if obj == None:
@@ -6867,7 +6906,7 @@ class Canwit(models.Model):
 
                 if type.lower() == "structural":
                     # Create a new Canwit with default values, tied to the msitem
-                    obj = Canhead.objects.create(msitem=msitem)
+                    obj = Codhead.objects.create(msitem=msitem)
                 else:
                     # Create a new Canwit with default values, tied to the msitem
                     obj = Canwit.objects.create(msitem=msitem, stype="imp", mtype="man")
@@ -7101,8 +7140,8 @@ class Canwit(models.Model):
 
         def get_dist(inc_s, exp_s, inc_eqg, exp_eqg):
             # Get the inc and exp for the SSG
-            #inc_eqg = super.srcftext
-            #exp_eqg = super.srcftrans
+            #inc_eqg = super.srchftext
+            #exp_eqg = super.srchftrans
             # Calculate distances
             similarity = similar(inc_s, inc_eqg) + similar(exp_s, exp_eqg)
             if similarity == 0.0:
@@ -7114,14 +7153,14 @@ class Canwit(models.Model):
         oErr = ErrHandle()
         try:
             # Get my own incipit and explicit
-            inc_s = "" if self.srcftext == None else self.srcftext
-            exp_s = "" if self.srcftrans == None else self.srcftrans
+            inc_s = "" if self.srchftext == None else self.srchftext
+            exp_s = "" if self.srchftrans == None else self.srchftrans
 
             # Make sure we only start doing something if it is really needed
             count = self.distances.count()
             if inc_s != "" or exp_s != "" or count > 0:
                 # Get a list of the current Austat elements in terms of id, srchinc/srchexpl
-                eqg_list = Austat.objects.all().values('id', 'srcftext', 'srcftrans')
+                eqg_list = Austat.objects.all().values('id', 'srchftext', 'srchftrans')
 
                 # Walk all Austat objects
                 with transaction.atomic():
@@ -7132,12 +7171,12 @@ class Canwit(models.Model):
                         obj = AustatDist.objects.filter(sermon=self, super=super_id).first()
                         if obj == None:
                             # Get the distance
-                            dist = get_dist(inc_s, exp_s, item['srcftext'], item['srcftrans'])
+                            dist = get_dist(inc_s, exp_s, item['srchftext'], item['srchftrans'])
                             # Create object and Set this distance
                             obj = AustatDist.objects.create(sermon=self, super_id=super_id, distance=dist)
                         elif bForceUpdate:
                             # Calculate and change the distance
-                            obj.distance = get_dist(inc_s, exp_s, item['srcftext'], item['srcftrans'])
+                            obj.distance = get_dist(inc_s, exp_s, item['srchftext'], item['srchftrans'])
                             obj.save()
         except:
             msg = oErr.get_error_message()
@@ -7149,7 +7188,7 @@ class Canwit(models.Model):
         bResult = True
         if self.bibleref == None or self.bibleref == "":
             # Remove any existing bibrange objects
-            self.sermonbibranges.all().delete()
+            self.canwitbibranges.all().delete()
         else:
             # done = Information.get_kvalue("biblerefs")
             if force or self.verses == None or self.verses == "" or self.verses == "[]" or lst_verses != None:
@@ -7274,9 +7313,9 @@ class Canwit(models.Model):
         # First attempt: just show .bibleref
         sBack = self.bibleref
         # Or do we have BibRange objects?
-        if self.sermonbibranges.count() > 0:
+        if self.canwitbibranges.count() > 0:
             html = []
-            for obj in self.sermonbibranges.all().order_by('book__idno', 'chvslist'):
+            for obj in self.canwitbibranges.all().order_by('book__idno', 'chvslist'):
                 # Find out the URL of this range
                 url = reverse("bibrange_details", kwargs={'pk': obj.id})
                 # Add this range
@@ -7352,7 +7391,7 @@ class Canwit(models.Model):
 
         # Visit all linked SSG items
         #    but make sure to exclude the template sermons
-        for linked in CanwitAustat.objects.filter(sermon=self).exclude(sermon__mtype="tem"):
+        for linked in CanwitAustat.objects.filter(canwit=self).exclude(canwit__mtype="tem"):
             # Add this SSG
             ssg_list.append(linked.super.id)
 
@@ -7371,20 +7410,20 @@ class Canwit(models.Model):
         sBack = ", ".join(lHtml)
         return sBack
 
-    def get_explicit(self):
-        """Return the *searchable* explicit, without any additional formatting"""
-        return self.srcftrans
+    def get_ftrans(self):
+        """Return the *searchable* ftrans, without any additional formatting"""
+        return self.srchftrans
 
-    def get_explicit_markdown(self):
-        """Get the contents of the explicit field using markdown"""
-        return adapt_markdown(self.explicit)
+    def get_ftrans_markdown(self):
+        """Get the contents of the ftrans field using markdown"""
+        return adapt_markdown(self.ftrans)
 
     def get_eqsetcount(self):
         """Get the number of SSGs this sermon is part of"""
 
         # Visit all linked SSG items
         #    NOTE: do not filter out mtype=tem
-        ssg_count = CanwitAustat.objects.filter(sermon=self).count()
+        ssg_count = CanwitAustat.objects.filter(canwit=self).count()
         return ssg_count
 
     def get_eqset(self, plain=True):
@@ -7475,7 +7514,7 @@ class Canwit(models.Model):
 
         lHtml = []
         sBack = ""
-        for goldlink in self.canwit_gold.all().order_by('sermon__author__name', 'sermon__siglist'):
+        for goldlink in self.canwit_gold.all().order_by('canwit__author__name', 'canwit__siglist'):
             lHtml.append("<tr class='view-row'>")
             lHtml.append("<td valign='top'><span class='badge signature ot'>{}</span></td>".format(goldlink.get_linktype_display()))
             # for gold in self.goldsermons.all().order_by('author__name', 'siglist'):
@@ -7512,27 +7551,27 @@ class Canwit(models.Model):
 
     def get_incexp_match(self, sMatch=""):
         html = []
-        dots = "..." if self.incipit else ""
-        sBack = "{}{}{}".format(self.srcftext, dots, self.srcftrans)
+        dots = "..." if self.ftext else ""
+        sBack = "{}{}{}".format(self.srchftext, dots, self.srchftrans)
         ratio = 0.0
         # Are we matching with something?
         if sMatch != "":
             sBack, ratio = get_overlap(sBack, sMatch)
         return sBack, ratio
 
-    def get_incipit(self):
-        """Return the *searchable* incipit, without any additional formatting"""
-        return self.srcftext
+    def get_ftext(self):
+        """Return the *searchable* ftext, without any additional formatting"""
+        return self.srchftext
 
-    def get_incipit_markdown(self):
-        """Get the contents of the incipit field using markdown"""
+    def get_ftext_markdown(self):
+        """Get the contents of the ftext field using markdown"""
 
         # Sanity check
-        if self.incipit != None and self.incipit != "":
-            if self.srcftext == None or self.srcftext == "":
+        if self.ftext != None and self.ftext != "":
+            if self.srchftext == None or self.srchftext == "":
                 Canwit.init_latin()
 
-        return adapt_markdown(self.incipit)
+        return adapt_markdown(self.ftext)
 
     def get_keywords_plain(self):
         lHtml = []
@@ -7565,7 +7604,7 @@ class Canwit(models.Model):
     def get_keywords_user_markdown(self, profile, plain=False):
         lHtml = []
         # Visit all keywords
-        for kwlink in self.sermo_userkeywords.filter(profile=profile).order_by('keyword__name'):
+        for kwlink in self.canwit_userkeywords.filter(profile=profile).order_by('keyword__name'):
             keyword = kwlink.keyword
             if plain:
                 lHtml.append(keyword.name)
@@ -7734,7 +7773,7 @@ class Canwit(models.Model):
                 break
         if sermonsig == None:
             # Create a new CanwitSignature based on this Gold Signature
-            sermonsig = CanwitSignature(sermon=self, gsig=gsig, editype=gsig.editype, code=gsig.code)
+            sermonsig = CanwitSignature(canwit=self, gsig=gsig, editype=gsig.editype, code=gsig.code)
             sermonsig.save()
         # Return the sermon signature
         return sermonsig
@@ -7785,9 +7824,9 @@ class Canwit(models.Model):
         with transaction.atomic():
             for obj in Canwit.objects.all():
                 bNeedSave = False
-                if obj.incipit: 
+                if obj.ftext: 
                     bNeedSave = True
-                if obj.explicit: 
+                if obj.ftrans: 
                     bNeedSave = True
                 lSign = []
                 for item in obj.canwitsignatures.all():
@@ -7813,16 +7852,16 @@ class Canwit(models.Model):
         return last
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
-        # Adapt the incipit and explicit
+        # Adapt the ftext and ftrans
         istop = 1
-        if self.incipit: 
-            srcftext = get_searchable(self.incipit)
-            if self.srcftext != srcftext:
-                self.srcftext = srcftext
-        if self.explicit: 
-            srcftrans = get_searchable(self.explicit)
-            if self.srcftrans != srcftrans:
-                self.srcftrans = srcftrans
+        if self.ftext: 
+            srchftext = get_searchable(self.ftext)
+            if self.srchftext != srchftext:
+                self.srchftext = srchftext
+        if self.ftrans: 
+            srchftrans = get_searchable(self.ftrans)
+            if self.srchftrans != srchftrans:
+                self.srchftrans = srchftrans
         # Preliminary saving, before accessing m2m fields
         response = super(Canwit, self).save(force_insert, force_update, using, update_fields)
         # Process signatures
@@ -7853,10 +7892,10 @@ class Canwit(models.Model):
         try:
             for project in projects:
                 # Create a connection between this project and the manuscript
-                obj_ps = CanwitProject.objects.filter(project=project, sermon=self).first()
+                obj_ps = CanwitProject.objects.filter(project=project, canwit=self).first()
                 if obj_ps is None:
                     # Create this link
-                    obj_ps = CanwitProject.objects.create(sermon=self, project=project)
+                    obj_ps = CanwitProject.objects.create(canwit=self, project=project)
         except:
             msg = oErr.get_error_message()
             oErr.DoError("Canwit/set_projects")
@@ -7924,7 +7963,7 @@ class Range(models.Model):
     # [1] The end of the range also in bk/ch/vs
     einde = models.CharField("Einde", default = "",  max_length=BKCHVS_LENGTH)
     # [1] Each range is linked to a Sermon
-    sermon = models.ForeignKey(Canwit, related_name="sermonranges", on_delete=models.CASCADE)
+    canwit = models.ForeignKey(Canwit, related_name="canwitranges", on_delete=models.CASCADE)
 
     # [0-1] Optional introducer
     intro = models.CharField("Introducer",  null=True, blank=True, max_length=LONG_STRING)
@@ -8200,7 +8239,7 @@ class BibRange(models.Model):
     # [0-1] Optional ChVs list
     chvslist = models.TextField("Chapters and verses", blank=True, null=True)
     # [1] Each range is linked to a Sermon
-    sermon = models.ForeignKey(Canwit, on_delete=models.CASCADE, related_name="sermonbibranges")
+    canwit = models.ForeignKey(Canwit, on_delete=models.CASCADE, related_name="canwitbibranges")
 
     # [0-1] Optional introducer
     intro = models.CharField("Introducer",  null=True, blank=True, max_length=LONG_STRING)
@@ -8224,7 +8263,7 @@ class BibRange(models.Model):
         response = super(BibRange, self).save(force_insert, force_update, using, update_fields)
 
         # Make sure the fields in [sermon] are adapted, if needed
-        bResult, msg = self.sermon.adapt_verses()
+        bResult, msg = self.canwit.adapt_verses()
 
 
         ## Add BibVerse objects if needed
@@ -8290,7 +8329,7 @@ class BibRange(models.Model):
             if book is None or book == "":
                 return None
             # Now we can try to search for an entry...
-            obj = sermon.sermonbibranges.filter(book=book, chvslist=chvslist).first()
+            obj = sermon.canwitbibranges.filter(book=book, chvslist=chvslist).first()
             if obj == None:
                 obj = BibRange(sermon=sermon, book=book, chvslist=chvslist)
                 bNeedSaving = True
@@ -8328,7 +8367,7 @@ class CanwitKeyword(models.Model):
     """Relation between a Canwit and a Keyword"""
 
     # [1] The link is between a Canwit instance ...
-    sermon = models.ForeignKey(Canwit, related_name="canwit_kw", on_delete=models.CASCADE)
+    canwit = models.ForeignKey(Canwit, related_name="canwit_kw", on_delete=models.CASCADE)
     # [1] ...and a keyword instance
     keyword = models.ForeignKey(Keyword, related_name="canwit_kw", on_delete=models.CASCADE)
     # [1] And a date: the date of saving this relation
@@ -8339,7 +8378,7 @@ class CanwitProject(models.Model):
     """Relation between a Canwit and a Project"""
 
     # [1] The link is between a Canwit instance ...
-    sermon = models.ForeignKey(Canwit, related_name="canwit_proj", on_delete=models.CASCADE)
+    canwit = models.ForeignKey(Canwit, related_name="canwit_proj", on_delete=models.CASCADE)
     # [1] ...and a project instance
     project = models.ForeignKey(Project, related_name="canwit_proj", on_delete=models.CASCADE)
     # [1] And a date: the date of saving this relation
@@ -8347,7 +8386,7 @@ class CanwitProject(models.Model):
 
     def delete(self, using = None, keep_parents = False):
         # Deletion is only allowed, if the project doesn't become 'orphaned'
-        count = self.sermon.projects.count()
+        count = self.canwit.projects.count()
         if count > 1:
             response = super(CanwitProject, self).delete(using, keep_parents)
         else:
@@ -8489,7 +8528,7 @@ class UserKeyword(models.Model):
     # [0-1] The link is with a Manuscript instance ...
     manu = models.ForeignKey(Manuscript, blank=True, null=True, related_name="manu_userkeywords", on_delete=models.SET_NULL)
     # [0-1] The link is with a Canwit instance ...
-    sermo = models.ForeignKey(Canwit, blank=True, null=True, related_name="sermo_userkeywords", on_delete=models.SET_NULL)
+    canwit = models.ForeignKey(Canwit, blank=True, null=True, related_name="canwit_userkeywords", on_delete=models.SET_NULL)
     # [0-1] The link is with a Austat instance ...
     super = models.ForeignKey(Austat, blank=True, null=True, related_name="super_userkeywords", on_delete=models.SET_NULL)
 
@@ -8558,7 +8597,7 @@ class CanwitAustat(models.Model):
     """Link from sermon description (S) to super sermon gold (SSG)"""
 
     # [1] The canwit
-    sermon = models.ForeignKey(Canwit, related_name="canwit_austat", on_delete=models.CASCADE)
+    canwit = models.ForeignKey(Canwit, related_name="canwit_austat", on_delete=models.CASCADE)
     # [0-1] The manuscript in which the canwit resides
     manu = models.ForeignKey(Manuscript, related_name="canwit_austat", blank=True, null=True, on_delete=models.SET_NULL)
     # [1] The gold sermon
@@ -8630,9 +8669,9 @@ class AustatDist(models.Model):
     """Keep track of the 'distance' between sermons and SSGs"""
 
     # [1] The canwit
-    sermon = models.ForeignKey(Canwit, related_name="sermonsuperdist", on_delete=models.CASCADE)
+    canwit = models.ForeignKey(Canwit, related_name="canwitsuperdist", on_delete=models.CASCADE)
     # [1] The equal gold sermon (=SSG)
-    super = models.ForeignKey(Austat, related_name="sermonsuperdist", on_delete=models.CASCADE)
+    super = models.ForeignKey(Austat, related_name="canwitsuperdist", on_delete=models.CASCADE)
     # [1] Each sermon-to-equal keeps track of a distance
     distance = models.FloatField("Distance", default=100.0)
 
@@ -8651,7 +8690,7 @@ class CanwitSignature(models.Model):
 
     # [1] Every signature belongs to exactly one Canonical Witness
     #     Note: when a Canwit gets removed, then its associated CanwitSignature gets removed too
-    sermon = models.ForeignKey(Canwit, null=False, blank=False, related_name="canwitsignatures", on_delete=models.CASCADE)
+    canwit = models.ForeignKey(Canwit, null=False, blank=False, related_name="canwitsignatures", on_delete=models.CASCADE)
 
     def __str__(self):
         return "{}: {}".format(self.editype, self.code)
@@ -8696,7 +8735,7 @@ class Basket(models.Model):
     """The basket is the user's vault of search results (of canwit items)"""
 
     # [1] The canwit
-    sermon = models.ForeignKey(Canwit, related_name="basket_contents", on_delete=models.CASCADE)
+    canwit = models.ForeignKey(Canwit, related_name="basket_contents", on_delete=models.CASCADE)
     # [1] The user
     profile = models.ForeignKey(Profile, related_name="basket_contents", on_delete=models.CASCADE)
 
@@ -8919,7 +8958,7 @@ class CollectionSerm(models.Model):
     """The link between a collection item and a S (sermon)"""
 
     # [1] The sermon to which the collection item refers
-    sermon = models.ForeignKey(Canwit, related_name = "canwit_col", on_delete=models.CASCADE)
+    canwit = models.ForeignKey(Canwit, related_name = "canwit_col", on_delete=models.CASCADE)
     # [1] The collection to which the context item refers to
     collection = models.ForeignKey(Collection, related_name= "canwit_col", on_delete=models.CASCADE)
     # [0-1] The order number for this S within the collection
