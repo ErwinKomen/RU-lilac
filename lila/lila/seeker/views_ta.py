@@ -32,7 +32,7 @@ import json
 from lila.utils import ErrHandle
 from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_entries, get_searchable, get_now_time, \
     add_gold2equal, add_equal2equal, add_ssg_equal2equal, get_helptext, Information, Country, City, Author, Manuscript, \
-    User, Group, Origin, Canwit, MsItem, Canhead, CanwitKeyword, CanwitAustat, NewsItem, \
+    User, Group, Origin, Canwit, MsItem, Codhead, CanwitKeyword, CanwitAustat, NewsItem, \
     SourceInfo, AustatKeyword, ManuscriptExt, \
     ManuscriptKeyword, Action, Austat, AustatLink, Location, LocationName, LocationIdentifier, LocationRelation, LocationType, \
     ProvenanceMan, Provenance, Daterange, CollOverlap, BibRange, Feast, Comment, AustatDist, \
@@ -464,11 +464,11 @@ def get_srmincipits(request):
         if request.is_ajax():
             author = request.GET.get("name", "")
             lstQ = []
-            lstQ.append(Q(srcftext__icontains=author))
-            items = Canwit.objects.filter(*lstQ).values("srcftext").distinct().all().order_by('srcftext')
+            lstQ.append(Q(srchftext__icontains=author))
+            items = Canwit.objects.filter(*lstQ).values("srchftext").distinct().all().order_by('srchftext')
             results = []
             for idx, co in enumerate(items):
-                val = co['srcftext']
+                val = co['srchftext']
                 co_json = {'name': val, 'id': idx }
                 results.append(co_json)
             data = json.dumps(results)
@@ -490,11 +490,11 @@ def get_srmexplicits(request):
         if request.is_ajax():
             author = request.GET.get("name", "")
             lstQ = []
-            lstQ.append(Q(srcftrans__icontains=author))
-            items = Canwit.objects.filter(*lstQ).values("srcftrans").distinct().all().order_by('srcftrans')
+            lstQ.append(Q(srchftrans__icontains=author))
+            items = Canwit.objects.filter(*lstQ).values("srchftrans").distinct().all().order_by('srchftrans')
             results = []
             for idx, co in enumerate(items):
-                val = co['srcftrans']
+                val = co['srchftrans']
                 co_json = {'name': val, 'id': idx }
                 results.append(co_json)
             data = json.dumps(results)

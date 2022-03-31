@@ -92,12 +92,11 @@
                     <span class="manusermo hc hidden">{{msitem.hclist|safe}}</span>
                   </span>
                 {% elif msitem.shead %}
-                  <span class="shead" {% if is_app_editor %}contenteditable="true"
-                          oninput="ru.lila.seeker.sermon_change(this);"
-                        {% endif %}
-                        >
-                    {% if msitem.shead.title %}{{msitem.shead.title}}{% else %}(structure head){% endif %}
-                  </span>
+                  <a href="{% url 'codhead_details' msitem.shead.id %}" class="sermon">
+                    <span>
+                      {% if msitem.shead.title %}{{msitem.shead.title}}{% else %}(structure head){% endif %}
+                    </span>
+                  </a>
 
                 {% endif %}
               </span>

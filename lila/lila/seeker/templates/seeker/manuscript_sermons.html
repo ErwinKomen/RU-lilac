@@ -3,30 +3,48 @@
 <div class="row">&nbsp;</div>
 <div id="manuscript_itemset" class="row">
   <div class="col-md-12">
-    <!-- Sermons in this manuscript -->
+    <!-- Codhead and Canwit in this manuscript -->
     <h3>
       <span>Contents</span>
       {% if is_app_editor %}
         <span id="add_search_criteria" class="pull-right">
-          <!-- Completely manual sermon adding -->
+          <!-- Completely manual codhead adding -->
           <a class="btn btn-xs jumbo-3" role="button" 
-             onclick="document.getElementById('create_new_sermon').submit();"             
+             onclick="document.getElementById('create_new_codhead').submit();"             
               >
-            <span class="glyphicon glyphicon-plus"></span>Add a sermon to this manuscript
+            <span class="glyphicon glyphicon-plus"></span>Add a Section to this manuscript
+          </a>
+          <!-- Completely manual canwit adding -->
+          <a class="btn btn-xs jumbo-3" role="button" 
+             onclick="document.getElementById('create_new_canwit').submit();"             
+              >
+            <span class="glyphicon glyphicon-plus"></span>Add a Canon Witness to this manuscript
           </a>
         </span>
       {% endif %}
     </h3>
 
     {% if is_app_editor %}
-      <!-- Room to have the form-link to create a new sermon for this manuscript -->
+      <!-- Room to have the form-link to create a new codhead for this manuscript -->
       <div class="row">
         <div class="hidden col-md-offset-6 col-md-6" >
-          <form id="create_new_sermon" action="{% url 'canwit_details' %}" method="post" >
+          <form id="create_new_codhead" action="{% url 'codhead_details' %}" method="post" >
             {% csrf_token %}
             <div class="hidden" >
-              <input type="text" name="sermo-manu" value="{{manuForm.instance.id}}" />
-              <input type="text" name="sermo-mtype" value="{{manuForm.instance.mtype}}" />
+              <input type="text" name="chead-manu" value="{{manuForm.instance.id}}" />
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Room to have the form-link to create a new canwit for this manuscript -->
+      <div class="row">
+        <div class="hidden col-md-offset-6 col-md-6" >
+          <form id="create_new_canwit" action="{% url 'canwit_details' %}" method="post" >
+            {% csrf_token %}
+            <div class="hidden" >
+              <input type="text" name="canwi-manu" value="{{manuForm.instance.id}}" />
+              <input type="text" name="canwi-mtype" value="{{manuForm.instance.mtype}}" />
             </div>
           </form>
         </div>
@@ -47,7 +65,7 @@
 
     <div id="sermonlog"></div>
 
-      <!-- A place where the Sermons are put in hierarchically organized <div> elements -->
+      <!-- A place where the MsItems are put in hierarchically organized <div> elements -->
       <div id="sermon_tree" class="not_hidden">
         <div class="" level="1">
           <table class="func-view sermons" style="width: 100%;">
@@ -55,14 +73,14 @@
               <tr>
                 <th style="width: 100%;">
                   <!-- Summary infor of this manuscript's items/sermons -->
-                  <span>Details of this manuscript's {{object.manuitems.count}} items ({{object.get_sermon_count}} sermons)</span>
+                  <span>Details of this manuscript's {{object.manuitems.count}} items ({{object.get_sermon_count}} canwits)</span>
                   {% if is_app_editor %}
                     <span class="tree" sermonid="" id="sermon_new">
-                      <!-- The *LOCUS* of the sermon that serves as drag point -->
+                      <!-- The *LOCUS* of the MsItem that serves as drag point -->
                       <span ondragover="ru.lila.seeker.sermon_dragenter(event);" ondragenter="ru.lila.seeker.sermon_dragenter(event);"
                             ondragleave="ru.lila.seeker.sermon_dragleave(event);" ondrop="ru.lila.seeker.sermon_drop(event);">
                         <code draggable="true" class="draggable" title="Add a new structure element from here"
-                              ondragstart="ru.lila.seeker.sermon_drag(event);">Structure...</code>
+                              ondragstart="ru.lila.seeker.sermon_drag(event);">Section...</code>
                       </span>
                     </span>
                   {% endif %}
@@ -73,7 +91,7 @@
                           onclick="ru.lila.seeker.manusermo(this, 'sig-auto');">Gryson A</span>
                     <span type="button" class="btn jumbo-1" title="Gryson/Clavis codes added manually"
                           onclick="ru.lila.seeker.manusermo(this, 'sig-manual');">Gryson M</span>
-                    <span type="button" class="btn jumbo-2" title="Title of this sermon/item"
+                    <span type="button" class="btn jumbo-2" title="Title of this item"
                           onclick="ru.lila.seeker.manusermo(this, 'title');">Title</span>
                     <span type="button" class="btn jumbo-2" title="Attributed author"
                           onclick="ru.lila.seeker.manusermo(this, 'author');">Author</span>
@@ -85,9 +103,9 @@
                           onclick="ru.lila.seeker.manusermo(this, 'note');">Note</span>
                     <span type="button" class="btn jumbo-1" title="Kewords attached to the Super Sermon Gold"
                           onclick="ru.lila.seeker.manusermo(this, 'kw-auto');">Keywords A</span>
-                    <span type="button" class="btn jumbo-1" title="Kewords manually attached to this sermon"
+                    <span type="button" class="btn jumbo-1" title="Kewords manually attached to this item"
                           onclick="ru.lila.seeker.manusermo(this, 'kw-manual');">Keywords M</span>
-                    <span type="button" class="btn jumbo-1" title="Historical Collection(s) associated with this sermon manifestation"
+                    <span type="button" class="btn jumbo-1" title="Historical Collection(s) associated with this item"
                           onclick="ru.lila.seeker.manusermo(this, 'hc');">HC</span>
                   </span>
 
@@ -97,7 +115,7 @@
                     <span>
                       <a mode="restore" class="edit-mode btn btn-xs jumbo-1 hidden" 
                          onclick="ru.lila.seeker.manuscript('restore');">
-                        <span class="glyphicon glyphicon-arrow-left" title="Restore to the original sermon hierarchy"></span>
+                        <span class="glyphicon glyphicon-arrow-left" title="Restore to the original item hierarchy"></span>
                       </a>
                     </span>
                     <span>
@@ -105,7 +123,7 @@
                          onclick="ru.lila.seeker.manuscript('save', this);"
                          targetid=""
                          targeturl="{% if manuForm.instance.id %}{% url 'manuscript_details' manuForm.instance.id %}{% endif %}" >
-                        <span class="glyphicon glyphicon-ok" title="Save this sermon hierarchy"></span>
+                        <span class="glyphicon glyphicon-ok" title="Save this item hierarchy"></span>
                         Save
                       </a>
                     </span>
@@ -130,7 +148,7 @@
             </thead>
           </table>
         </div>
-        <!-- This is where the sermon hierarchy is put-->
+        <!-- This is where the MsItem hierarchy is put-->
         <div id="sermon_tree_main">
           {% for msitem in canwit_list %}
             {% if msitem.childof == 1 %}
@@ -154,7 +172,7 @@
 
 
       {% if is_app_editor %}
-        <!-- Hidden sermon hierarchy element -->
+        <!-- Hidden MsItem hierarchy element -->
         <div sermonid="" id="sermon_hierarchy_element" class="tree hidden" sermontype="new">
           <table class="func-view sermons" style="width: 100%;">
             <tbody>
@@ -170,12 +188,12 @@
                 <!-- empty space -->
                 <td valign="top" class="sermonbutton"><span>&nbsp;</span></td>
 
-                <!-- The number of the sermon in our current hierarchy -->
+                <!-- The number of the MsItem in our current hierarchy -->
                 <td valign="top" class="sermonnumber tdnowrap" onclick="ru.lila.seeker.sermon_selection(this);">
                   <span>*</span>
                 </td>
 
-                <!-- The *LOCUS* of the sermon that serves as drag point -->
+                <!-- The *LOCUS* of the MsItem that serves as drag point -->
                 <td valign="top" class="tdnowrap " style="background-color: white;"
                     ondragover="ru.lila.seeker.sermon_dragenter(event);" ondragenter="ru.lila.seeker.sermon_dragenter(event);" 
                     ondragleave="ru.lila.seeker.sermon_dragleave(event);" ondrop="ru.lila.seeker.sermon_drop(event);" >

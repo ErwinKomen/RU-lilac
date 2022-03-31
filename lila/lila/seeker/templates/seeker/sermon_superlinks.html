@@ -19,7 +19,7 @@
                   <span>
                     <a class="btn btn-xs jumbo-1" 
                         onclick="ru.lila.seeker.elevate_confirm(this)"
-                        title="Copy information from this Super Sermon Gold to this Sermon manifestation (Author, incipit, explicit)">
+                        title="Copy information from this Super Sermon Gold to this Canon Witness (Author, full text, translation)">
                       Copy <span class="glyphicon glyphicon-share-alt"></span>
                     </a>
                   </span>
@@ -42,7 +42,7 @@
                     </table>
                   </div>
                   <div>
-                    <span>Do you really want to copy these details to the Sermon manifestation?</span>
+                    <span>Do you really want to copy these details to the Canon Witnesss?</span>
                     <span>
                       <a class="btn btn-xs jumbo-1" onclick="ru.lila.seeker.elevate_cancel(this);">Cancel</a>
                     </span>
@@ -50,7 +50,7 @@
                       <a class="btn btn-xs jumbo-4" 
                          onclick="ru.lila.seeker.elevate_confirm(this)"
                          href="{% url 'canwit_details' object_id %}?supercopy={{instance.super.id}}"
-                         title="Copy information from this Super Sermon Gold to this Sermon manifestation (Author, incipit, explicit)">
+                         title="Copy information from this Super Sermon Gold to this Canon witness (Author, full text, translation)">
                         Copy <span class="glyphicon glyphicon-share-alt"></span>
                       </a>
                     </span>

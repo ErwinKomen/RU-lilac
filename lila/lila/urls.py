@@ -80,6 +80,10 @@ urlpatterns = [
     url(r'^codico/details(?:/(?P<pk>\d+))?/$', CodicoDetails.as_view(), name='codico_details'),
     url(r'^codico/edit(?:/(?P<pk>\d+))?/$', CodicoEdit.as_view(), name='codico_edit'),
 
+    url(r'^codhead/details(?:/(?P<pk>\d+))?/$', CodheadDetails.as_view(), name='codhead_details'),
+    url(r'^codhead/edit(?:/(?P<pk>\d+))?/$', CodheadEdit.as_view(), name='codhead_edit'),
+    url(r'^codhead/list', CodheadListView.as_view(), name='codhead_list'),
+    
     url(r'^canwit/details(?:/(?P<pk>\d+))?/$', CanwitDetails.as_view(), name='canwit_details'),
     url(r'^canwit/edit(?:/(?P<pk>\d+))?/$', CanwitEdit.as_view(), name='canwit_edit'),
     url(r'^canwit/list', CanwitListView.as_view(), name='canwit_list'),

@@ -32,7 +32,7 @@ import json
 from lila.utils import ErrHandle
 from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_entries, get_searchable, get_now_time, \
     add_gold2equal, add_equal2equal, add_ssg_equal2equal, get_helptext, Information, Country, City, Author, Manuscript, \
-    User, Group, Origin, Canwit, MsItem, Canhead, CanwitKeyword, CanwitAustat, NewsItem, \
+    User, Group, Origin, Canwit, MsItem, Codhead, CanwitKeyword, CanwitAustat, NewsItem, \
     SourceInfo, AustatKeyword, ManuscriptExt, Colwit, \
     ManuscriptKeyword, Action, Austat, AustatLink, Location, LocationName, LocationIdentifier, LocationRelation, LocationType, \
     ProvenanceMan, Provenance, Daterange, CollOverlap, BibRange, Feast, Comment, AustatDist, \
@@ -46,7 +46,7 @@ from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_
 from lila.seeker.forms import SearchCollectionForm, SearchManuscriptForm, SearchManuForm, SearchSermonForm, LibrarySearchForm, SignUpForm, \
     AuthorSearchForm, UploadFileForm, UploadFilesForm, ManuscriptForm, CanwitForm, CommentForm, \
     AuthorEditForm, BibRangeForm, FeastForm, ColwitForm, \
-    CanwitSuperForm, SearchUrlForm, \
+    CanwitSuperForm, SearchUrlForm, CodheadForm, \
     CanwitSignatureForm, AustatLinkForm, \
     ReportEditForm, SourceEditForm, ManuscriptProvForm, LocationForm, LocationRelForm, OriginForm, \
     LibraryForm, ManuscriptExtForm, ManuscriptLitrefForm, CanwitKeywordForm, KeywordForm, \
@@ -106,6 +106,7 @@ def get_non_editable_projects(profile, projects):
 def evaluate_projlist(profile, instance, projlist, sText):
     bBack = True
     msg = ""
+    oErr = ErrHandle()
     try:
         if projlist is None or len(projlist) == 0:
             # Check how many projects the user does *NOT* have rights for
@@ -239,6 +240,10 @@ class ManuscriptEdit(BasicDetails):
         if instance != None and instance.mtype == "rec":
             # Also adapt the title
             self.titlesg = "Reconstructed manuscript"
+        # Make sure to check all codico's
+        for codico in instance.manuscriptcodicounits.all():
+            codico.check_hierarchy()
+
         return None
 
     def add_to_context(self, context, instance):
@@ -847,7 +852,7 @@ class ManuscriptHierarchy(ManuscriptDetails):
                 # Debugging:
                 str_hlist = json.dumps(hlist, indent=2)
 
-                # Step 1: Convert any new hierarchical elements into [MsItem] with Canhead
+                # Step 1: Convert any new hierarchical elements into [MsItem] with Codhead
                 head_to_id = {}
                 deletables = []
                 with transaction.atomic():
@@ -856,7 +861,7 @@ class ManuscriptHierarchy(ManuscriptDetails):
                             # This is a new structural element - Create an MsItem
                             msitem = MsItem.objects.create(manu=instance)
                             # Create a new MsHead item
-                            shead = Canhead.objects.create(msitem=msitem,title=item['title'])
+                            shead = Codhead.objects.create(msitem=msitem,title=item['title'])
                             # Make a mapping
                             head_to_id[item['id']] = msitem.id
                             # Testing
@@ -1644,13 +1649,13 @@ class ManuscriptDownload(BasicPart):
                     # What kind of item is this?
                     col_num += 1
                     if msitem.itemheads.count() > 0:
-                        canhead = msitem.itemheads.first()
-                        # This is a Canhead
+                        codhead = msitem.itemheads.first()
+                        # This is a Codhead
                         ws.cell(row=row_num, column=col_num).value = "Structural"
                         col_num += 2
-                        ws.cell(row=row_num, column=col_num).value = canhead.locus
+                        ws.cell(row=row_num, column=col_num).value = codhead.locus
                         col_num += 4
-                        ws.cell(row=row_num, column=col_num).value = canhead.title.strip()
+                        ws.cell(row=row_num, column=col_num).value = codhead.title.strip()
                     else:
                         # This is a Canwit
                         ws.cell(row=row_num, column=col_num).value = "Plain"
@@ -1700,11 +1705,11 @@ class ManuscriptDownload(BasicPart):
 
                     # What kind of item is this?
                     if msitem.itemheads.count() > 0:
-                        canhead = msitem.itemheads.first()
-                        # This is a Canhead
+                        codhead = msitem.itemheads.first()
+                        # This is a Codhead
                         oSermon['type'] = "Structural"
-                        oSermon['locus'] = canhead.locus
-                        oSermon['title'] = canhead.title.strip()
+                        oSermon['locus'] = codhead.locus
+                        oSermon['title'] = codhead.title.strip()
                     else:
                         # This is a Canwit
                         oSermon['type'] = "Plain"
@@ -2223,7 +2228,7 @@ class ColwitDetails(ColwitEdit):
         """Add to the existing context"""
 
         # Start by executing the standard handling
-        context = super(SermonDetails, self).add_to_context(context, instance)
+        context = super(ColwitDetails, self).add_to_context(context, instance)
 
         oErr = ErrHandle()
 
@@ -2232,7 +2237,7 @@ class ColwitDetails(ColwitEdit):
             pass
         except:
             msg = oErr.get_error_message()
-            oErr.DoError("SermonDetails/add_to_context")
+            oErr.DoError("ColwitDetails/add_to_context")
 
         # Return the context we have made
         return context
@@ -2260,7 +2265,7 @@ class ColwitListView(BasicList):
     basic_name = "colwit"
     template_help = "seeker/filter_help.html"
 
-    order_cols = ['author__name', 'siglist', 'srcftext;srcftrans', 'manu__idno', 'title', 'sectiontitle', '','', 'stype']
+    order_cols = ['author__name', 'siglist', 'srchftext;srchftrans', 'manu__idno', 'title', 'sectiontitle', '','', 'stype']
     order_default = order_cols
     order_heads = [
         {'name': 'Author',      'order': 'o=1', 'type': 'str', 'custom': 'author', 'linkdetails': True}, 
@@ -2379,47 +2384,364 @@ class ColwitListView(BasicList):
 # ============= CANONICAL WITNESS VIEWS ============================
 
 
+class CodheadEdit(BasicDetails):
+    """The editable part of one canwit description (manifestation)"""
+    
+    model = Codhead
+    mForm = CodheadForm
+    prefix = "chead"
+    title = "Section" 
+    rtype = "json"
+    mainitems = []
+    basic_name = "codhead"
+    use_team_group = True
+    history_button = True
+    prefix_type = "simple"
+
+    stype_edi_fields = ['locus', 'title']
+
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+
+        oErr = ErrHandle()
+        try:
+            # Need to know who this user (profile) is
+            profile = Profile.get_user_profile(self.request.user.username)
+
+            # Define the main items to show and edit
+            manu_id = None if instance == None else instance.get_manuscript().id
+            context['mainitems'] = [
+                # {'type': 'plain', 'label': "Status:",               'value': instance.get_stype_light(True),'field_key': 'stype'},
+                # -------- HIDDEN field values ---------------
+                {'type': 'plain', 'label': "Manuscript id",         'value': manu_id,                   'field_key': "manu",        'empty': 'hide'},
+                # --------------------------------------------
+                {'type': 'plain', 'label': "Locus:",                'value': instance.locus,            'field_key': "locus"}, 
+                {'type': 'plain', 'label': "Title:",                'value': instance.title,            'field_key': 'title'},
+                 ]
+
+            # Add a button back to the Manuscript
+            topleftlist = []
+            if instance.get_manuscript():
+                manu = instance.get_manuscript()
+                buttonspecs = {'label': "M", 
+                     'title': "Go to manuscript {}".format(manu.idno), 
+                     'url': reverse('manuscript_details', kwargs={'pk': manu.id})}
+                topleftlist.append(buttonspecs)
+                lcity = "" if manu.lcity == None else "{}, ".format(manu.lcity.name)
+                lib = "" if manu.library == None else "{}, ".format(manu.library.name)
+                idno = "{}{}{}".format(lcity, lib, manu.idno)
+            else:
+                idno = "(unknown)"
+            context['topleftbuttons'] = topleftlist
+
+            # Add the manuscript's IDNO completely right
+            title_right = ["<span class='manuscript-idno' title='Manuscript'>{}</span>".format(
+                idno)]
+            #    ... as well as the *title* of the Codico to which I belong
+            codico = instance.msitem.codico
+            codi_title = "cod. unit. {}".format(codico.order)
+            title_right.append("&nbsp;<span class='codico-title' title='Codicologial unit'>{}</span>".format(codi_title))
+            context['title_right'] = "".join(title_right)
+
+            # Signal that we have select2
+            context['has_select2'] = True
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CodheadEdit/add_to_context")
+
+        # Return the context we have made
+        return context
+
+    def after_new(self, form, instance):
+        """Action to be performed after adding a new item"""
+
+        ## Set the 'afternew' URL
+        manu = instance.get_manuscript()
+        #if manu and instance.order < 0:
+        #    # Calculate how many sermons there are
+        #    sermon_count = manu.get_sermon_count()
+        #    # Make sure the new sermon gets changed
+        #    form.instance.order = sermon_count
+
+        # Return positively
+        return True, "" 
+
+    def before_save(self, form, instance):
+        oErr = ErrHandle()
+        bBack = True
+        msg = ""
+        try:
+            if hasattr(form, 'cleaned_data'):
+
+                # Issue #421: check how many projects are attached to the manuscript
+                if not instance is None and not instance.msitem is None and not instance.msitem.manu is None:
+                    # Need to know who is 'talking'...
+                    username = self.request.user.username
+                    profile = Profile.get_user_profile(username)
+
+                    # There is a sermon and a manuscript
+                    manu = instance.msitem.manu
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CodheadEdit/before_save")
+            bBack = False
+        return bBack, msg
+
+    def after_save(self, form, instance):
+        """This is for processing items from the list of available ones"""
+
+        msg = ""
+        bResult = True
+        oErr = ErrHandle()
+        method = "nodistance"   # Alternative: "superdist"
+        
+        try:
+            # Process many-to-many changes: Add and remove relations in accordance with the new set passed on by the user
+            if getattr(form, 'cleaned_data') != None:
+                pass
+        except:
+            msg = oErr.get_error_message()
+            bResult = False
+        return bResult, msg
+
+    def action_add(self, instance, details, actiontype):
+        """User can fill this in to his/her liking"""
+        lila_action_add(self, instance, details, actiontype)
+
+    def get_history(self, instance):
+        return lila_get_history(instance)
+
+
+class CodheadDetails(CodheadEdit):
+    """The details of one manuscript section (Codhead)"""
+
+    rtype = "html"
+
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+
+        # Start by executing the standard handling
+        context = super(CodheadDetails, self).add_to_context(context, instance)
+
+        oErr = ErrHandle()
+
+        try:
+            context['sections'] = []
+
+            # List of post-load objects
+            context['postload_objects'] = []
+
+            # Lists of related objects
+            context['related_objects'] = []
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CodheadDetails/add_to_context")
+
+        # Return the context we have made
+        return context
+
+    def before_save(self, form, instance):
+        bResult = True
+        msg = ""
+        oErr = ErrHandle()
+        try:
+            # If needed, create an MsItem
+            if instance.msitem == None:
+                # Make sure we have the manuscript
+                manu = form.cleaned_data.get("manu", None)
+                msitem = MsItem.objects.create(manu=manu)
+                # Now make sure to set the link from Manuscript to MsItem
+                instance.msitem = msitem
+
+            # Double check for the presence of manu and order
+            if instance.msitem and instance.msitem.order < 0:
+                # Calculate how many MSITEMS (!) there are
+                msitem_count = instance.msitem.manu.manuitems.all().count()
+                # Adapt the MsItem order
+                msitem.order = msitem_count
+                msitem.save()
+                # Find out which is the one PRECEDING me (if any) at the HIGHEST level
+                prec_list = instance.msitem.manu.manuitems.filter(parent__isnull=True, order__gt=msitem.order)
+                if prec_list.count() > 0:
+                    # Get the last item
+                    prec_item = prec_list.last()
+                    # Set the 'Next' here correctly
+                    prec_item.next = msitem
+                    prec_item.save()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CodheadDetails/before_save")
+            bResult = False
+
+        return bResult, msg
+
+    def process_formset(self, prefix, request, formset):
+        return None
+
+    def after_save(self, form, instance):
+        return True, ""
+
+
+class CodheadListView(BasicList):
+    """Search and list sermons"""
+    
+    model = Codhead
+    listform = CodheadForm
+    has_select2 = True
+    use_team_group = True
+    paginate_by = 20
+    bUseFilter = True
+    prefix = "chead"
+    new_button = False      # Don't show the [Add new sermon] button here. It is shown under the Manuscript Details view.
+    basketview = False
+    plural_name = "Manuscript sections"
+    basic_name = "codhead"
+    template_help = "seeker/filter_help.html"
+
+    order_cols = ['msitem__manu__idno', 'title', 'locus']
+    order_default = order_cols
+    order_heads = [
+        {'name': 'Manuscript',  'order': 'o=4', 'type': 'str', 'custom': 'manuscript'},
+        {'name': 'Title',       'order': 'o=5', 'type': 'str', 'custom': 'title', 
+         'allowwrap': True,           'autohide': "on", 'filter': 'filter_title'},
+        {'name': 'Locus',       'order': '',    'type': 'str', 'field':  'locus' }
+         ]
+
+    filters = [ {"name": "Manuscript",       "id": "filter_manuid",         "enabled": False},
+                {"name": "Title",            "id": "filter_title",          "enabled": False},
+                ]
+    
+    searches = [
+        {'section': '', 'filterlist': [
+            {'filter': 'title',     'dbfield': 'title',         'keyS': 'srch_title'},
+            {'filter': 'manuid',    'fkfield': 'msitem__manu',  'keyS': 'manuidno',     'keyList': 'manuidlist', 'keyFk': 'idno', 'infield': 'id'},
+            ]},
+        {'section': 'other', 'filterlist': [
+            {'filter': 'mtype',     'dbfield': 'msitem__mtype',    'keyS': 'mtype'},
+            ]}
+         ]
+
+    def initializations(self):
+        oErr = ErrHandle()
+        try:
+            # ======== One-time adaptations ==============
+            listview_adaptations("canwit_list")
+
+            # Make sure to set a basic filter
+            self.basic_filter = Q(mtype="man")
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CodheadListView/initializations")
+        return None
+
+    def add_to_context(self, context, initial):
+        # Find out who the user is
+        profile = Profile.get_user_profile(self.request.user.username)
+        return context
+
+    def get_field_value(self, instance, custom):
+        sBack = ""
+        sTitle = ""
+        html = []
+        if custom == "manuscript":
+            manu = instance.get_manuscript()
+            if manu == None:
+                html.append("-")
+            else:
+                if manu.idno == None:
+                    sIdNo = "-"
+                else:
+                    sIdNo = manu.idno[:20]
+                html.append("<a href='{}' class='nostyle'><span style='font-size: small;'>{}</span></a>".format(
+                    reverse('manuscript_details', kwargs={'pk': manu.id}),
+                    sIdNo))
+                sTitle = manu.idno
+        elif custom == "title":
+            sTitle = ""
+            if instance.title != None and instance.title != "":
+                sTitle = instance.title
+            html.append(sTitle)
+            
+        # Combine the HTML code
+        sBack = "\n".join(html)
+        return sBack, sTitle
+
+    def adapt_search(self, fields):
+        # Adapt the search to the keywords that *may* be shown
+        lstExclude=[]
+        qAlternative = None
+        oErr = ErrHandle()
+
+        try:
+            # Make sure we show MANUSCRIPTS (identifiers) as well as reconstructions
+            lstExclude.append(Q(mtype='tem') )
+
+            # Double check the length of the exclude list
+            if len(lstExclude) == 0:
+                lstExclude = None
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CodheadListView/adapt_search")
+        
+        return fields, lstExclude, qAlternative
+
+    def view_queryset(self, qs):
+        search_id = [x['id'] for x in qs.values('id')]
+        profile = Profile.get_user_profile(self.request.user.username)
+        profile.search_sermo = json.dumps(search_id)
+        profile.save()
+        return None
+
+    def get_helptext(self, name):
+        """Use the get_helptext function defined in models.py"""
+        return get_helptext(name)
+
+
+# ============= CANONICAL WITNESS VIEWS ============================
+
+
 class CanwitEdit(BasicDetails):
-    """The editable part of one sermon description (manifestation)"""
+    """The editable part of one canwit description (manifestation)"""
     
     model = Canwit
     mForm = CanwitForm
-    prefix = "sermo"
-    title = "Sermon" 
+    prefix = "canwi"
+    title = "Canon Witness" 
     rtype = "json"
     mainitems = []
-    basic_name = "sermon"
+    basic_name = "canwit"
     use_team_group = True
     history_button = True
     prefix_type = "simple"
 
     StossgFormSet = inlineformset_factory(Canwit, CanwitAustat,
                                          form=CanwitSuperForm, min_num=0,
-                                         fk_name = "sermon",
+                                         fk_name = "canwit",
                                          extra=0, can_delete=True, can_order=False)
     SDkwFormSet = inlineformset_factory(Canwit, CanwitKeyword,
                                        form=CanwitKeywordForm, min_num=0,
-                                       fk_name="sermon", extra=0)
+                                       fk_name="canwit", extra=0)
     SDcolFormSet = inlineformset_factory(Canwit, CollectionSerm,
                                        form=CanwitCollectionForm, min_num=0,
-                                       fk_name="sermon", extra=0)
+                                       fk_name="canwit", extra=0)
     SDsignFormSet = inlineformset_factory(Canwit, CanwitSignature,
                                          form=CanwitSignatureForm, min_num=0,
-                                         fk_name = "sermon",
+                                         fk_name = "canwit",
                                          extra=0, can_delete=True, can_order=False)
     SbrefFormSet = inlineformset_factory(Canwit, BibRange,
                                          form=BibRangeForm, min_num=0,
-                                         fk_name = "sermon",
+                                         fk_name = "canwit",
                                          extra=0, can_delete=True, can_order=False)
 
-    formset_objects = [{'formsetClass': StossgFormSet, 'prefix': 'stossg', 'readonly': False, 'noinit': True, 'linkfield': 'sermon'},
-                       {'formsetClass': SDkwFormSet,   'prefix': 'sdkw',   'readonly': False, 'noinit': True, 'linkfield': 'sermon'},                       
-                       {'formsetClass': SDcolFormSet,  'prefix': 'sdcol',  'readonly': False, 'noinit': True, 'linkfield': 'sermo'},
-                       {'formsetClass': SDsignFormSet, 'prefix': 'sdsig',  'readonly': False, 'noinit': True, 'linkfield': 'sermon'},
-                       {'formsetClass': SbrefFormSet,  'prefix': 'sbref',  'readonly': False, 'noinit': True, 'linkfield': 'sermon'}] 
+    formset_objects = [{'formsetClass': StossgFormSet, 'prefix': 'stossg', 'readonly': False, 'noinit': True, 'linkfield': 'canwit'},
+                       {'formsetClass': SDkwFormSet,   'prefix': 'sdkw',   'readonly': False, 'noinit': True, 'linkfield': 'canwit'},                       
+                       {'formsetClass': SDcolFormSet,  'prefix': 'sdcol',  'readonly': False, 'noinit': True, 'linkfield': 'canwit'},
+                       {'formsetClass': SDsignFormSet, 'prefix': 'sdsig',  'readonly': False, 'noinit': True, 'linkfield': 'canwit'},
+                       {'formsetClass': SbrefFormSet,  'prefix': 'sbref',  'readonly': False, 'noinit': True, 'linkfield': 'canwit'}] 
 
-    stype_edi_fields = ['manu', 'locus', 'author', 'sectiontitle', 'title', 'subtitle', 'incipit', 'explicit', 'postscriptum', 'quote', 
-                                'bibnotes', 'feast', 'bibleref', 'additional', 'note',
+    stype_edi_fields = ['locus', 'author', 'sectiontitle', 'title', 'subtitle', 'ftext', 'ftrans', 'postscriptum', 'quote', 
+                                'bibnotes', 'feast', 'bibleref', 'additional', 'note',  # 'manu', 
                         #'kwlist',
                         'CanwitSignature', 'siglist',
                         #'CollectionSerm', 'collist_s',
@@ -2460,144 +2782,149 @@ class CanwitEdit(BasicDetails):
     def add_to_context(self, context, instance):
         """Add to the existing context"""
 
-        # Need to know who this user (profile) is
-        profile = Profile.get_user_profile(self.request.user.username)
+        oErr = ErrHandle()
+        try:
+            # Need to know who this user (profile) is
+            profile = Profile.get_user_profile(self.request.user.username)
 
-        istemplate = (instance.mtype == "tem")
+            istemplate = (instance.mtype == "tem")
 
-        # Define the main items to show and edit
-        # manu_id = None if instance == None or instance.manu == None else instance.manu.id
-        manu_id = None if instance == None else instance.get_manuscript().id
-        context['mainitems'] = []
-        # Possibly add the Template identifier
-        if istemplate:
-            context['mainitems'].append(
-                {'type': 'plain', 'label': "Template:", 'value': instance.get_template_link(profile)}
-                )
-        # Get the main items
-        mainitems_main = [
-            {'type': 'plain', 'label': "Status:",               'value': instance.get_stype_light(True),'field_key': 'stype'},
-            # -------- HIDDEN field values ---------------
-            {'type': 'plain', 'label': "Manuscript id",         'value': manu_id,                   'field_key': "manu",        'empty': 'hide'},
-            # --------------------------------------------
-            {'type': 'plain', 'label': "Locus:",                'value': instance.locus,            'field_key': "locus"}, 
-            {'type': 'safe',  'label': "Attributed author:",    'value': instance.get_author(),     'field_key': 'author'},
-            {'type': 'plain', 'label': "Author certainty:",     'value': instance.get_autype(),     'field_key': 'autype', 'editonly': True},
-            {'type': 'plain', 'label': "Section title:",        'value': instance.sectiontitle,     'field_key': 'sectiontitle'},
-            {'type': 'safe',  'label': "Lectio:",               'value': instance.get_quote_markdown(),'field_key': 'quote'}, 
-            {'type': 'plain', 'label': "Title:",                'value': instance.title,            'field_key': 'title'},
-            # Issue #237, delete subtitle
-            {'type': 'plain', 'label': "Sub title:",            'value': instance.subtitle,         'field_key': 'subtitle', 
-             'editonly': True, 'title': 'The subtitle field is legacy. It is edit-only, non-viewable'},
-            {'type': 'safe',  'label': "Incipit:",              'value': instance.get_incipit_markdown(), 
-             'field_key': 'incipit',  'key_ta': 'srmincipit-key'}, 
-            {'type': 'safe',  'label': "Explicit:",             'value': instance.get_explicit_markdown(),
-             'field_key': 'explicit', 'key_ta': 'srmexplicit-key'}, 
-            {'type': 'safe',  'label': "Postscriptum:",         'value': instance.get_postscriptum_markdown(),
-             'field_key': 'postscriptum'}, 
-            # Issue #23: delete bibliographic notes
-            {'type': 'plain', 'label': "Bibliographic notes:",  'value': instance.bibnotes,         'field_key': 'bibnotes', 
-             'editonly': True, 'title': 'The bibliographic-notes field is legacy. It is edit-only, non-viewable'},
-            {'type': 'plain', 'label': "Feast:",                'value': instance.get_feast(),      'field_key': 'feast'}
-             ]
-        exclude_field_keys = ['locus']
-        for item in mainitems_main: 
-            # Make sure to exclude field key 'locus'
-            if not istemplate or item['field_key'] not in exclude_field_keys:
-                context['mainitems'].append(item)
+            # Define the main items to show and edit
+            # manu_id = None if instance == None or instance.manu == None else instance.manu.id
+            manu_id = None if instance == None else instance.get_manuscript().id
+            context['mainitems'] = []
+            # Possibly add the Template identifier
+            if istemplate:
+                context['mainitems'].append(
+                    {'type': 'plain', 'label': "Template:", 'value': instance.get_template_link(profile)}
+                    )
+            # Get the main items
+            mainitems_main = [
+                {'type': 'plain', 'label': "Status:",               'value': instance.get_stype_light(True),'field_key': 'stype'},
+                # -------- HIDDEN field values ---------------
+                {'type': 'plain', 'label': "Manuscript id",         'value': manu_id,                   'field_key': "manu",        'empty': 'hide'},
+                # --------------------------------------------
+                {'type': 'plain', 'label': "Locus:",                'value': instance.locus,            'field_key': "locus"}, 
+                {'type': 'safe',  'label': "Attributed author:",    'value': instance.get_author(),     'field_key': 'author'},
+                {'type': 'plain', 'label': "Author certainty:",     'value': instance.get_autype(),     'field_key': 'autype', 'editonly': True},
+                {'type': 'plain', 'label': "Section title:",        'value': instance.sectiontitle,     'field_key': 'sectiontitle'},
+                {'type': 'safe',  'label': "Lectio:",               'value': instance.get_quote_markdown(),'field_key': 'quote'}, 
+                {'type': 'plain', 'label': "Title:",                'value': instance.title,            'field_key': 'title'},
+                # Issue #237, delete subtitle
+                {'type': 'plain', 'label': "Sub title:",            'value': instance.subtitle,         'field_key': 'subtitle', 
+                 'editonly': True, 'title': 'The subtitle field is legacy. It is edit-only, non-viewable'},
+                {'type': 'safe',  'label': "Full text:",              'value': instance.get_ftext_markdown(), 
+                 'field_key': 'ftext',  'key_ta': 'srmincipit-key'}, 
+                {'type': 'safe',  'label': "Translation:",             'value': instance.get_ftrans_markdown(),
+                 'field_key': 'ftrans', 'key_ta': 'srmexplicit-key'}, 
+                {'type': 'safe',  'label': "Postscriptum:",         'value': instance.get_postscriptum_markdown(),
+                 'field_key': 'postscriptum'}, 
+                # Issue #23: delete bibliographic notes
+                {'type': 'plain', 'label': "Bibliographic notes:",  'value': instance.bibnotes,         'field_key': 'bibnotes', 
+                 'editonly': True, 'title': 'The bibliographic-notes field is legacy. It is edit-only, non-viewable'},
+                {'type': 'plain', 'label': "Feast:",                'value': instance.get_feast(),      'field_key': 'feast'}
+                 ]
+            exclude_field_keys = ['locus']
+            for item in mainitems_main: 
+                # Make sure to exclude field key 'locus'
+                if not istemplate or item['field_key'] not in exclude_field_keys:
+                    context['mainitems'].append(item)
 
-        # Bibref and Cod. notes can only be added to non-templates
-        if not istemplate:
-            mainitems_BibRef ={'type': 'plain', 'label': "Bible reference(s):",   'value': instance.get_bibleref(),        
-             'multiple': True, 'field_list': 'bibreflist', 'fso': self.formset_objects[4]}
-            context['mainitems'].append(mainitems_BibRef)
-            mainitems_CodNotes ={'type': 'plain', 'label': "Cod. notes:",           'value': instance.additional,       
-             'field_key': 'additional',   'title': 'Codicological notes'}
-            context['mainitems'].append(mainitems_CodNotes)
+            # Bibref and Cod. notes can only be added to non-templates
+            if not istemplate:
+                mainitems_BibRef ={'type': 'plain', 'label': "Bible reference(s):",   'value': instance.get_bibleref(),        
+                 'multiple': True, 'field_list': 'bibreflist', 'fso': self.formset_objects[4]}
+                context['mainitems'].append(mainitems_BibRef)
+                mainitems_CodNotes ={'type': 'plain', 'label': "Cod. notes:",           'value': instance.additional,       
+                 'field_key': 'additional',   'title': 'Codicological notes'}
+                context['mainitems'].append(mainitems_CodNotes)
 
-        mainitems_more =[
-            {'type': 'plain', 'label': "Note:",                 'value': instance.get_note_markdown(),             'field_key': 'note'}
-            ]
-        for item in mainitems_more: context['mainitems'].append(item)
-
-        if not istemplate:
-            username = profile.user.username
-            team_group = app_editor
-            mainitems_m2m = [
-                {'type': 'line',  'label': "Keywords:",             'value': instance.get_keywords_markdown(), 
-                 # 'multiple': True,  'field_list': 'kwlist',         'fso': self.formset_objects[1]},
-                 'field_list': 'kwlist',         'fso': self.formset_objects[1]},
-                {'type': 'plain', 'label': "Keywords (user):", 'value': instance.get_keywords_user_markdown(profile),   'field_list': 'ukwlist',
-                 'title': 'User-specific keywords. If the moderator accepts these, they move to regular keywords.'},
-                {'type': 'line',  'label': "Keywords (related):",   'value': instance.get_keywords_ssg_markdown(),
-                 'title': 'Keywords attached to the Authority file(s)'},
-                {'type': 'line',    'label': "Gryson/Clavis:",'value': instance.get_eqsetsignatures_markdown('combi'),
-                 'title': "Gryson/Clavis codes of the Sermons Gold that are part of the same equality set + those manually linked to this manifestation Sermon"}, 
-                {'type': 'line',    'label': "Gryson/Clavis (manual):",'value': instance.get_sermonsignatures_markdown(),
-                 'title': "Gryson/Clavis codes manually linked to this manifestation Sermon", 'unique': True, 'editonly': True, 
-                 'multiple': True,
-                 'field_list': 'siglist_m', 'fso': self.formset_objects[3], 'template_selection': 'ru.lila.sigs_template'},
-                {'type': 'plain',   'label': "Personal datasets:",  'value': instance.get_collections_markdown(username, team_group, settype="pd"), 
-                 'multiple': True,  'field_list': 'collist_s',      'fso': self.formset_objects[2] },
-                {'type': 'plain',   'label': "Public datasets (link):",  'value': instance.get_collection_link("pd"), 
-                 'title': "Public datasets in which an Authority file is that is linked to this sermon"},
-                {'type': 'plain',   'label': "Historical collections (link):",  'value': instance.get_collection_link("hc"), 
-                 'title': "Historical collections in which an Authority file is that is linked to this sermon"},
-                {'type': 'line',    'label': "Editions:",           'value': instance.get_editions_markdown(),
-                 'title': "Editions of the Sermons Gold that are part of the same equality set"},
-                {'type': 'line',    'label': "Literature:",         'value': instance.get_litrefs_markdown()},
-                # Project HIER
-                {'type': 'plain', 'label': "Project:",     'value': instance.get_project_markdown2(), 'field_list': 'projlist'},
+            mainitems_more =[
+                {'type': 'plain', 'label': "Note:",                 'value': instance.get_note_markdown(),             'field_key': 'note'}
                 ]
-            for item in mainitems_m2m: context['mainitems'].append(item)
-        # IN all cases
-        mainitems_SSG = {'type': 'line',    'label': "Authority file links:",  'value': self.get_superlinks_markdown(instance), 
-             'multiple': True,  'field_list': 'superlist',       'fso': self.formset_objects[0], 
-             'inline_selection': 'ru.lila.ssglink_template',   'template_selection': 'ru.lila.ssgdist_template'}
-        context['mainitems'].append(mainitems_SSG)
-        # Notes:
-        # Collections: provide a link to the Sermon-listview, filtering on those Sermons that are part of one particular collection
+            for item in mainitems_more: context['mainitems'].append(item)
 
-        # Add a button back to the Manuscript
-        topleftlist = []
-        if instance.get_manuscript():
-            manu = instance.get_manuscript()
-            buttonspecs = {'label': "M", 
-                 'title': "Go to manuscript {}".format(manu.idno), 
-                 'url': reverse('manuscript_details', kwargs={'pk': manu.id})}
-            topleftlist.append(buttonspecs)
-            lcity = "" if manu.lcity == None else "{}, ".format(manu.lcity.name)
-            lib = "" if manu.library == None else "{}, ".format(manu.library.name)
-            idno = "{}{}{}".format(lcity, lib, manu.idno)
-        else:
-            idno = "(unknown)"
-        context['topleftbuttons'] = topleftlist
-        # Add something right to the SermonDetails title
-        # OLD: context['title_addition'] = instance.get_eqsetsignatures_markdown('first')
-        # Changed in issue #241: show the lila code
-        context['title_addition'] = instance.get_lilacode_markdown()
-        # Add the manuscript's IDNO completely right
-        title_right = ["<span class='manuscript-idno' title='Manuscript'>{}</span>".format(
-            idno)]
-        #    ... as well as the *title* of the Codico to which I belong
-        codico = instance.msitem.codico
+            if not istemplate:
+                username = profile.user.username
+                team_group = app_editor
+                mainitems_m2m = [
+                    {'type': 'line',  'label': "Keywords:",             'value': instance.get_keywords_markdown(), 
+                     # 'multiple': True,  'field_list': 'kwlist',         'fso': self.formset_objects[1]},
+                     'field_list': 'kwlist',         'fso': self.formset_objects[1]},
+                    {'type': 'plain', 'label': "Keywords (user):", 'value': instance.get_keywords_user_markdown(profile),   'field_list': 'ukwlist',
+                     'title': 'User-specific keywords. If the moderator accepts these, they move to regular keywords.'},
+                    {'type': 'line',  'label': "Keywords (related):",   'value': instance.get_keywords_ssg_markdown(),
+                     'title': 'Keywords attached to the Authority file(s)'},
+                    {'type': 'line',    'label': "Gryson/Clavis:",'value': instance.get_eqsetsignatures_markdown('combi'),
+                     'title': "Gryson/Clavis codes of the Sermons Gold that are part of the same equality set + those manually linked to this manifestation Sermon"}, 
+                    {'type': 'line',    'label': "Gryson/Clavis (manual):",'value': instance.get_sermonsignatures_markdown(),
+                     'title': "Gryson/Clavis codes manually linked to this manifestation Sermon", 'unique': True, 'editonly': True, 
+                     'multiple': True,
+                     'field_list': 'siglist_m', 'fso': self.formset_objects[3], 'template_selection': 'ru.lila.sigs_template'},
+                    {'type': 'plain',   'label': "Personal datasets:",  'value': instance.get_collections_markdown(username, team_group, settype="pd"), 
+                     'multiple': True,  'field_list': 'collist_s',      'fso': self.formset_objects[2] },
+                    {'type': 'plain',   'label': "Public datasets (link):",  'value': instance.get_collection_link("pd"), 
+                     'title': "Public datasets in which an Authority file is that is linked to this sermon"},
+                    {'type': 'plain',   'label': "Historical collections (link):",  'value': instance.get_collection_link("hc"), 
+                     'title': "Historical collections in which an Authority file is that is linked to this sermon"},
+                    {'type': 'line',    'label': "Editions:",           'value': instance.get_editions_markdown(),
+                     'title': "Editions of the Sermons Gold that are part of the same equality set"},
+                    {'type': 'line',    'label': "Literature:",         'value': instance.get_litrefs_markdown()},
+                    # Project HIER
+                    {'type': 'plain', 'label': "Project:",     'value': instance.get_project_markdown2(), 'field_list': 'projlist'},
+                    ]
+                for item in mainitems_m2m: context['mainitems'].append(item)
+            # IN all cases
+            mainitems_SSG = {'type': 'line',    'label': "Authority file links:",  'value': self.get_superlinks_markdown(instance), 
+                 'multiple': True,  'field_list': 'superlist',       'fso': self.formset_objects[0], 
+                 'inline_selection': 'ru.lila.ssglink_template',   'template_selection': 'ru.lila.ssgdist_template'}
+            context['mainitems'].append(mainitems_SSG)
+            # Notes:
+            # Collections: provide a link to the Sermon-listview, filtering on those Sermons that are part of one particular collection
 
-        # Old code for [codi_title]: codi_title = "?" if codico == None or codico.name == "" else codico.name
-        # Issue #422: change the text of the [codi_title]
-        codi_title = "cod. unit. {}".format(codico.order)
-        title_right.append("&nbsp;<span class='codico-title' title='Codicologial unit'>{}</span>".format(codi_title))
-        context['title_right'] = "".join(title_right)
+            # Add a button back to the Manuscript
+            topleftlist = []
+            if instance.get_manuscript():
+                manu = instance.get_manuscript()
+                buttonspecs = {'label': "M", 
+                     'title': "Go to manuscript {}".format(manu.idno), 
+                     'url': reverse('manuscript_details', kwargs={'pk': manu.id})}
+                topleftlist.append(buttonspecs)
+                lcity = "" if manu.lcity == None else "{}, ".format(manu.lcity.name)
+                lib = "" if manu.library == None else "{}, ".format(manu.library.name)
+                idno = "{}{}{}".format(lcity, lib, manu.idno)
+            else:
+                idno = "(unknown)"
+            context['topleftbuttons'] = topleftlist
+            # Add something right to the CanwitDetails title
+            # OLD: context['title_addition'] = instance.get_eqsetsignatures_markdown('first')
+            # Changed in issue #241: show the lila code
+            context['title_addition'] = instance.get_lilacode_markdown()
+            # Add the manuscript's IDNO completely right
+            title_right = ["<span class='manuscript-idno' title='Manuscript'>{}</span>".format(
+                idno)]
+            #    ... as well as the *title* of the Codico to which I belong
+            codico = instance.msitem.codico
 
-        # Signal that we have select2
-        context['has_select2'] = True
+            # Old code for [codi_title]: codi_title = "?" if codico == None or codico.name == "" else codico.name
+            # Issue #422: change the text of the [codi_title]
+            codi_title = "cod. unit. {}".format(codico.order)
+            title_right.append("&nbsp;<span class='codico-title' title='Codicologial unit'>{}</span>".format(codi_title))
+            context['title_right'] = "".join(title_right)
 
-        # Add comment modal stuff
-        initial = dict(otype="sermo", objid=instance.id, profile=profile)
-        context['commentForm'] = CommentForm(initial=initial, prefix="com")
-        context['comment_list'] = get_usercomments('sermo', instance, profile)
-        lhtml = []
-        lhtml.append(render_to_string("seeker/comment_add.html", context, self.request))
-        context['after_details'] = "\n".join(lhtml)
+            # Signal that we have select2
+            context['has_select2'] = True
+
+            # Add comment modal stuff
+            initial = dict(otype="sermo", objid=instance.id, profile=profile)
+            context['commentForm'] = CommentForm(initial=initial, prefix="com")
+            context['comment_list'] = get_usercomments('sermo', instance, profile)
+            lhtml = []
+            lhtml.append(render_to_string("seeker/comment_add.html", context, self.request))
+            context['after_details'] = "\n".join(lhtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CanwitEdit/add_to_context")
 
         # Return the context we have made
         return context
@@ -2608,7 +2935,7 @@ class CanwitEdit(BasicDetails):
         sBack = ""
         if instance:
             # Add to context
-            context['superlist'] = instance.canwit_austat.all().order_by('sermon__author__name', 'sermon__siglist')
+            context['superlist'] = instance.canwit_austat.all().order_by('canwit__author__name', 'canwit__siglist')
             context['is_app_editor'] = user_is_ingroup(self.request, app_editor)
             context['object_id'] = instance.id
             # Calculate with the template
@@ -2741,7 +3068,7 @@ class CanwitEdit(BasicDetails):
                             #bNeedSaving = False
 
                             ## Double check if this one already exists for the current instance
-                            #obj = instance.sermonbibranges.filter(book=onebook, chvslist=newchvs, intro=newintro, added=newadded).first()
+                            #obj = instance.canwitbibranges.filter(book=onebook, chvslist=newchvs, intro=newintro, added=newadded).first()
                             #if obj == None:
                             #    obj = BibRange.objects.create(sermon=instance, book=onebook, chvslist=newchvs)
                             #    bNeedSaving = True
@@ -2753,7 +3080,7 @@ class CanwitEdit(BasicDetails):
                             #    bNeedSaving = True
                             #if bNeedSaving:
                             #    obj.save()
-                            #    x = instance.sermonbibranges.all()
+                            #    x = instance.canwitbibranges.all()
 
                             form.instance.book = onebook
                             if newchvs != None:
@@ -2827,12 +3154,12 @@ class CanwitEdit(BasicDetails):
             if getattr(form, 'cleaned_data') != None:
                 # (1) 'keywords'
                 kwlist = form.cleaned_data['kwlist']
-                adapt_m2m(CanwitKeyword, instance, "sermon", kwlist, "keyword")
+                adapt_m2m(CanwitKeyword, instance, "canwit", kwlist, "keyword")
             
                 # (2) user-specific 'keywords'
                 ukwlist = form.cleaned_data['ukwlist']
                 profile = Profile.get_user_profile(self.request.user.username)
-                adapt_m2m(UserKeyword, instance, "sermo", ukwlist, "keyword", qfilter = {'profile': profile}, extrargs = {'profile': profile, 'type': 'sermo'})
+                adapt_m2m(UserKeyword, instance, "canwit", ukwlist, "keyword", qfilter = {'profile': profile}, extrargs = {'profile': profile, 'type': 'sermo'})
 
                 ## (3) 'Links to Sermon (not 'Gold') Signatures'
                 #siglist = form.cleaned_data['siglist']
@@ -2840,16 +3167,16 @@ class CanwitEdit(BasicDetails):
 
                 # (4) 'Links to Gold Sermons'
                 superlist = form.cleaned_data['superlist']
-                adapt_m2m(CanwitAustat, instance, "sermon", superlist, "super", extra = ['linktype'], related_is_through=True)
+                adapt_m2m(CanwitAustat, instance, "canwit", superlist, "super", extra = ['linktype'], related_is_through=True)
 
                 # (5) 'collections'
                 collist_s = form.cleaned_data['collist_s']
-                adapt_m2m(CollectionSerm, instance, "sermon", collist_s, "collection")
+                adapt_m2m(CollectionSerm, instance, "canwit", collist_s, "collection")
 
                 # (6) 'projects'
                 projlist = form.cleaned_data['projlist']
                 sermo_proj_deleted = []
-                adapt_m2m(CanwitProject, instance, "sermon", projlist, "project", deleted=sermo_proj_deleted)
+                adapt_m2m(CanwitProject, instance, "canwit", projlist, "project", deleted=sermo_proj_deleted)
                 project_dependant_delete(self.request, sermo_proj_deleted)
 
                 # When sermons have been added to the manuscript, the sermons need to be updated 
@@ -2864,16 +3191,16 @@ class CanwitEdit(BasicDetails):
                     manu_project_count = manu.projects.count()
                     if manu_project_count == 1:
                         project = manu.projects.first()
-                        CanwitProject.objects.create(sermon=instance, project=project)
+                        CanwitProject.objects.create(canwit=instance, project=project)
 
                 # Process many-to-ONE changes
                 # (1) links from bibrange to sermon
                 bibreflist = form.cleaned_data['bibreflist']
-                adapt_m2o(BibRange, instance, "sermon", bibreflist)
+                adapt_m2o(BibRange, instance, "canwit", bibreflist)
 
                 # (2) 'canwitsignatures'
                 siglist_m = form.cleaned_data['siglist_m']
-                adapt_m2o(CanwitSignature, instance, "sermon", siglist_m)
+                adapt_m2o(CanwitSignature, instance, "canwit", siglist_m)
 
             ## Make sure the 'verses' field is adapted, if needed
             #bResult, msg = instance.adapt_verses()
@@ -2905,7 +3232,7 @@ class CanwitDetails(CanwitEdit):
         """Add to the existing context"""
 
         # Start by executing the standard handling
-        context = super(SermonDetails, self).add_to_context(context, instance)
+        context = super(CanwitDetails, self).add_to_context(context, instance)
 
         oErr = ErrHandle()
 
@@ -2923,9 +3250,9 @@ class CanwitDetails(CanwitEdit):
                     # (1) copy author
                     if equal.author != None: obj.author = equal.author
                     # (2) copy incipit
-                    if equal.incipit != None and equal.incipit != "": obj.incipit = equal.incipit ; obj.srcftext = equal.srcftext
+                    if equal.incipit != None and equal.incipit != "": obj.incipit = equal.incipit ; obj.srchftext = equal.srchftext
                     # (3) copy explicit
-                    if equal.explicit != None and equal.explicit != "": obj.explicit = equal.explicit ; obj.srcftrans = equal.srcftrans
+                    if equal.explicit != None and equal.explicit != "": obj.explicit = equal.explicit ; obj.srchftrans = equal.srchftrans
 
                     # Now save the adapted Austat obj
                     obj.save()
@@ -2948,42 +3275,50 @@ class CanwitDetails(CanwitEdit):
                 context['related_objects'] = []
         except:
             msg = oErr.get_error_message()
-            oErr.DoError("SermonDetails/add_to_context")
+            oErr.DoError("CanwitDetails/add_to_context")
 
         # Return the context we have made
         return context
 
     def before_save(self, form, instance):
-        # If needed, create an MsItem
-        if instance.msitem == None:
-            # Make sure we have the manuscript
-            manu = form.cleaned_data.get("manu", None)
-            msitem = MsItem.objects.create(manu=manu)
-            # Now make sure to set the link from Manuscript to MsItem
-            instance.msitem = msitem
+        bResult = True
+        msg = ""
+        oErr = ErrHandle()
+        try:
+            # If needed, create an MsItem
+            if instance.msitem == None:
+                # Make sure we have the manuscript
+                manu = form.cleaned_data.get("manu", None)
+                msitem = MsItem.objects.create(manu=manu)
+                # Now make sure to set the link from Manuscript to MsItem
+                instance.msitem = msitem
 
-            # If possible, also get the mtype
-            mtype = self.qd.get("sermo-mtype", None)
-            if mtype != None:
-                instance.mtype = mtype
+                # If possible, also get the mtype
+                mtype = self.qd.get("sermo-mtype", None)
+                if mtype != None:
+                    instance.mtype = mtype
 
-        # Double check for the presence of manu and order
-        if instance.msitem and instance.msitem.order < 0:
-            # Calculate how many MSITEMS (!) there are
-            msitem_count = instance.msitem.manu.manuitems.all().count()
-            # Adapt the MsItem order
-            msitem.order = msitem_count
-            msitem.save()
-            # Find out which is the one PRECEDING me (if any) at the HIGHEST level
-            prec_list = instance.msitem.manu.manuitems.filter(parent__isnull=True, order__gt=msitem.order)
-            if prec_list.count() > 0:
-                # Get the last item
-                prec_item = prec_list.last()
-                # Set the 'Next' here correctly
-                prec_item.next = msitem
-                prec_item.save()
+            # Double check for the presence of manu and order
+            if instance.msitem and instance.msitem.order < 0:
+                # Calculate how many MSITEMS (!) there are
+                msitem_count = instance.msitem.manu.manuitems.all().count()
+                # Adapt the MsItem order
+                msitem.order = msitem_count
+                msitem.save()
+                # Find out which is the one PRECEDING me (if any) at the HIGHEST level
+                prec_list = instance.msitem.manu.manuitems.filter(parent__isnull=True, order__gt=msitem.order)
+                if prec_list.count() > 0:
+                    # Get the last item
+                    prec_item = prec_list.last()
+                    # Set the 'Next' here correctly
+                    prec_item.next = msitem
+                    prec_item.save()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CanwitDetails/before_save")
+            bResult = False
 
-        return True, ""
+        return bResult, msg
 
     def process_formset(self, prefix, request, formset):
         return None
@@ -3008,7 +3343,7 @@ class CanwitListView(BasicList):
     basic_name = "sermon"
     template_help = "seeker/filter_help.html"
 
-    order_cols = ['author__name', 'siglist', 'srcftext;srcftrans', 'manu__idno', 'title', 'sectiontitle', '','', 'stype']
+    order_cols = ['author__name', 'siglist', 'srchftext;srchftrans', 'manu__idno', 'title', 'sectiontitle', '','', 'stype']
     order_default = order_cols
     order_heads = [
         {'name': 'Author',      'order': 'o=1', 'type': 'str', 'custom': 'author', 'linkdetails': True}, 
@@ -3060,8 +3395,8 @@ class CanwitListView(BasicList):
     
     searches = [
         {'section': '', 'filterlist': [
-            {'filter': 'incipit',       'dbfield': 'srcftext',       'keyS': 'incipit',  'regex': adapt_regex_incexp},
-            {'filter': 'explicit',      'dbfield': 'srcftrans',      'keyS': 'explicit', 'regex': adapt_regex_incexp},
+            {'filter': 'incipit',       'dbfield': 'srchftext',       'keyS': 'incipit',  'regex': adapt_regex_incexp},
+            {'filter': 'explicit',      'dbfield': 'srchftrans',      'keyS': 'explicit', 'regex': adapt_regex_incexp},
             {'filter': 'title',         'dbfield': 'title',             'keyS': 'srch_title'},
             {'filter': 'sectiontitle',  'dbfield': 'sectiontitle',      'keyS': 'srch_sectiontitle'},
             {'filter': 'feast',         'fkfield': 'feast',             'keyFk': 'feast', 'keyList': 'feastlist', 'infield': 'id'},
@@ -3093,7 +3428,7 @@ class CanwitListView(BasicList):
             # {'filter': 'collsuper',     'fkfield': 'goldsermons__equal__collections', 'keyFk': 'name', 'keyList': 'collist_ssg','infield': 'id' }
             ]},
         {'section': 'manuscript', 'filterlist': [
-            {'filter': 'manuid',        'fkfield': 'manu',                    'keyS': 'manuidno',     'keyList': 'manuidlist', 'keyFk': 'idno', 'infield': 'id'},
+            {'filter': 'manuid',        'fkfield': 'msitem__manu',                    'keyS': 'manuidno',     'keyList': 'manuidlist', 'keyFk': 'idno', 'infield': 'id'},
             {'filter': 'country',       'fkfield': 'msitem__manu__library__lcountry', 'keyS': 'country_ta',   'keyId': 'country',     'keyFk': "name"},
             {'filter': 'city',          'fkfield': 'msitem__manu__library__lcity',    'keyS': 'city_ta',      'keyId': 'city',        'keyFk': "name"},
             {'filter': 'library',       'fkfield': 'msitem__manu__library',           'keyS': 'libname_ta',   'keyId': 'library',     'keyFk': "name"},
@@ -4140,7 +4475,7 @@ class AustatListView(BasicList):
     bUseFilter = True  
     plural_name = "Authoritative statements"
     sg_name = "Authoritative statement"
-    order_cols = ['code', 'author', 'firstsig', 'srcftext', '', 'scount', 'sgcount', 'ssgcount', 'hccount', 'stype']
+    order_cols = ['code', 'author', 'firstsig', 'srchftext', '', 'scount', 'sgcount', 'ssgcount', 'hccount', 'stype']
     order_default= order_cols
     order_heads = [
         {'name': 'Author',                  'order': 'o=1', 'type': 'str', 'custom': 'author', 'linkdetails': True},
@@ -4186,8 +4521,8 @@ class AustatListView(BasicList):
                ]
     searches = [
         {'section': '', 'filterlist': [
-            {'filter': 'incipit',   'dbfield': 'srcftext',       'keyS': 'incipit',  'regex': adapt_regex_incexp},
-            {'filter': 'explicit',  'dbfield': 'srcftrans',      'keyS': 'explicit', 'regex': adapt_regex_incexp},
+            {'filter': 'incipit',   'dbfield': 'srchftext',       'keyS': 'incipit',  'regex': adapt_regex_incexp},
+            {'filter': 'explicit',  'dbfield': 'srchftrans',      'keyS': 'explicit', 'regex': adapt_regex_incexp},
             {'filter': 'code',      'dbfield': 'code',              'keyS': 'code',     'help': 'lilacode',
              'keyList': 'lilalist', 'infield': 'id'},
             {'filter': 'number',    'dbfield': 'number',            'keyS': 'number',
@@ -5177,7 +5512,7 @@ class CollPrivDetails(CollAnyEdit):
                 sermons['saveasbutton'] = True
 
                 qs_sermo = instance.canwit_col.all().order_by(
-                        'order', 'sermon__author__name', 'sermon__siglist', 'sermon__srcftext', 'sermon__srcftrans')
+                        'order', 'sermon__author__name', 'sermon__siglist', 'sermon__srchftext', 'sermon__srchftrans')
                 check_order(qs_sermo)
 
                 # Walk these collection sermons
@@ -5231,7 +5566,7 @@ class CollPrivDetails(CollAnyEdit):
                 goldsermons['saveasbutton'] = True
 
                 qs_sermo = instance.gold_col.all().order_by(
-                        'order', 'gold__author__name', 'gold__siglist', 'gold__equal__code', 'gold__srcftext', 'gold__srcftrans')
+                        'order', 'gold__author__name', 'gold__siglist', 'gold__equal__code', 'gold__srchftext', 'gold__srchftrans')
                 check_order(qs_sermo)
 
                 # Walk these collection sermons
@@ -5285,7 +5620,7 @@ class CollPrivDetails(CollAnyEdit):
                 supers['saveasbutton'] = True
 
                 qs_sermo = instance.super_col.all().order_by(
-                        'order', 'super__author__name', 'super__firstsig', 'super__srcftext', 'super__srcftrans')
+                        'order', 'super__author__name', 'super__firstsig', 'super__srchftext', 'super__srchftrans')
                 check_order(qs_sermo)
 
                 # Walk these collection sermons
@@ -5503,7 +5838,7 @@ class CollHistDetails(CollHistEdit):
                 supers['classes'] = 'collapse'
 
                 qs_sermo = instance.super_col.all().order_by(
-                        'order', 'super__author__name', 'super__firstsig', 'super__srcftext', 'super__srcftrans')
+                        'order', 'super__author__name', 'super__firstsig', 'super__srchftext', 'super__srchftrans')
                 check_order(qs_sermo)
 
                 # Walk these collection sermons
@@ -6192,8 +6527,8 @@ class CollectionListView(BasicList):
                 {'section': 'super', 'filterlist': [
                     {'filter': 'ssgauthor',    'fkfield': 'super_col__super__author',            
                      'keyS': 'ssgauthorname', 'keyFk': 'name', 'keyList': 'ssgauthorlist', 'infield': 'id', 'external': 'gold-authorname' },
-                    {'filter': 'ssgincipit',   'dbfield': 'super_col__super__srcftext',   'keyS': 'ssgincipit'},
-                    {'filter': 'ssgexplicit',  'dbfield': 'super_col__super__srcftrans',  'keyS': 'ssgexplicit'},
+                    {'filter': 'ssgincipit',   'dbfield': 'super_col__super__srchftext',   'keyS': 'ssgincipit'},
+                    {'filter': 'ssgexplicit',  'dbfield': 'super_col__super__srchftrans',  'keyS': 'ssgexplicit'},
                     {'filter': 'ssgcode',      'fkfield': 'super_col__super', 'keyFk': 'code',           
                      'keyS': 'ssgcode', 'keyList': 'ssglilalist', 'infield': 'id'},
                     {'filter': 'ssgnumber',    'dbfield': 'super_col__super__number',       'keyS': 'ssgnumber'},
@@ -6204,8 +6539,8 @@ class CollectionListView(BasicList):
                     ]},
                 # Section S
                 {'section': 'sermo', 'filterlist': [
-                    {'filter': 'sermoincipit',       'dbfield': 'super_col__super__austat_sermons__srcftext',   'keyS': 'sermoincipit'},
-                    {'filter': 'sermoexplicit',      'dbfield': 'super_col__super__austat_sermons__srcftrans',  'keyS': 'sermoexplicit'},
+                    {'filter': 'sermoincipit',       'dbfield': 'super_col__super__austat_sermons__srchftext',   'keyS': 'sermoincipit'},
+                    {'filter': 'sermoexplicit',      'dbfield': 'super_col__super__austat_sermons__srchftrans',  'keyS': 'sermoexplicit'},
                     {'filter': 'sermotitle',         'dbfield': 'super_col__super__austat_sermons__title',         'keyS': 'sermotitle'},
                     {'filter': 'sermofeast',         'dbfield': 'super_col__super__austat_sermons__feast',         'keyS': 'sermofeast'},
                     {'filter': 'bibref',             'dbfield': '$dummy',                                             'keyS': 'bibrefbk'},

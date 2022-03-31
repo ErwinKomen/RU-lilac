@@ -17,7 +17,7 @@ from lila.utils import ErrHandle
 from lila.basic.views import BasicPart
 from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_entries, adapt_search, get_searchable, get_now_time, \
     add_gold2equal, add_equal2equal, add_ssg_equal2equal, get_helptext, Information, Country, City, Author, Manuscript, \
-    User, Group, Origin, Canwit, MsItem, Canhead, CanwitKeyword, CanwitAustat, NewsItem, \
+    User, Group, Origin, Canwit, MsItem, Codhead, CanwitKeyword, CanwitAustat, NewsItem, \
     FieldChoice, SourceInfo, AustatKeyword, ManuscriptExt, \
     ManuscriptKeyword, Action, Austat, AustatLink, Location, LocationName, LocationIdentifier, LocationRelation, LocationType, \
     ProvenanceMan, Provenance, Daterange, CollOverlap, BibRange, Feast, Comment, AustatDist, \
@@ -604,11 +604,11 @@ class AustatGraph(BasicPart):
                         # Add this item to the ssg_corpus
                         latin = {}
                         if ssg.incipit != None:
-                            for item in ssg.srcftext.replace(",", "").replace("…", "").split(" "): 
+                            for item in ssg.srchftext.replace(",", "").replace("…", "").split(" "): 
                                 add_to_dict(latin, item)
                                 add_to_dict(all_words, item)
                         if ssg.explicit != None:
-                            for item in ssg.srcftrans.replace(",", "").replace("…", "").split(" "): 
+                            for item in ssg.srchftrans.replace(",", "").replace("…", "").split(" "): 
                                 add_to_dict(latin, item)
                                 add_to_dict(all_words, item)
                         # Get the name of the author
@@ -855,11 +855,11 @@ class AustatPca(BasicPart):
                         # Add this item to the ssg_corpus
                         latin = {}
                         if ssg.incipit != None:
-                            for item in ssg.srcftext.replace(",", "").replace("…", "").split(" "): 
+                            for item in ssg.srchftext.replace(",", "").replace("…", "").split(" "): 
                                 add_to_dict(latin, item)
                                 add_to_dict(all_words, item)
                         if ssg.explicit != None:
-                            for item in ssg.srcftrans.replace(",", "").replace("…", "").split(" "): 
+                            for item in ssg.srchftrans.replace(",", "").replace("…", "").split(" "): 
                                 add_to_dict(latin, item)
                                 add_to_dict(all_words, item)
                         # Get the name of the author

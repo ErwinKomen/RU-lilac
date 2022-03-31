@@ -13,9 +13,9 @@
       {% endif %}
     {% endfor %}
   {% else %}
-    {% for canhead in msitem.itemheads.all %}
-      <locus from="{{canhead.locus_first}}" to="{{canhead.locus_last}}">{{canhead.locus}}</locus>
-      <title>{% if canhead.title %}{{canhead.title.strip}}{% endif %}</title>
+    {% for codhead in msitem.itemheads.all %}
+      <locus from="{{codhead.locus_first}}" to="{{codhead.locus_last}}">{{codhead.locus}}</locus>
+      <title>{% if codhead.title %}{{codhead.title.strip}}{% endif %}</title>
     {% endfor %}
   {% endif %}
 
