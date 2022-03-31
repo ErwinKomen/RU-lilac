@@ -5183,15 +5183,12 @@ class Daterange(models.Model):
             manu_finish = manuscript.yearfinish
             current_start = 3000
             current_finish = 0
-            #for dr in self.manuscript.manuscript_dateranges.all():
-            #    if dr.yearstart < current_start: current_start = dr.yearstart
-            #    if dr.yearfinish > current_finish: current_finish = dr.yearfinish
+
             # Look at the CODICO dateranges
             for dr in Daterange.objects.filter(codico__manuscript=manuscript):
             # for dr in self.codico_dateranges.all():
                 if dr.yearstart < current_start: current_start = dr.yearstart
                 if dr.yearfinish > current_finish: current_finish = dr.yearfinish
-
 
             # Need any changes in *MANUSCRIPT*?
             bNeedSaving = False
