@@ -15,10 +15,6 @@ import pytz
 from django.urls import reverse
 from datetime import datetime
 from markdown import markdown
-from lila.utils import *
-from lila.settings import APP_PREFIX, WRITABLE_DIR, TIME_ZONE
-from lila.seeker.excel import excel_to_list
-from lila.bible.models import Reference, Book, BKCHVS_LENGTH
 import sys, os, io, re
 import copy
 import json
@@ -34,6 +30,13 @@ from io import StringIO
 from pyzotero import zotero
 
 from xml.dom import minidom
+
+# =============== Importing my own stuff ======================
+from lila.utils import *
+from lila.settings import APP_PREFIX, WRITABLE_DIR, TIME_ZONE
+from lila.seeker.excel import excel_to_list
+from lila.bible.models import Reference, Book, BKCHVS_LENGTH
+
 
 re_number = r'\d+'
 
@@ -597,6 +600,7 @@ def process_lib_entries(oStatus):
     oBack = {}
     JSON_ENTRIES = "lila_entries.json"
 
+    errHandle = ErrHandle()
     try:
         oStatus.set("preparing")
         fName = os.path.abspath(os.path.join(WRITABLE_DIR, JSON_ENTRIES))
@@ -618,6 +622,7 @@ def process_lib_entries(oStatus):
 def import_data_file(sContents, arErr):
     """Turn the contents of [data_file] into a json object"""
 
+    errHandle = ErrHandle()
     try:
         # Validate
         if sContents == "":
@@ -730,127 +735,6 @@ def add_gold2equal(src, dst_eq, eq_log = None):
     except:
         msg = oErr.get_error_message()
         oErr.DoError("add_gold2equal")
-
-    # Return the number of added relations
-    return added, lst_total
-
-def add_gold2gold(src, dst, ltype, eq_log = None):
-    """Add a gold-to-gold relation from src to dst of type ltype"""
-
-    # Initialisations
-    lst_add = []
-    lst_total = []
-    added = 0
-    oErr = ErrHandle()
-
-    def spread_partial(group):
-        """Make sure all members of the equality group have the same partial relations"""
-
-        lst_back = []
-        added = 0
-        for linktype in LINK_PRT:
-            lst_prt_add = []    # List of partially equals relations to be added
-            qs_prt = SermonGoldSame.objects.filter(linktype=linktype).order_by('src__id')
-
-            # Get a list of existing 'partially equals' destination links from the current group
-            qs_grp_prt = qs_prt.filter(Q(src__in=group))
-            if len(qs_grp_prt) > 0:
-                # Make a list of unique destination gold objects
-                lst_dst = []
-                for obj in qs_grp_prt:
-                    dst = obj.dst
-                    if dst not in lst_dst: lst_dst.append(dst)
-                # Make a list of relations that need to be added
-                for src in group:
-                    for dst in lst_dst:
-                        # Make sure relations are not equal
-                        if src.id != dst.id:
-                            # Check if the relation already is there
-                            obj = qs_prt.filter(src=src, dst=dst).first()
-                            if obj == None:
-                                oAdd = {'src': src, 'dst': dst}
-                                if oAdd not in lst_prt_add:
-                                    lst_prt_add.append(oAdd)
-                            # Check if the reverse relation is already there
-                            obj = qs_prt.filter(src=dst, dst=src).first()
-                            if obj == None:
-                                oAdd = {'src': dst, 'dst': src}
-                                if oAdd not in lst_prt_add:
-                                    lst_prt_add.append(oAdd)
-            # Add all the relations in lst_prt_add
-            with transaction.atomic():
-                for idx, item in enumerate(lst_prt_add):
-                    obj = SermonGoldSame(linktype=linktype, src=item['src'], dst=item['dst'])
-                    obj.save()
-                    added += 1
-                    lst_back.append("<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format( 
-                        (idx+1), item['src'].siglist, item['dst'].siglist, linktype, "add" ))
-        # Return the results
-        return added, lst_back
-
-    try:
-
-        # Main body of add_gold2gold()
-        lst_total = []
-        lst_total.append("<table><thead><tr><th>item</th><th>src</th><th>dst</th><th>linktype</th><th>addtype</th></tr>")
-        lst_total.append("<tbody>")
-
-        # Action depends on the kind of relationship that is added
-        if ltype == LINK_EQUAL:
-            eq_added, eq_list = add_gold2equal(src, dst.equal, eq_log)
-
-            for item in eq_list: lst_total.append(item)
-
-            # (6) Bookkeeping
-            added += eq_added
-        elif src.equal == dst.equal:
-            # Trying to add a non-equal link to two gold-sermons that are in the same equality group
-            pass
-        else:
-            # What is added is a partially equals link - between equality groups
-            prt_added = 0
-
-            groups = ['to']
-            # Implement the REVERSE for link types Partially, Similar, Nearly Equals
-            if ltype in LINK_PRT:
-                groups.append('back')
-
-            for group in groups:
-                # (1) save the source group
-                if group == "to":
-                    grp_src = src.equal
-                    grp_dst = dst.equal
-                else:
-                    grp_src = dst.equal
-                    grp_dst = src.equal
-
-                # (2) Check existing link(s) between the groups
-                obj = AustatLink.objects.filter(src=grp_src, dst=grp_dst).first()
-                if obj == None:
-                    # (3a) there is no link yet: add it
-                    obj = AustatLink(src=grp_src, dst=grp_dst, linktype=ltype)
-                    obj.save()
-                    # Possibly log the action
-                    if eq_log != None:
-                        eq_log.append("Add austatlink {} from eqg {} to eqg {}".format(ltype, grp_src, grp_dst))
-                    # Bookkeeping
-                    lst_total.append("<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format( 
-                        added+1, obj.src.equal_goldsermons.first().siglist, obj.dst.equal_goldsermons.first().siglist, ltype, "add" ))
-                    prt_added += 1
-                else:
-                    # (3b) There is a link, but possibly of a different type
-                    obj.linktype = ltype
-                    obj.save()
-
-
-            # (3) Bookkeeping
-            added += prt_added
-            x = "\n".join( eq_log[-20:])
-        # Finish the report list
-        lst_total.append("</tbody></table>")
-    except:
-        msg = oErr.get_error_message()
-        oErr.DoError("add_gold2gold")
 
     # Return the number of added relations
     return added, lst_total
@@ -983,151 +867,6 @@ def add_equal2equal(src, dst_eq, ltype):
     except:
         msg = oErr.get_error_message()
         oErr.DoError("add_equal2equal")
-
-    # Return the number of added relations
-    return added, lst_total
-
-def add_gold2gold_ORIGINAL(src, dst, ltype):
-    """Add a gold-to-gold relation from src to dst of type ltype"""
-
-    # Initialisations
-    lst_add = []
-    lst_total = []
-    added = 0
-    oErr = ErrHandle()
-
-    def spread_partial(group):
-        """Make sure all members of the equality group have the same partial relations"""
-
-        lst_back = []
-        added = 0
-        for linktype in LINK_PRT:
-            lst_prt_add = []    # List of partially equals relations to be added
-            qs_prt = SermonGoldSame.objects.filter(linktype=linktype).order_by('src__id')
-
-            # Get a list of existing 'partially equals' destination links from the current group
-            qs_grp_prt = qs_prt.filter(Q(src__in=group))
-            if len(qs_grp_prt) > 0:
-                # Make a list of unique destination gold objects
-                lst_dst = []
-                for obj in qs_grp_prt:
-                    dst = obj.dst
-                    if dst not in lst_dst: lst_dst.append(dst)
-                # Make a list of relations that need to be added
-                for src in group:
-                    for dst in lst_dst:
-                        # Make sure relations are not equal
-                        if src.id != dst.id:
-                            # Check if the relation already is there
-                            obj = qs_prt.filter(src=src, dst=dst).first()
-                            if obj == None:
-                                oAdd = {'src': src, 'dst': dst}
-                                if oAdd not in lst_prt_add:
-                                    lst_prt_add.append(oAdd)
-                            # Check if the reverse relation is already there
-                            obj = qs_prt.filter(src=dst, dst=src).first()
-                            if obj == None:
-                                oAdd = {'src': dst, 'dst': src}
-                                if oAdd not in lst_prt_add:
-                                    lst_prt_add.append(oAdd)
-            # Add all the relations in lst_prt_add
-            with transaction.atomic():
-                for idx, item in enumerate(lst_prt_add):
-                    obj = SermonGoldSame(linktype=linktype, src=item['src'], dst=item['dst'])
-                    obj.save()
-                    added += 1
-                    lst_back.append("<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format( 
-                        (idx+1), item['src'].siglist, item['dst'].siglist, linktype, "add" ))
-        # Return the results
-        return added, lst_back
-
-    try:
-
-        # Main body of add_gold2gold()
-        lst_total = []
-        lst_total.append("<table><thead><tr><th>item</th><th>src</th><th>dst</th><th>linktype</th><th>addtype</th></tr>")
-        lst_total.append("<tbody>")
-
-        # Action depends on the kind of relationship that is added
-        if ltype == LINK_EQUAL:
-            # 1: Get the group of related gold-sermons in which the src resides
-            grp_src = [x.dst for x in SermonGoldSame.objects.filter(linktype=LINK_EQUAL, src=src)]
-            grp_src.append(src)
-            # 2: Get the group of related gold-sermons in which the dst resides
-            grp_dst = [x.dst for x in SermonGoldSame.objects.filter(linktype=LINK_EQUAL, src=dst)]
-            grp_dst.append(dst)
-            # 3: Double check all EQUAL relations that should be there
-            lst_add = []
-            for inst_src in grp_src:
-                for inst_dst in grp_dst:
-                    # Make sure they are not equal
-                    if inst_src.id != inst_dst.id:
-                        obj = SermonGoldSame.objects.filter(linktype=LINK_EQUAL, src=inst_src, dst=inst_dst).first()
-                        if obj == None:
-                            # Add the relation to the ones that should be added
-                            oAdd = {'src': inst_src, 'dst': inst_dst}
-                            if oAdd not in lst_add:
-                                lst_add.append(oAdd)
-                        # Also try and add the reverse relation
-                        obj = SermonGoldSame.objects.filter(linktype=LINK_EQUAL, src=inst_dst, dst=inst_src).first()
-                        if obj == None:
-                            # Add the relation to the ones that should be added
-                            oAdd = {'src': inst_dst, 'dst': inst_src}
-                            if oAdd not in lst_add:
-                                lst_add.append(oAdd)
-            # 4: Add those that need adding in one go
-            with transaction.atomic():
-                for idx, item in enumerate(lst_add):
-                    obj = SermonGoldSame(linktype=LINK_EQUAL, src=item['src'], dst=item['dst'])
-                    obj.save()
-                    lst_total.append("<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format( 
-                        (idx+1), item['src'].siglist, item['dst'].siglist, LINK_EQUAL, "add" ))
-                    added += 1
-            # 5: Create a new group, consisting of the two groups
-            group = [x for x in grp_src]
-            for item in grp_dst: group.append(item)
-            # 6: Spread the partial links over the new group
-            prt_added, lst_partial = spread_partial(group)
-            for item in lst_partial: lst_total.append(item)
-            added += prt_added
-        else:
-            # What is added is a partially equals link
-
-            # 1: Get the group of related gold-sermons in which the src resides
-            grp_src = [x.dst for x in SermonGoldSame.objects.filter(linktype=LINK_EQUAL, src=src)]
-            grp_src.append(src)
-            # 2: Get the group of related gold-sermons in which the dst resides
-            grp_dst = [x.dst for x in SermonGoldSame.objects.filter(linktype=LINK_EQUAL, src=dst)]
-            grp_dst.append(dst)
-            # 3: make linktype-links from all in src to all in dst
-            lst_prt_add = []
-            for inst_src in grp_src:
-                for inst_dst in grp_dst:
-                    # Make sure they are not equal
-                    if inst_src.id != inst_dst.id:
-                        obj = SermonGoldSame.objects.filter(linktype=ltype, src=inst_src, dst=inst_dst).first()
-                        if obj == None:
-                            # Add the relation to the ones that should be added
-                            lst_prt_add.append({'src': inst_src, 'dst': inst_dst})
-                        # Check if the reverse relation is already there
-                        obj = SermonGoldSame.objects.filter(linktype=ltype, src=inst_dst, dst=inst_src).first()
-                        if obj == None:
-                            lst_prt_add.append({'src': inst_dst, 'dst': inst_src})
-            # 4: Add those that need adding in one go
-            with transaction.atomic():
-                for idx, item in enumerate(lst_prt_add):
-                    obj = SermonGoldSame(linktype=ltype, src=item['src'], dst=item['dst'])
-                    obj.save()
-                    lst_total.append("<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format( 
-                        (idx+1), item['src'].siglist, item['dst'].siglist, ltype, "add" ))
-                    added += 1
-        
-
-        # Finish the report list
-        lst_total.append("</tbody></table>")
-    except:
-        msg = oErr.get_error_message()
-        oErr.DoError("add_gold2gold")
 
     # Return the number of added relations
     return added, lst_total
@@ -3204,7 +2943,7 @@ class Comment(models.Model):
 
     def get_otype(self):
         otypes = dict(manu="Manuscript", sermo="Sermon", gold="Gold Sermon", 
-                      super="Authority file", codi="codicological unit")
+                      super="Authoritative statement", codi="codicological unit")
         return otypes[self.otype]
 
 
@@ -4058,10 +3797,6 @@ class Manuscript(models.Model):
             sBack = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(url, sBack)
         return sBack
 
-    #def get_project(self):
-    #    sBack = "-" if self.project == None else self.project.name
-    #    return sBack
-
     def get_projects(self):
         sBack = "-" 
         if self.projects.count() > 0:
@@ -4070,12 +3805,6 @@ class Manuscript(models.Model):
                 html.append(obj.name)
             sBack = ", ".join(html)
         return sBack
-
-    #def get_project_markdown(self):
-    #    sBack = "-"
-    #    if self.project:
-    #        sBack = '<span class="project">{}</span>'.format(self.project.name)
-    #    return sBack
 
     def get_project_markdown2(self): 
         lHtml = []
@@ -4138,12 +3867,10 @@ class Manuscript(models.Model):
             sBack = "".join(lHtml)
         return sBack
 
-    def get_sermon_count(self):
-        method = "msitem"   # "canwit"
-        if method == "msitem":
-            count = Canwit.objects.filter(msitem__manu=self).count()
-        else:
-            count = self.manusermons.all().count()
+    def get_canwit_count(self):
+        """Get the number of Canwits in this manuscript"""
+
+        count = Canwit.objects.filter(msitem__manu=self).count()
         return count
 
     def get_canwit_list(self, username, team_group):
@@ -5113,7 +4840,7 @@ class Codico(models.Model):
             sBack = "".join(lHtml)
         return sBack
 
-    def get_sermon_count(self):
+    def get_canwit_count(self):
         count = Canwit.objects.filter(msitem__codico=self).count()
         return count
 
@@ -5533,12 +5260,12 @@ class Austat(models.Model):
 
     # [0-1] We would very much like to know the *REAL* author
     author = models.ForeignKey(Author, null=True, blank=True, on_delete = models.SET_NULL, related_name="author_austats")
-    # [0-1] We would like to know the INCIPIT (first line in Latin)
-    incipit = models.TextField("Incipit", null=True, blank=True)
-    srchftext = models.TextField("Incipit (searchable)", null=True, blank=True)
-    # [0-1] We would like to know the EXPLICIT (last line in Latin)
-    explicit = models.TextField("Explicit", null=True, blank=True)
-    srchftrans = models.TextField("Explicit (searchable)", null=True, blank=True)
+    # [0-1] We would like to know the FULL TEXT
+    ftext = models.TextField("Full text", null=True, blank=True)
+    srchftext = models.TextField("Full text (searchable)", null=True, blank=True)
+    # [0-1] We would like to know the FULL TEXT TRANSLATION
+    ftrans = models.TextField("Translation", null=True, blank=True)
+    srchftrans = models.TextField("Translation (searchable)", null=True, blank=True)
     # [0-1] The 'lila-code' for a sermon - see instructions (16-01-2020 4): [lila aaa.nnnn]
     code = models.CharField("lila code", blank=True, null=True, max_length=lila_CODE_LENGTH, default="ZZZ_DETERMINE")
     # [0-1] The number of this SSG (numbers are 1-based, per author)
@@ -5587,11 +5314,11 @@ class Austat(models.Model):
 
         oErr = ErrHandle()
         try:
-            # Adapt the incipit and explicit - if necessary
-            srchftext = get_searchable(self.incipit)
+            # Adapt the ftext and ftrans - if necessary
+            srchftext = get_searchable(self.ftext)
             if self.srchftext != srchftext:
                 self.srchftext = srchftext
-            srchftrans = get_searchable(self.explicit)
+            srchftrans = get_searchable(self.ftrans)
             if self.srchftrans != srchftrans:
                 self.srchftrans = srchftrans
 
@@ -5702,7 +5429,7 @@ class Austat(models.Model):
     def create_new(self):
         """Create a copy of [self]"""
 
-        fields = ['author', 'incipit', 'srchftext', 'explicit', 'srchftrans', 'number', 'code', 'stype', 'moved']
+        fields = ['author', 'ftext', 'srchftext', 'ftrans', 'srchftrans', 'number', 'code', 'stype', 'moved']
         org = Austat()
         for field in fields:
             value = getattr(self, field)
@@ -5737,15 +5464,24 @@ class Austat(models.Model):
         sBack = ", ".join(lHtml)
         return sBack
 
-    def get_explicit_markdown(self, incexp_type = "actual"):
+    def get_editions_markdown(self):
+        """Get all the editions associated with the CanWits (?) in this equality set (?)"""
+
+        lHtml = []
+        # Visit all editions
+
+        sBack = ", ".join(lHtml)
+        return sBack
+
+    def get_ftrans_markdown(self, incexp_type = "actual"):
         """Get the contents of the explicit field using markdown"""
 
         if incexp_type == "both":
-            parsed = adapt_markdown(self.explicit)
+            parsed = adapt_markdown(self.ftrans)
             search = self.srchftrans
             sBack = "<div>{}</div><div class='searchincexp'>{}</div>".format(parsed, search)
         elif incexp_type == "actual":
-            sBack = adapt_markdown(self.explicit)
+            sBack = adapt_markdown(self.ftrans)
         elif incexp_type == "search":
             sBack = adapt_markdown(self.srchftrans)
         return sBack
@@ -5760,7 +5496,7 @@ class Austat(models.Model):
 
     def get_incexp_match(self, sMatch=""):
         html = []
-        dots = "..." if self.incipit else ""
+        dots = "..." if self.ftext else ""
         sBack = "{}{}{}".format(self.srchftext, dots, self.srchftrans)
         ratio = 0.0
         # Are we matching with something?
@@ -5768,15 +5504,15 @@ class Austat(models.Model):
             sBack, ratio = get_overlap(sBack, sMatch)
         return sBack, ratio
 
-    def get_incipit_markdown(self, incexp_type = "actual"):
-        """Get the contents of the incipit field using markdown"""
+    def get_ftext_markdown(self, incexp_type = "actual"):
+        """Get the contents of the ftext field using markdown"""
         # Perform
         if incexp_type == "both":
-            parsed = adapt_markdown(self.incipit)
+            parsed = adapt_markdown(self.ftext)
             search = self.srchftext
             sBack = "<div>{}</div><div class='searchincexp'>{}</div>".format(parsed, search)
         elif incexp_type == "actual":
-            sBack = adapt_markdown(self.incipit)
+            sBack = adapt_markdown(self.ftext)
         elif incexp_type == "search":
             sBack = adapt_markdown(self.srchftext)
         return sBack
@@ -5828,15 +5564,23 @@ class Austat(models.Model):
             lHtml.append("(by Unknown Author) ")
 
         if do_incexpl:
-            # Treat incipit
-            if self.incipit: lHtml.append("{}".format(self.srchftext))
+            # Treat ftext
+            if self.ftext: lHtml.append("{}".format(self.srchftext))
             # Treat intermediate dots
-            if self.incipit and self.explicit: lHtml.append("...-...")
-            # Treat explicit
-            if self.explicit: lHtml.append("{}".format(self.srchftrans))
+            if self.ftext and self.ftrans: lHtml.append(" (")
+            # Treat ftrans
+            if self.ftrans: lHtml.append("{})".format(self.srchftrans))
 
         # Return the results
         return "".join(lHtml)
+
+    def get_litrefs_markdown(self):
+        """Get all the literature references associated with the CanWits (?) in this equality set (?)"""
+
+        lHtml = []
+        # Visit all editions
+        sBack = ", ".join(lHtml)
+        return sBack
 
     def get_moved_code(self):
         """Get the lila code of the one this is replaced by"""
@@ -5899,7 +5643,7 @@ class Austat(models.Model):
         # Add the lila code
         code = self.code if self.code and self.code != "" else "(nocode_{})".format(self.id)
         url = reverse('austat_details', kwargs={'pk': self.id})
-        sBack = "<span  class='badge jumbo-1'><a href='{}'  title='Go to the Authority file'>{}</a></span>".format(url, code)
+        sBack = "<span  class='badge jumbo-1'><a href='{}'  title='Go to the Authoritative statement'>{}</a></span>".format(url, code)
         #lHtml.append("<span class='lilacode'>{}</span> ".format(code))
         #sBack = " ".join(lHtml)
         return sBack
@@ -5978,24 +5722,15 @@ class Austat(models.Model):
         # Add the lila code
         lHtml.append("{}".format(self.get_code()))
 
-        ## Treat signatures
-        #equal_set = self.equal_goldsermons.all()
-        #qs = Signature.objects.filter(gold__in=equal_set).order_by('-editype', 'code').distinct()
-        #if qs.count() > 0:
-        #    lSign = []
-        #    for item in qs:
-        #        lSign.append(item.short())
-        #    lHtml.append(" {} ".format(" | ".join(lSign)))
-
         # Treat the author
         if self.author:
             lHtml.append(" {} ".format(self.author.name))
-        # Treat incipit
-        if self.incipit: lHtml.append(" {}".format(self.srchftext))
+        # Treat ftext
+        if self.ftext: lHtml.append(" {}".format(self.srchftext))
         # Treat intermediate dots
-        if self.incipit and self.explicit: lHtml.append("...-...")
+        if self.ftext and self.ftrans: lHtml.append(" (")
         # Treat explicit
-        if self.explicit: lHtml.append("{}".format(self.srchftrans))
+        if self.ftrans: lHtml.append("{})".format(self.srchftrans))
         # Return the results
         return "".join(lHtml)
 
@@ -6007,28 +5742,17 @@ class Austat(models.Model):
         code = self.code if self.code else "(no lila code)"
         lHtml.append("<span class='lilacode'>{}</span> ".format(code))
 
-        ## Treat signatures
-        #equal_set = self.equal_goldsermons.all()
-        #qs = Signature.objects.filter(gold__in=equal_set).order_by('-editype', 'code').distinct()
-        #if qs.count() > 0:
-        #    lSign = []
-        #    for item in qs:
-        #        lSign.append(item.short())
-        #    lHtml.append("<span class='signature'>{}</span>".format(" | ".join(lSign)))
-        #else:
-        #    lHtml.append("[-]")
-
         # Treat the author
         if self.author:
             lHtml.append("(by <span class='sermon-author'>{}</span>) ".format(self.author.name))
         else:
             lHtml.append("(by <i>Unknown Author</i>) ")
-        # Treat incipit
-        if self.incipit: lHtml.append("{}".format(self.get_incipit_markdown()))
+        # Treat ftext
+        if self.ftext: lHtml.append("{}".format(self.get_ftext_markdown()))
         # Treat intermediate dots
-        if self.incipit and self.explicit: lHtml.append("...-...")
-        # Treat explicit
-        if self.explicit: lHtml.append("{}".format(self.get_explicit_markdown()))
+        if self.ftext and self.ftrans: lHtml.append(" (")
+        # Treat ftrans
+        if self.ftrans: lHtml.append("{})".format(self.get_ftrans_markdown()))
         # Return the results
         return "".join(lHtml)
 
@@ -6050,16 +5774,6 @@ class Austat(models.Model):
         else:
             iNumber = qs_ssg.first().number + 1
         return iNumber
-
-    #def set_firstsig(self):
-    #    # Calculate the first signature
-    #    first = Signature.objects.filter(gold__equal=self).order_by('-editype', 'code').first()
-    #    if first != None:
-    #        firstsig = first.code
-    #        if self.firstsig != firstsig:
-    #            # Save changes
-    #            self.save()
-    #    return True
 
     def set_ssgcount(self):
         # Calculate and set the ssgcount
@@ -6482,8 +6196,8 @@ class Collection(models.Model):
                 # Create a S based on this SSG
                 sermon = Canwit.objects.create(
                     manu=manu, msitem=msitem, author=ssg.author, 
-                    incipit=ssg.incipit, srchftext=ssg.srchftext,
-                    explicit=ssg.explicit, srchftrans=ssg.srchftrans,
+                    ftext=ssg.ftext, srchftext=ssg.srchftext,
+                    ftrans=ssg.ftrans, srchftrans=ssg.srchftrans,
                     stype="imp", mtype=mtype)
                 # Create a link from the S to this SSG
                 ssg_link = CanwitAustat.objects.create(sermon=sermon, super=ssg, linktype=LINK_UNSPECIFIED)
@@ -6787,8 +6501,8 @@ class Canwit(models.Model):
         {'name': 'Section title',       'type': 'field', 'path': 'sectiontitle'},
         {'name': 'Lectio',              'type': 'field', 'path': 'quote'},
         {'name': 'Title',               'type': 'field', 'path': 'title'},
-        {'name': 'Incipit',             'type': 'field', 'path': 'incipit'},
-        {'name': 'Explicit',            'type': 'field', 'path': 'explicit'},
+        {'name': 'Full text',           'type': 'field', 'path': 'ftext'},
+        {'name': 'Translation',         'type': 'field', 'path': 'ftrans'},
         {'name': 'Postscriptum',        'type': 'field', 'path': 'postscriptum'},
         {'name': 'Feast',               'type': 'fk',    'path': 'feast', 'fkfield': 'name'},
         {'name': 'Bible reference(s)',  'type': 'func',  'path': 'brefs'},
@@ -7152,7 +6866,7 @@ class Canwit(models.Model):
 
         oErr = ErrHandle()
         try:
-            # Get my own incipit and explicit
+            # Get my own ftext and ftrans
             inc_s = "" if self.srchftext == None else self.srchftext
             exp_s = "" if self.srchftrans == None else self.srchftrans
 
@@ -7732,7 +7446,7 @@ class Canwit(models.Model):
         equal = self.austats.all().order_by('code', 'author__name', 'number').first()
         if equal != None and equal.code != "":
             url = reverse('austat_details', kwargs={'pk': equal.id})
-            sBack = "<span  class='badge jumbo-1'><a href='{}'  title='Go to the Authority file'>{}</a></span>".format(url, equal.code)
+            sBack = "<span  class='badge jumbo-1'><a href='{}'  title='Go to the Authoritative statement'>{}</a></span>".format(url, equal.code)
         return sBack
 
     def get_postscriptum_markdown(self):
@@ -8502,7 +8216,7 @@ class AustatCorpusItem(models.Model):
 
     # [1] Link-item 1: source
     equal = models.ForeignKey(Austat, related_name="ssgcorpusequals", on_delete=models.CASCADE)
-    # [1] WOrds in this SSG's incipit and explicit - stringified JSON
+    # [1] WOrds in this SSG's ftext and ftrans - stringified JSON
     words = models.TextField("Words", default = "{}")
     # [1] Number of sermons - the scount
     scount = models.IntegerField("Sermon count", default = 0)
@@ -8760,7 +8474,7 @@ class BasketMan(models.Model):
 class BasketSuper(models.Model):
     """The basket is the user's vault of search results (of super sermon gold items)"""
     
-    # [1] The super sermon gold / Authority file
+    # [1] The SSG / Authority file / Authoritative statement
     super = models.ForeignKey(Austat, related_name="basket_contents_super", on_delete=models.CASCADE)
     # [1] The user
     profile = models.ForeignKey(Profile, related_name="basket_contents_super", on_delete=models.CASCADE)
@@ -9053,7 +8767,7 @@ class Template(models.Model):
 
         num = 0
         if self.manu:
-            num = self.manu.get_sermon_count()
+            num = self.manu.get_canwit_count()
         return num
 
     def get_username(self):

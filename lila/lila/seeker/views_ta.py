@@ -455,7 +455,7 @@ def get_authors(request):
     return HttpResponse(data, mimetype)
 
 @csrf_exempt
-def get_srmincipits(request):
+def get_cwftexts(request):
     """Get a list of manifestation-canwit full text for autocomplete"""
 
     oErr = ErrHandle()
@@ -481,7 +481,7 @@ def get_srmincipits(request):
     return HttpResponse(data, mimetype)
 
 @csrf_exempt
-def get_srmexplicits(request):
+def get_cwftrans(request):
     """Get a list of Manifestation-canwit full-translation for autocomplete"""
 
     oErr = ErrHandle()
@@ -492,6 +492,58 @@ def get_srmexplicits(request):
             lstQ = []
             lstQ.append(Q(srchftrans__icontains=author))
             items = Canwit.objects.filter(*lstQ).values("srchftrans").distinct().all().order_by('srchftrans')
+            results = []
+            for idx, co in enumerate(items):
+                val = co['srchftrans']
+                co_json = {'name': val, 'id': idx }
+                results.append(co_json)
+            data = json.dumps(results)
+        else:
+            data = "Request is not ajax"
+    except:
+        msg = oErr.get_error_message()
+        data = "error: {}".format(msg)
+    mimetype = "application/json"
+    return HttpResponse(data, mimetype)
+
+@csrf_exempt
+def get_asftexts(request):
+    """Get a list of manifestation-canwit full text for autocomplete"""
+
+    oErr = ErrHandle()
+    try:
+        data = 'fail'
+        if request.is_ajax():
+            author = request.GET.get("name", "")
+            lstQ = []
+            lstQ.append(Q(srchftext__icontains=author))
+            items = Austat.objects.filter(*lstQ).values("srchftext").distinct().all().order_by('srchftext')
+            results = []
+            for idx, co in enumerate(items):
+                val = co['srchftext']
+                co_json = {'name': val, 'id': idx }
+                results.append(co_json)
+            data = json.dumps(results)
+        else:
+            data = "Request is not ajax"
+    except:
+        msg = oErr.get_error_message()
+        data = "error: {}".format(msg)
+    mimetype = "application/json"
+    return HttpResponse(data, mimetype)
+
+@csrf_exempt
+def get_asftrans(request):
+    """Get a list of Manifestation-canwit full-translation for autocomplete"""
+
+    oErr = ErrHandle()
+    try:
+        data = 'fail'
+        if request.is_ajax():
+            author = request.GET.get("name", "")
+            lstQ = []
+            lstQ.append(Q(srchftrans__icontains=author))
+            items = Austat.objects.filter(*lstQ).values("srchftrans").distinct().all().order_by('srchftrans')
             results = []
             for idx, co in enumerate(items):
                 val = co['srchftrans']

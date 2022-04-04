@@ -1334,7 +1334,7 @@ class CanwitForm(lilaModelForm):
                 widget=FeastWidget(attrs={'data-placeholder': 'Select multiple feasts...', 'style': 'width: 100%;', 'class': 'searching'}))
     superlist = ModelMultipleChoiceField(queryset=None, required=False,
                 widget=CanwitSuperAddOnlyWidget(attrs={'data-placeholder': 'Add links with the green "+" sign...', 
-                                                  'placeholder': 'Linked Authority files...', 'style': 'width: 100%;', 'class': 'searching'}))
+                                                  'placeholder': 'Linked Authoritative Statements...', 'style': 'width: 100%;', 'class': 'searching'}))
     lilalist  = ModelMultipleChoiceField(queryset=None, required=False, 
                     widget=AustatMultiWidget(attrs={'data-placeholder': 'Select multiple lila codes...', 'style': 'width: 100%;', 
                                                        'class': 'searching'}))
@@ -1400,7 +1400,7 @@ class CanwitForm(lilaModelForm):
     date_until  = forms.IntegerField(label=_("Date until"), required = False,
                     widget=forms.TextInput(attrs={'placeholder': 'Until (including)...',  'style': 'width: 30%;', 'class': 'searching'}))
     typeaheads = ["authors", "manuidnos", "signatures", "keywords", "countries", "cities", "libraries", "origins", 
-                  "locations", "srmincipits", "srmexplicits"]
+                  "locations", "cwftexts", "cwftrans"]
 
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
@@ -1416,8 +1416,8 @@ class CanwitForm(lilaModelForm):
                  'bibnotes':    forms.TextInput(attrs={'placeholder': 'Bibliography notes...', 'style': 'width: 100%;', 'class': 'searching'}),
                  'feast':    FeastOneWidget(attrs={'data-placeholder': 'Select one feast...', 'style': 'width: 100%;', 'class': 'searching'}),
 
-                 'ftext':     forms.TextInput(attrs={'class': 'typeahead searching srmincipits input-sm', 'placeholder': 'Full text...', 'style': 'width: 100%;'}),
-                 'ftrans':    forms.TextInput(attrs={'class': 'typeahead searching srmexplicits input-sm', 'placeholder': 'Translation...', 'style': 'width: 100%;'}),
+                 'ftext':     forms.TextInput(attrs={'class': 'typeahead searching cwftexts input-sm', 'placeholder': 'Full text...', 'style': 'width: 100%;'}),
+                 'ftrans':    forms.TextInput(attrs={'class': 'typeahead searching cwftrans input-sm', 'placeholder': 'Translation...', 'style': 'width: 100%;'}),
                  'stype':       forms.Select(attrs={'style': 'width: 100%;'}),
 
                  # larger areas
@@ -1492,7 +1492,7 @@ class CanwitForm(lilaModelForm):
             self.fields['collist_s'].widget = CollectionSermoWidget( attrs={'username': username, 'team_group': team_group,
                         'data-placeholder': 'Select multiple sermon manifestation collections...', 'style': 'width: 100%;', 'class': 'searching'})
             self.fields['collist_ssg'].widget = CollectionSuperWidget( attrs={'username': username, 'team_group': team_group, 'settype': 'pd',
-                        'data-placeholder': 'Select multiple Authority file collections...', 'style': 'width: 100%;', 'class': 'searching'})
+                        'data-placeholder': 'Select multiple Authoritative statement collections...', 'style': 'width: 100%;', 'class': 'searching'})
             self.fields['collist_hist'].widget = CollectionSuperWidget( attrs={'username': username, 'team_group': team_group, 'settype': 'hc',
                         'data-placeholder': 'Select multiple historical collections...', 'style': 'width: 100%;', 'class': 'searching'})
             self.fields['collone'].widget = CollOneSermoWidget( attrs={'username': username, 'team_group': team_group,
@@ -1531,7 +1531,6 @@ class CanwitForm(lilaModelForm):
                 # Determine the initial collections
                 self.fields['collist_m'].initial = [x.pk for x in instance.collections.filter(type='manu').order_by('name')]
                 self.fields['collist_s'].initial = [x.pk for x in instance.collections.filter(type='sermo').order_by('name')]
-                # self.fields['collist_sg'].initial = [x.pk for x in instance.collections.filter(type='gold').order_by('name')]
                 self.fields['collist_ssg'].initial = [x.pk for x in instance.collections.filter(type='super').order_by('name')]
 
                 # Note: what we *show* are the signatures that have actually been copied -- the SERMON signatures
@@ -1900,17 +1899,17 @@ class CollectionForm(lilaModelForm):
     ssgnumber   = forms.CharField(label=_("Author Number"), required=False,
                 widget=forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'data-placeholder': 'Author number'}))
     ssgincipit  = forms.CharField(label=_("Incipit"), required=False,
-                widget=forms.TextInput(attrs={'class': 'typeahead searching gldincipits input-sm', 'placeholder': 'Incipit...', 'style': 'width: 100%;'}))
+                widget=forms.TextInput(attrs={'class': 'typeahead searching asftexts input-sm', 'placeholder': 'Incipit...', 'style': 'width: 100%;'}))
     ssgexplicit = forms.CharField(label=_("Explicit"), required=False,
-                widget=forms.TextInput(attrs={'class': 'typeahead searching gldexplicits input-sm', 'placeholder': 'Explicit...', 'style': 'width: 100%;'}))
+                widget=forms.TextInput(attrs={'class': 'typeahead searching asftrans input-sm', 'placeholder': 'Explicit...', 'style': 'width: 100%;'}))
     ssgstype    = forms.ChoiceField(label=_("Stype"), required=False, widget=forms.Select(attrs={'style': 'width: 100%;'}))
     
     
     # SERMON-specific
     sermoincipit  = forms.CharField(label=_("Incipit"), required=False,
-                widget=forms.TextInput(attrs={'class': 'typeahead searching gldincipits input-sm', 'placeholder': 'Incipit...', 'style': 'width: 100%;'}))
+                widget=forms.TextInput(attrs={'class': 'typeahead searching asftexts input-sm', 'placeholder': 'Incipit...', 'style': 'width: 100%;'}))
     sermoexplicit = forms.CharField(label=_("Explicit"), required=False,
-                widget=forms.TextInput(attrs={'class': 'typeahead searching gldexplicits input-sm', 'placeholder': 'Explicit...', 'style': 'width: 100%;'}))
+                widget=forms.TextInput(attrs={'class': 'typeahead searching asftrans input-sm', 'placeholder': 'Explicit...', 'style': 'width: 100%;'}))
     sermotitle  = forms.CharField(label=_("Title"), required=False,
                 widget=forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'placeholder': 'Title'}))
     sermofeast  = forms.CharField(label=_("Feast"), required=False,
@@ -1950,7 +1949,7 @@ class CollectionForm(lilaModelForm):
     manustypelist   = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=StypeWidget(attrs={'data-placeholder': 'Select multiple status types...', 'style': 'width: 100%;'}))
 
-    typeaheads = ["collections", "authors", "signatures", "gldincipits", "gldexplicits",
+    typeaheads = ["collections", "authors", "signatures", "asftexts", "asftrans",
                   "countries", "cities", "libraries", "origins", "manuidnos"]
 
 
@@ -2054,7 +2053,6 @@ class CollectionForm(lilaModelForm):
             # Obligatory values for the querysets of m/s/sg/ssg
             self.fields['collist_m'].queryset = Collection.objects.none()
             self.fields['collist_s'].queryset = Collection.objects.none()
-            self.fields['collist_sg'].queryset = Collection.objects.none()
             self.fields['collist_ssg'].queryset = Collection.objects.none()
         else:
             type = prefix.split("-")[0]
@@ -2065,7 +2063,6 @@ class CollectionForm(lilaModelForm):
             # Note: the collection filters must use the SCOPE of the collection
             self.fields['collist_m'].queryset = Collection.get_scoped_queryset('manu', username, team_group)
             self.fields['collist_s'].queryset = Collection.get_scoped_queryset('sermo', username, team_group)
-            self.fields['collist_sg'].queryset = Collection.get_scoped_queryset('gold', username, team_group)
             self.fields['collist_ssg'].queryset = Collection.get_scoped_queryset('super', username, team_group)
             
 
@@ -2161,7 +2158,7 @@ class CanwitSuperForm(forms.ModelForm):
     # For the method "nodistance"
     newsuper    = forms.CharField(label=_("Sermon Gold"), required=False, help_text="editable", 
                 widget=SuperOneWidget(attrs={'data-placeholder': 'Select links...', 
-                                                  'placeholder': 'Select an Authority file...', 'style': 'width: 100%;', 'class': 'searching'}))
+                                                  'placeholder': 'Select an Authoritative statement...', 'style': 'width: 100%;', 'class': 'searching'}))
 
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
@@ -2252,7 +2249,7 @@ class CanwitKeywordForm(forms.ModelForm):
                 self.fields['name'].initial = kw
 
 
-class SuperSermonGoldForm(lilaModelForm):
+class AustatForm(lilaModelForm):
     stypelist   = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=StypeWidget(attrs={'data-placeholder': 'Select multiple status types...', 'style': 'width: 100%;'}))
     authorname = forms.CharField(label=_("Author"), required=False, 
@@ -2261,10 +2258,10 @@ class SuperSermonGoldForm(lilaModelForm):
                 widget=AuthorWidget(attrs={'data-placeholder': 'Select multiple authors...', 'style': 'width: 100%;', 'class': 'searching'}))
     newauthor = ModelChoiceField(queryset=None, required=False,
                 widget=AuthorOneWidget(attrs={'data-placeholder': 'Select one author...', 'style': 'width: 100%;', 'class': 'searching'}))
-    newincipit = forms.CharField(label=_("Incipit"), required=False,
-                widget=forms.TextInput(attrs={'class': 'typeahead searching gldincipits input-sm', 'placeholder': 'Incipit...', 'style': 'width: 100%;'}))
-    newexplicit = forms.CharField(label=_("Explicit"), required=False,
-                widget=forms.TextInput(attrs={'class': 'typeahead searching gldincipits input-sm', 'placeholder': 'Explicit...', 'style': 'width: 100%;'}))
+    newftext = forms.CharField(label=_("Incipit"), required=False,
+                widget=forms.TextInput(attrs={'class': 'typeahead searching asftexts input-sm', 'placeholder': 'Full text...', 'style': 'width: 100%;'}))
+    newftrans = forms.CharField(label=_("Explicit"), required=False,
+                widget=forms.TextInput(attrs={'class': 'typeahead searching asftexts input-sm', 'placeholder': 'Translation...', 'style': 'width: 100%;'}))
     signature = forms.CharField(label=_("Signature"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching signatures input-sm', 'placeholder': 'Signature/code (Gryson, Clavis)...', 'style': 'width: 100%;'}))
     signatureid = forms.CharField(label=_("Signature ID"), required=False)
@@ -2290,7 +2287,6 @@ class SuperSermonGoldForm(lilaModelForm):
 
     collist_m   = ModelMultipleChoiceField(queryset=None, required=False)
     collist_s   = ModelMultipleChoiceField(queryset=None, required=False)
-    collist_sg  = ModelMultipleChoiceField(queryset=None, required=False)
     collist_ssg = ModelMultipleChoiceField(queryset=None, required=False)
     collist_hist = ModelMultipleChoiceField(queryset=None, required=False)
     superlist    = ModelMultipleChoiceField(queryset=None, required=False)
@@ -2302,25 +2298,25 @@ class SuperSermonGoldForm(lilaModelForm):
                 widget=forms.TextInput(attrs={'class': 'typeahead searching collections input-sm', 'placeholder': 'Collection(s)...', 'style': 'width: 100%;'}))
     collone     = ModelChoiceField(queryset=None, required=False) #, 
                 # widget=CollOneSuperWidget(attrs={'data-placeholder': 'Select one collection...', 'style': 'width: 100%;', 'class': 'searching'}))
-    typeaheads = ["authors", "gldincipits", "gldexplicits", "signatures"]   # Add [signatures] because of select_gold
-    initial_fields = ['author', 'incipit', 'explicit']
+    typeaheads = ["authors", "asftexts", "asftrans", "signatures"]   # Add [signatures] because of select_gold
+    initial_fields = ['author', 'ftext', 'ftrans']
 
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = Austat
-        fields = ['author', 'incipit', 'explicit', 'code', 'number', 'stype']
+        fields = ['author', 'ftext', 'ftrans', 'code', 'number', 'stype']
         widgets={'code':        forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 
                                                        'placeholder': 'lila code. Use wildcards, e.g: *002.*, *003'}),
                  'number':      forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'data-placeholder': 'Author number'}),
-                 'incipit':     forms.TextInput(attrs={'class': 'typeahead searching gldincipits input-sm', 'placeholder': 'Incipit...', 'style': 'width: 100%;'}),
-                 'explicit':    forms.TextInput(attrs={'class': 'typeahead searching gldexplicits input-sm', 'placeholder': 'Explicit...', 'style': 'width: 100%;'}),
+                 'ftext':     forms.TextInput(attrs={'class': 'typeahead searching asftexts input-sm', 'placeholder': 'Full text...', 'style': 'width: 100%;'}),
+                 'ftrans':    forms.TextInput(attrs={'class': 'typeahead searching asftrans input-sm', 'placeholder': 'Translation...', 'style': 'width: 100%;'}),
                  'stype':       forms.Select(attrs={'style': 'width: 100%;'})
                  }
 
     def __init__(self, *args, **kwargs):
         # Start by executing the standard handling
-        super(SuperSermonGoldForm, self).__init__(*args, **kwargs)
+        super(AustatForm, self).__init__(*args, **kwargs)
         oErr = ErrHandle()
         try:
             username = self.username
@@ -2397,13 +2393,12 @@ class SuperSermonGoldForm(lilaModelForm):
                     self.fields['authorname'].initial = instance.author.name
                     self.fields['newauthor'].initial = instance.author.id
                     self.fields['newauthor'].widget.initial = instance.author.id
-                self.fields['newincipit'].initial = instance.incipit
-                self.fields['newexplicit'].initial = instance.explicit
+                self.fields['newftext'].initial = instance.ftext
+                self.fields['newftrans'].initial = instance.ftrans
                 self.fields['collist_ssg'].initial = [x.pk for x in instance.collections.filter(settype="pd").order_by('name')]
                 self.fields['collist_hist'].initial = [x.pk for x in instance.collections.filter(settype="hc").order_by('name')]
                 self.fields['superlist'].initial = [x.pk for x in instance.austat_src.all().order_by('dst__code', 'dst__author__name', 'dst__number')]
                 self.fields['superlist'].queryset = AustatLink.objects.filter(id__in=self.fields['superlist'].initial)
-                self.fields['goldlist'].initial = [x.pk for x in instance.equal_goldsermons.all().order_by('siglist')]
                 self.fields['kwlist'].initial = [x.pk for x in instance.keywords.all().order_by('name')]
                 self.fields['ukwlist'].initial = [x.keyword.pk for x in instance.super_userkeywords.filter(profile=profile).order_by('keyword__name')]
                 self.fields['projlist'].initial = [x.pk for x in instance.projects.all().order_by('name')] #
@@ -2411,9 +2406,19 @@ class SuperSermonGoldForm(lilaModelForm):
                 qs = instance.austat_dst.all()
         except:
             msg = oErr.get_error_message()
-            oErr.DoError("SuperSermonGoldForm-init")
+            oErr.DoError("AustatForm-init")
         # We are okay
         return None
+
+    def clean(self):        # -> Dict[str, Any]:
+        oErr = ErrHandle()
+        response = None
+        try:
+            response = super(AustatForm, self).clean()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("AustatForm-clean")
+        return response
 
 
 class AustatLinkForm(forms.ModelForm):
@@ -2423,7 +2428,7 @@ class AustatLinkForm(forms.ModelForm):
                 widget=forms.Select(attrs={'class': 'input-sm', 'placeholder': 'Type of specification...',  'style': 'width: 100%;', 'tdstyle': 'width: 130px;',
                     'title': 'Direction specification (optional)'}))
     newsuper = ModelChoiceField(queryset=None, required=False, help_text="editable",
-                widget=AustatWidget(attrs={'data-placeholder': 'Select one Authority file...', 'style': 'width: 100%;', 'class': 'searching select2-ssg'}))
+                widget=AustatWidget(attrs={'data-placeholder': 'Select one Authoritative statement...', 'style': 'width: 100%;', 'class': 'searching select2-ssg'}))
     newalt = forms.CharField(label=_("Alternatives"), required=False, help_text="editable", 
                 widget=CheckboxString(attrs={'class': 'input-sm', 'placeholder': 'Alternatives...',  'style': 'width: 100%;', 
                     'title': 'one of several alternatives: check this box when there are several options for a source (of a part of a text), but it is not clear which of these is the direct source'}))
@@ -2501,7 +2506,7 @@ class AustatLinkForm(forms.ModelForm):
                 if existing.count() > 0:
                     # This combination already exists
                     raise forms.ValidationError(
-                            "This Authority file is already linked"
+                            "This Authoritative statement is already linked"
                         )
         # Make sure to return the correct cleaned data again
         return cleaned_data

@@ -240,7 +240,7 @@ def do_create_pdf_manu(request):
     pdf_list_temp = []
     for obj in qs:
         # Count all (Canwit) items for each manuscript
-        count = obj.get_sermon_count()
+        count = obj.get_canwit_count()
         
         # Handle empty origin fields
         origin = None if obj.origin == None else obj.origin.name
