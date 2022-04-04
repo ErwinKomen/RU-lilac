@@ -13,7 +13,7 @@
                 <span>
                   <a class="btn btn-xs jumbo-1" 
                       onclick="ru.lila.seeker.elevate_confirm(this)"
-                      title="Elevate this Gold Sermon to Authority file (Author, incipit, explicit)">
+                      title="Elevate this Gold Sermon to Authoritative statement (Author, full text, translation)">
                     Elevate <span class="glyphicon glyphicon-share-alt"></span>
                   </a>
                 </span>
@@ -35,7 +35,7 @@
                     </table>
                   </div>
                   <div>
-                    <span>Do you really want to elevate this one as Authority file?</span>
+                    <span>Do you really want to elevate this one as Authoritative statement?</span>
                     <span>
                       <a class="btn btn-xs jumbo-1" onclick="ru.lila.seeker.elevate_cancel(this);">Cancel</a>
                     </span>
@@ -43,7 +43,7 @@
                     <span>
                       <a class="btn btn-xs jumbo-3" 
                           href="{% url 'austat_details' object_id %}?goldcopy={{instance.id}}&simple=t"
-                          title="Elevate this Gold Sermon to Authority file (incipit, explicit)">
+                          title="Elevate this Gold Sermon to Authoritative statement (fulltext, translation)">
                         Elevate basic<span class="glyphicon glyphicon-share-alt"></span>
                       </a>
                     </span>
@@ -51,7 +51,7 @@
                     <span>
                       <a class="btn btn-xs jumbo-4" 
                           href="{% url 'austat_details' object_id %}?goldcopy={{instance.id}}&simple=f"
-                          title="Elevate this Gold Sermon to Authority file (Author, incipit, explicit)">
+                          title="Elevate this Gold Sermon to Authoritative statement (fulltext, translation)">
                         Elevate all<span class="glyphicon glyphicon-share-alt"></span>
                       </a>
                     </span>

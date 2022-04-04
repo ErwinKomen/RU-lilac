@@ -1,4 +1,4 @@
-﻿var django = {
+var django = {
   "jQuery": jQuery.noConflict(true)
 };
 var jQuery = django.jQuery;
@@ -152,7 +152,7 @@ var ru = (function ($, ru) {
             div_ta = "#__typeaheads__",
             i = 0,
             lst_options = ["countries", "cities", "libraries", "origins", "locations", "litrefs", "authors",
-                           "gldincipits", "srmincipits", "gldexplicits", "srmexplicits",
+                           "asftexts", "cwftexts", "asftrans", "cwftrans",
                            "manuidnos", "editions", "keywords", "collections"],
             item = "";
 
@@ -278,7 +278,7 @@ var ru = (function ($, ru) {
                     }
                   });
                   break;
-                case "gldincipits":
+                case "asftexts":
                   // Bloodhound: gldincipit
                   loc_gldincipits = new Bloodhound({
                     datumTokenizer: function (myObj) {
@@ -289,9 +289,9 @@ var ru = (function ($, ru) {
                     },
                     // loc_countries will be an array of countries
                     local: loc_gldincipitsL,
-                    prefetch: { url: base_url + 'api/gldincipits/', cache: true },
+                    prefetch: { url: base_url + 'api/asftexts/', cache: true },
                     remote: {
-                      url: base_url + 'api/gldincipits/?name=',
+                      url: base_url + 'api/asftexts/?name=',
                       replace: function (url, uriEncodedQuery) {
                         url += encodeURIComponent(uriEncodedQuery);
                         return url;
@@ -299,7 +299,7 @@ var ru = (function ($, ru) {
                     }
                   });
                   break;
-                case "srmincipits":
+                case "cwftexts":
                   // Bloodhound: srmincipit
                   loc_srmincipits = new Bloodhound({
                     datumTokenizer: function (myObj) {
@@ -310,9 +310,9 @@ var ru = (function ($, ru) {
                     },
                     // loc_countries will be an array of countries
                     local: loc_srmincipitsL,
-                    prefetch: { url: base_url + 'api/srmincipits/', cache: true },
+                    prefetch: { url: base_url + 'api/cwftexts/', cache: true },
                     remote: {
-                      url: base_url + 'api/srmincipits/?name=',
+                      url: base_url + 'api/cwftexts/?name=',
                       replace: function (url, uriEncodedQuery) {
                         url += encodeURIComponent(uriEncodedQuery);
                         return url;
@@ -320,7 +320,7 @@ var ru = (function ($, ru) {
                     }
                   });
                   break;
-                case "gldexplicits":
+                case "asftrans":
                   // Bloodhound: gldexplicit
                   loc_gldexplicits = new Bloodhound({
                     datumTokenizer: function (myObj) {
@@ -331,9 +331,9 @@ var ru = (function ($, ru) {
                     },
                     // loc_countries will be an array of countries
                     local: loc_gldexplicitsL,
-                    prefetch: { url: base_url + 'api/gldexplicits/', cache: true },
+                    prefetch: { url: base_url + 'api/asftrans/', cache: true },
                     remote: {
-                      url: base_url + 'api/gldexplicits/?name=',
+                      url: base_url + 'api/asftrans/?name=',
                       replace: function (url, uriEncodedQuery) {
                         url += encodeURIComponent(uriEncodedQuery);
                         return url;
@@ -341,7 +341,7 @@ var ru = (function ($, ru) {
                     }
                   });
                   break;
-                case "srmexplicits":
+                case "cwftrans":
                   // Bloodhound: srmexplicit
                   loc_srmexplicits = new Bloodhound({
                     datumTokenizer: function (myObj) {
@@ -352,9 +352,9 @@ var ru = (function ($, ru) {
                     },
                     // loc_countries will be an array of countries
                     local: loc_srmexplicitsL,
-                    prefetch: { url: base_url + 'api/srmexplicits/', cache: true },
+                    prefetch: { url: base_url + 'api/cwftrans/', cache: true },
                     remote: {
-                      url: base_url + 'api/srmexplicits/?name=',
+                      url: base_url + 'api/cwftrans/?name=',
                       replace: function (url, uriEncodedQuery) {
                         url += encodeURIComponent(uriEncodedQuery);
                         return url;
@@ -520,10 +520,10 @@ var ru = (function ($, ru) {
           $(".typeahead.locations").typeahead('destroy');
           $(".typeahead.litrefs").typeahead('destroy');
           $(".typeahead.authors").typeahead('destroy');
-          $(".typeahead.gldincipits").typeahead('destroy');
-          $(".typeahead.gldexplicits").typeahead('destroy');
-          $(".typeahead.srmincipits").typeahead('destroy');
-          $(".typeahead.srmexplicits").typeahead('destroy');
+          $(".typeahead.asftexts").typeahead('destroy');
+          $(".typeahead.asftrans").typeahead('destroy');
+          $(".typeahead.cwftexts").typeahead('destroy');
+          $(".typeahead.cwftrans").typeahead('destroy');
           $(".typeahead.editions").typeahead('destroy');
           $(".typeahead.keywords").typeahead('destroy');
           $(".typeahead.collections").typeahead('destroy');
@@ -643,10 +643,10 @@ var ru = (function ($, ru) {
           });
 
           // Type-ahead: gldincipit -- NOTE: not in a form-row, but in a normal 'row'
-          $(".row .typeahead.gldincipits, tr .typeahead.gldincipits").typeahead(
+          $(".row .typeahead.asftexts, tr .typeahead.asftexts").typeahead(
             { hint: true, highlight: true, minLength: 1 },
             {
-              name: 'gldincipits', source: loc_gldincipits, limit: 25, displayKey: "name",
+              name: 'asftexts', source: loc_gldincipits, limit: 25, displayKey: "name",
               templates: {
                 empty: '<p>Use the wildcard * to mark inexact wording or # for whole words</p>',
                 suggestion: function (item) {
@@ -655,16 +655,16 @@ var ru = (function ($, ru) {
               }
             }
           ).on('typeahead:selected typeahead:autocompleted', function (e, suggestion, name) {
-            $(this).closest("td").find(".gldincipit-key input").last().val(suggestion.id);
+            $(this).closest("td").find(".gldftext-key input").last().val(suggestion.id);
           }).on('typeahead:open', function (e) {
-            $(this).closest("td").find(".gldincipit-key input").last().val("");
+            $(this).closest("td").find(".gldftext-key input").last().val("");
           });
 
           // Type-ahead: srmincipit -- NOTE: not in a form-row, but in a normal 'row'
-          $(".row .typeahead.srmincipits, tr .typeahead.srmincipits").typeahead(
+          $(".row .typeahead.cwftexts, tr .typeahead.cwftexts").typeahead(
             { hint: true, highlight: true, minLength: 1 },
             {
-              name: 'srmincipits', source: loc_srmincipits, limit: 25, displayKey: "name",
+              name: 'cwftexts', source: loc_srmincipits, limit: 25, displayKey: "name",
               templates: {
                 empty: '<p>Use the wildcard * to mark inexact wording or # for whole words</p>',
                 suggestion: function (item) {
@@ -679,10 +679,10 @@ var ru = (function ($, ru) {
           });
 
           // Type-ahead: gldexplicit -- NOTE: not in a form-row, but in a normal 'row'
-          $(".row .typeahead.gldexplicits, tr:not(.empty-form) .typeahead.gldexplicits").typeahead(
+          $(".row .typeahead.asftrans, tr:not(.empty-form) .typeahead.asftrans").typeahead(
             { hint: true, highlight: true, minLength: 1 },
             {
-              name: 'gldexplicits', source: loc_gldexplicits, limit: 25, displayKey: "name",
+              name: 'asftrans', source: loc_gldexplicits, limit: 25, displayKey: "name",
               templates: {
                 empty: '<p>Use the wildcard * to mark inexact wording or # for whole words</p>',
                 suggestion: function (item) {
@@ -691,16 +691,16 @@ var ru = (function ($, ru) {
               }
             }
           ).on('typeahead:selected typeahead:autocompleted', function (e, suggestion, name) {
-            $(this).closest("td").find(".gldexplicit-key input").last().val(suggestion.id);
+            $(this).closest("td").find(".gldftrans-key input").last().val(suggestion.id);
           }).on('typeahead:open', function (e) {
-            $(this).closest("td").find(".gldexplicit-key input").last().val("");
+            $(this).closest("td").find(".gldftrans-key input").last().val("");
           });
 
           // Type-ahead: srmexplicit -- NOTE: not in a form-row, but in a normal 'row'
-          $(".row .typeahead.srmexplicits, tr:not(.empty-form) .typeahead.srmexplicits").typeahead(
+          $(".row .typeahead.cwftrans, tr:not(.empty-form) .typeahead.cwftrans").typeahead(
             { hint: true, highlight: true, minLength: 1 },
             {
-              name: 'srmexplicits', source: loc_srmexplicits, limit: 25, displayKey: "name",
+              name: 'cwftrans', source: loc_srmexplicits, limit: 25, displayKey: "name",
               templates: {
                 empty: '<p>Use the wildcard * to mark inexact wording or # for whole words</p>',
                 suggestion: function (item) {

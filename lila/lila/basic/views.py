@@ -671,6 +671,41 @@ def get_current_datetime():
     """Get the current time"""
     return timezone.now()
 
+def get_previous_page(request, top=False):
+    """Find the previous page for this user"""
+
+    username = "anonymous" if request.user == None else request.user.username
+    if username != "anonymous" and request.user.username != "":
+        # Get the current path list
+        p_list = [] # Profile.get_stack(username)
+        p_item = []
+        if len(p_list) < 2:
+            prevpage = request.META.get('HTTP_REFERER') 
+        elif top:
+            p_item = p_list[len(p_list)-1]
+            prevpage = p_item['url']
+        else:
+            p_item = p_list[len(p_list)-2]
+            prevpage = p_item['url']
+        # Possibly add arguments
+        if 'kwargs' in p_item:
+            # First strip off any arguments (anything after ?) in the url
+            if "?" in prevpage:
+                prevpage = prevpage.split("?")[0]
+            bFirst = True
+            for k,v in p_item['kwargs'].items():
+                if bFirst:
+                    addsign = "?"
+                    bFirst = False
+                else:
+                    addsign = "&"
+                prevpage = "{}{}{}={}".format(prevpage, addsign, k, v)
+    else:
+        prevpage = request.META.get('HTTP_REFERER') 
+    # Return the path
+    return prevpage
+
+
 def treat_bom(sHtml):
     """REmove the BOM marker except at the beginning of the string"""
 
@@ -769,42 +804,6 @@ def adapt_m2o(cls, instance, field, qs, link_to_obj = None, **kwargs):
         # Remove links that are not in [qs]
         for obj in linked_qs:
             if obj not in qs:
-                # Remove this item
-                obj.delete()
-        # Return okay
-        return True
-    except:
-        msg = errHandle.get_error_message()
-        return False
-
-def adapt_m2o_sig(instance, qs):
-    """Adapt the instances of [CanwitSignature] pointing to [instance] to only include [qs] 
-    
-    Note: convert CanwitSignature into (Gold) Signature
-    """
-
-    errHandle = ErrHandle()
-    try:
-        # Get all the [CanwitSignature] items currently linking to [instance]
-        linked_qs = CanwitSignature.objects.filter(sermon=instance)
-        # make sure all items in [qs] are linked to [instance]
-        bRedo = False
-        for obj in qs:
-            # Get the CanwitSignature equivalent for Gold signature [obj]
-            sermsig = instance.get_sermonsig(obj)
-            if sermsig not in linked_qs:
-                # Indicate that we need to re-query
-                bRedo = True
-        # Do we need to re-query?
-        if bRedo: 
-            # Yes we do...
-            linked_qs = CanwitSignature.objects.filter(sermon=instance)
-        # Remove links that are not in [qs]
-        for obj in linked_qs:
-            # Get the gold-signature equivalent of this sermon signature
-            gsig = obj.get_goldsig()
-            # Check if the gold-sermon equivalent is in [qs]
-            if gsig not in qs:
                 # Remove this item
                 obj.delete()
         # Return okay
@@ -1595,9 +1594,6 @@ class BasicDetails(DetailView):
         return response
 
     def initializations(self, request, pk):
-        # Store the previous page
-        # self.previous = get_previous_page(request)
-
         self.lst_typeahead = []
 
         # Copy any pk
@@ -1672,7 +1668,6 @@ class BasicDetails(DetailView):
         context['is_app_editor'] = user_is_ingroup(self.request, app_editor)
         context['is_app_userplus'] = user_is_ingroup(self.request, app_userplus)
         context['is_app_moderator'] = user_is_superuser(self.request) or user_is_ingroup(self.request, app_moderator)
-        # context['prevpage'] = get_previous_page(self.request) # self.previous
         context['afternewurl'] = ""
 
         context['topleftbuttons'] = ""
@@ -2637,8 +2632,6 @@ class BasicPart(View):
         return formset
 
     def initializations(self, request, object_id):
-        # Store the previous page
-        #self.previous = get_previous_page(request)
         # Clear errors
         self.arErr = []
         # COpy the request

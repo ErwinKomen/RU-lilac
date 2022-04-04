@@ -2040,7 +2040,7 @@ var ru = (function ($, ru) {
           // Add popup title to nodes;
           node.append("title")
             .text(function (d) {
-              return "Authority File(s): " + d.lila + "\n Linked manifestations: " + d.scount + " (id=" + d.id + ")";
+              return "Authoritative statement(s): " + d.lila + "\n Linked manifestations: " + d.scount + " (id=" + d.id + ")";
             });
           // Add popup title to links: this provides the actual weight
           link.append("title")

@@ -30,6 +30,7 @@ import json
 
 # ======= imports from my own application ======
 from lila.utils import ErrHandle
+from lila.bible.models import Reference
 from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_entries, get_searchable, get_now_time, \
     add_gold2equal, add_equal2equal, add_ssg_equal2equal, get_helptext, Information, Country, City, Author, Manuscript, \
     User, Group, Origin, Canwit, MsItem, Codhead, CanwitKeyword, CanwitAustat, NewsItem, \
@@ -51,7 +52,7 @@ from lila.seeker.forms import SearchCollectionForm, SearchManuscriptForm, Search
     ReportEditForm, SourceEditForm, ManuscriptProvForm, LocationForm, LocationRelForm, OriginForm, \
     LibraryForm, ManuscriptExtForm, ManuscriptLitrefForm, CanwitKeywordForm, KeywordForm, \
     ManuscriptKeywordForm, DaterangeForm, ProjectForm, CanwitCollectionForm, CollectionForm, \
-    SuperSermonGoldForm, ManuscriptCollectionForm, CollectionLitrefForm, \
+    AustatForm, ManuscriptCollectionForm, CollectionLitrefForm, \
     SuperSermonGoldCollectionForm, ProfileForm, UserKeywordForm, ProvenanceForm, ProvenanceManForm, \
     TemplateForm, TemplateImportForm, ManuReconForm,  ManuscriptProjectForm, \
     CodicoForm, CodicoProvForm, ProvenanceCodForm, OriginCodForm, CodicoOriginForm
@@ -240,9 +241,10 @@ class ManuscriptEdit(BasicDetails):
         if instance != None and instance.mtype == "rec":
             # Also adapt the title
             self.titlesg = "Reconstructed manuscript"
-        # Make sure to check all codico's
-        for codico in instance.manuscriptcodicounits.all():
-            codico.check_hierarchy()
+        if not instance is None:
+            # Make sure to check all codico's
+            for codico in instance.manuscriptcodicounits.all():
+                codico.check_hierarchy()
 
         return None
 
@@ -1154,7 +1156,7 @@ class ManuscriptListView(BasicList):
         {"name": "PD: Sermon",              "id": "filter_collection_sermo",    "enabled": False, "head_id": "filter_collection"},
         # Issue #416: Delete the option to search for a GoldSermon dataset 
         # {"name": "PD: Sermon Gold",         "idco": "filter_collection_gold",     "enabled": False, "head_id": "filter_collection"},
-        {"name": "PD: Authority file",   "id": "filter_collection_super",    "enabled": False, "head_id": "filter_collection"},
+        {"name": "PD: Authoritative statement",   "id": "filter_collection_super",    "enabled": False, "head_id": "filter_collection"},
       ]
 
     searches = [
@@ -1340,7 +1342,7 @@ class ManuscriptListView(BasicList):
                 sTitle = codico.name
         elif custom == "count":
             # html.append("{}".format(instance.manusermons.count()))
-            html.append("{}".format(instance.get_sermon_count()))
+            html.append("{}".format(instance.get_canwit_count()))
         elif custom == "from":
             # Walk all codico's
             for item in Daterange.objects.filter(codico__manuscript=instance):
@@ -1501,7 +1503,7 @@ class ManuscriptListView(BasicList):
         # fields['mtype'] = 'man'
         # Make sure we show MANUSCRIPTS (identifiers) as well as reconstructions
 
-        # Make sure we only use the Authority Files with accepted modifications
+        # Make sure we only use the Authoritative statements with accepted modifications
         # This means that atype should be 'acc' (and not: 'mod', 'rej' or 'def')        
         # With this condition we make sure ALL manuscripts are in de unfiltered listview
         print (fields['lilacode'])
@@ -2459,7 +2461,7 @@ class CodheadEdit(BasicDetails):
         manu = instance.get_manuscript()
         #if manu and instance.order < 0:
         #    # Calculate how many sermons there are
-        #    sermon_count = manu.get_sermon_count()
+        #    sermon_count = manu.get_canwit_count()
         #    # Make sure the new sermon gets changed
         #    form.instance.order = sermon_count
 
@@ -2854,7 +2856,7 @@ class CanwitEdit(BasicDetails):
                     {'type': 'plain', 'label': "Keywords (user):", 'value': instance.get_keywords_user_markdown(profile),   'field_list': 'ukwlist',
                      'title': 'User-specific keywords. If the moderator accepts these, they move to regular keywords.'},
                     {'type': 'line',  'label': "Keywords (related):",   'value': instance.get_keywords_ssg_markdown(),
-                     'title': 'Keywords attached to the Authority file(s)'},
+                     'title': 'Keywords attached to the Authoritative statement(s)'},
                     {'type': 'line',    'label': "Gryson/Clavis:",'value': instance.get_eqsetsignatures_markdown('combi'),
                      'title': "Gryson/Clavis codes of the Sermons Gold that are part of the same equality set + those manually linked to this manifestation Sermon"}, 
                     {'type': 'line',    'label': "Gryson/Clavis (manual):",'value': instance.get_sermonsignatures_markdown(),
@@ -2864,9 +2866,9 @@ class CanwitEdit(BasicDetails):
                     {'type': 'plain',   'label': "Personal datasets:",  'value': instance.get_collections_markdown(username, team_group, settype="pd"), 
                      'multiple': True,  'field_list': 'collist_s',      'fso': self.formset_objects[2] },
                     {'type': 'plain',   'label': "Public datasets (link):",  'value': instance.get_collection_link("pd"), 
-                     'title': "Public datasets in which an Authority file is that is linked to this sermon"},
+                     'title': "Public datasets in which an Authoritative statement is that is linked to this sermon"},
                     {'type': 'plain',   'label': "Historical collections (link):",  'value': instance.get_collection_link("hc"), 
-                     'title': "Historical collections in which an Authority file is that is linked to this sermon"},
+                     'title': "Historical collections in which an Authoritative statement is that is linked to this sermon"},
                     {'type': 'line',    'label': "Editions:",           'value': instance.get_editions_markdown(),
                      'title': "Editions of the Sermons Gold that are part of the same equality set"},
                     {'type': 'line',    'label': "Literature:",         'value': instance.get_litrefs_markdown()},
@@ -2875,7 +2877,7 @@ class CanwitEdit(BasicDetails):
                     ]
                 for item in mainitems_m2m: context['mainitems'].append(item)
             # IN all cases
-            mainitems_SSG = {'type': 'line',    'label': "Authority file links:",  'value': self.get_superlinks_markdown(instance), 
+            mainitems_SSG = {'type': 'line',    'label': "Authoritative statement links:",  'value': self.get_superlinks_markdown(instance), 
                  'multiple': True,  'field_list': 'superlist',       'fso': self.formset_objects[0], 
                  'inline_selection': 'ru.lila.ssglink_template',   'template_selection': 'ru.lila.ssgdist_template'}
             context['mainitems'].append(mainitems_SSG)
@@ -2949,7 +2951,7 @@ class CanwitEdit(BasicDetails):
         manu = instance.get_manuscript()
         if manu and instance.order < 0:
             # Calculate how many sermons there are
-            sermon_count = manu.get_sermon_count()
+            sermon_count = manu.get_canwit_count()
             # Make sure the new sermon gets changed
             form.instance.order = sermon_count
 
@@ -3379,7 +3381,7 @@ class CanwitListView(BasicList):
                 {"name": "Sermon",           "id": "filter_collsermo",      "enabled": False, "head_id": "filter_collection"},
                 # Issue #416: Delete the option to search for a GoldSermon personal dataset
                 # {"name": "Sermon Gold",      "id": "filter_collgold",       "enabled": False, "head_id": "filter_collection"},
-                {"name": "Authority file",   "id": "filter_collsuper",      "enabled": False, "head_id": "filter_collection"},
+                {"name": "Authoritative statement",   "id": "filter_collsuper",      "enabled": False, "head_id": "filter_collection"},
                 {"name": "Manuscript",       "id": "filter_collmanu",       "enabled": False, "head_id": "filter_collection"},
                 {"name": "Historical",       "id": "filter_collhc",         "enabled": False, "head_id": "filter_collection"},
                 {"name": "Shelfmark",        "id": "filter_manuid",         "enabled": False, "head_id": "filter_manuscript"},
@@ -3496,10 +3498,10 @@ class CanwitListView(BasicList):
         elif custom == "signature":
             html.append(instance.signature_string(include_auto=True, do_plain=False))
         elif custom == "incexpl":
-            html.append("<span>{}</span>".format(instance.get_incipit_markdown()))
+            html.append("<span>{}</span>".format(instance.get_ftext_markdown()))
             dots = "..." if instance.incipit else ""
             html.append("<span style='color: blue;'>{}</span>".format(dots))
-            html.append("<span>{}</span>".format(instance.get_explicit_markdown()))
+            html.append("<span>{}</span>".format(instance.get_ftrans_markdown()))
         elif custom == "manuscript":
             manu = instance.get_manuscript()
             if manu == None:
@@ -3655,7 +3657,7 @@ class CanwitListView(BasicList):
             msg = oErr.get_error_message()
             oErr.DoError("SermonListView/adapt_search")
         
-        # Make sure we only use the Authority Files with accepted modifications
+        # Make sure we only use the Authoritative statements with accepted modifications
         # This means that atype should be 'acc' (and not: 'mod', 'rej' or 'def') 
         # With this condition we make sure ALL sermons are in de unfiltered listview
         if fields['lilacode'] != '':
@@ -3680,7 +3682,7 @@ class CanwitListView(BasicList):
 
 class AustatEdit(BasicDetails):
     model = Austat
-    mForm = SuperSermonGoldForm
+    mForm = AustatForm
     prefix = 'as'
     title = "Authoritative Statement"
     rtype = "json"
@@ -3729,18 +3731,18 @@ class AustatEdit(BasicDetails):
                 # Issue #295: the [number] (number within author) must be there, though hidden, not editable
                 {'type': 'plain', 'label': "Number:",        'value': instance.number,    'field_key': 'number',   'empty': 'hide'},
                 {'type': 'plain', 'label': "Author id:",     'value': author_id,          'field_key': 'author',   'empty': 'hide'},
-                {'type': 'plain', 'label': "Incipit:",       'value': instance.incipit,   'field_key': 'incipit',  'empty': 'hide'},
-                {'type': 'plain', 'label': "Explicit:",      'value': instance.explicit,  'field_key': 'explicit', 'empty': 'hide'},
+                {'type': 'plain', 'label': "Full text:",     'value': instance.ftext,     'field_key': 'ftext',    'empty': 'hide'},
+                {'type': 'plain', 'label': "Translation:",   'value': instance.ftrans,    'field_key': 'ftrans',   'empty': 'hide'},
 
                 # Issue #212: remove this sermon number
                 # {'type': 'plain', 'label': "Sermon number:", 'value': instance.number, 'field_view': 'number', 
                 # 'title': 'This is the automatically assigned sermon number for this particular author' },
 
                 {'type': 'plain', 'label': "lila Code:",   'value': instance.code,   'title': 'The lila Code is automatically determined'}, 
-                {'type': 'safe',  'label': "Incipit:",       'value': instance.get_incipit_markdown("search"), 
-                 'field_key': 'newincipit',  'key_ta': 'gldincipit-key', 'title': instance.get_incipit_markdown("actual")}, 
-                {'type': 'safe',  'label': "Explicit:",      'value': instance.get_explicit_markdown("search"),
-                 'field_key': 'newexplicit', 'key_ta': 'gldexplicit-key', 'title': instance.get_explicit_markdown("actual")}, 
+                {'type': 'safe',  'label': "Full text:",   'value': instance.get_ftext_markdown("search"), 
+                 'field_key': 'newftext',  'key_ta': 'gldftext-key', 'title': instance.get_ftext_markdown("actual")}, 
+                {'type': 'safe',  'label': "Translation:", 'value': instance.get_ftrans_markdown("search"),
+                 'field_key': 'newftrans', 'key_ta': 'gldftrans-key', 'title': instance.get_ftrans_markdown("actual")}, 
                 # Hier project    
     
 
@@ -3756,9 +3758,7 @@ class AustatEdit(BasicDetails):
             
                 {'type': 'line',  'label': "Historical collections:",   'value': instance.get_collections_markdown(username, team_group, settype="hc"), 
                     'field_list': 'collist_hist', 'fso': self.formset_objects[0] },
-                {'type': 'line',  'label': "Contains:", 'title': 'The gold sermons in this equality set',  'value': self.get_goldset_markdown(instance), 
-                    'field_list': 'goldlist', 'inline_selection': 'ru.lila.sg_template' },
-                {'type': 'line',    'label': "Links:",  'title': "Authority file links:",  'value': instance.get_superlinks_markdown(), 
+                {'type': 'line',    'label': "Links:",  'title': "Authoritative statement links:",  'value': instance.get_superlinks_markdown(), 
                     'multiple': True,  'field_list': 'superlist',       'fso': self.formset_objects[1], 
                     'inline_selection': 'ru.lila.as2as_template',   'template_selection': 'ru.lila.ssg_template'},
                 {'type': 'line', 'label': "Editions:",              'value': instance.get_editions_markdown(),
@@ -3771,37 +3771,6 @@ class AustatEdit(BasicDetails):
 
             # Some tests can only be performed if this is *not* a new instance
             if not instance is None and not instance.id is None:
-                pending = approval_pending(instance)
-                if user_is_ingroup(self.request, app_editor) and pending.count() > 0:
-                    context['approval_pending'] = pending
-                    context['approval_pending_list'] = approval_pending_list(instance)
-                    context['mainitems'].append(dict(
-                        type='safe', label='', value=render_to_string('seeker/pending_changes.html', context, self.request)))
-
-                # Special processing for those with editing rights
-                if may_edit_project(self.request, profile, instance):
-
-                    # Adapt the PROJECT line in the mainitems list
-                    for oItem in context['mainitems']:
-                        if oItem['label'] == "Project:":
-                            # Add the list
-                            oItem['field_list'] = "projlist"
-                            # We can now leave from here
-                            break
-                    # Any editor may suggest that an SSG be added to other project(s)
-                    oItem = dict(type="plain", 
-                                 label="Add to project",
-                                 title="Submit a request to add this SSG to the following project(s)",
-                                 value=self.get_prj_submitted(instance))
-                    oItem['field_list'] = "addprojlist"
-                    context['mainitems'].append(oItem)
-                    # Any editor may suggest that an SSG be deleted from particular project(s)
-                    oItem = dict(type="plain", 
-                                 label="Remove from project",
-                                 title="Submit a request to remove this SSG from the following project(s)",
-                                 value=self.get_prj_submitted(instance))
-                    oItem['field_list'] = "delprojlist"
-                    context['mainitems'].append(oItem)
 
                 # THe SSG items that have a value in *moved* may not be editable
                 editable = (instance.moved == None)
@@ -3820,32 +3789,19 @@ class AustatEdit(BasicDetails):
             # Signal that we have select2
             context['has_select2'] = True
 
-            # SPecification of the new button
-            context['new_button_title'] = "Sermon Gold"
-            context['new_button_name'] = "gold"
-            context['new_button_url'] = reverse("gold_details")
-            context['new_button_params'] = [
-                {'name': 'gold-n-equal', 'value': instance.id}
-                ]
+            ## SPecification of the new button
+            #context['new_button_title'] = "Sermon Gold"
+            #context['new_button_name'] = "gold"
+            #context['new_button_url'] = reverse("gold_details")
+            #context['new_button_params'] = [
+            #    {'name': 'gold-n-equal', 'value': instance.id}
+            #    ]
         except:
             msg = oErr.get_error_message()
             oErr.DoError("AustatEdit/add_to_context")
 
         # Return the context we have made
         return context
-
-    def get_goldset_markdown(self, instance):
-        context = {}
-        template_name = 'seeker/super_goldset.html'
-        sBack = ""
-        if instance:
-            # Add to context
-            context['goldlist'] = instance.equal_goldsermons.all().order_by('siglist')
-            context['is_app_editor'] = user_is_ingroup(self.request, app_editor)
-            context['object_id'] = instance.id
-            # Calculate with the template
-            sBack = render_to_string(template_name, context)
-        return sBack
 
     def process_formset(self, prefix, request, formset):
         errors = []
@@ -3976,8 +3932,8 @@ class AustatEdit(BasicDetails):
         bBack = True
         msg = ""
         transfer_changes = [
-            {'src': 'newincipit',  'dst': 'incipit',  'type': 'text'},
-            {'src': 'newexplicit', 'dst': 'explicit', 'type': 'text'},
+            {'src': 'newftext',    'dst': 'ftext',    'type': 'text'},
+            {'src': 'newftrans',   'dst': 'ftrans',   'type': 'text'},
             {'src': 'newauthor',   'dst': 'author',   'type': 'fk'},
             ]
         try:
@@ -3986,83 +3942,42 @@ class AustatEdit(BasicDetails):
                 username = self.request.user.username
                 profile = Profile.get_user_profile(username)
 
-                ## Check for author
-                #if instance.author == None:
-                #    # Set to "undecided" author if possible
-                #    author = Author.get_undecided()
-                #    instance.author = author
-
                 # Get the cleaned data: this is the new stuff
                 cleaned_data = form.cleaned_data
 
-                # See if and how many changes are suggested
-                iCount, bNeedReload = approval_parse_changes(profile, cleaned_data, instance)
-                if bNeedReload:
-                    # Signal that we need to have a re-load
-                    self.bNeedReload = True
-
-                # Only proceed if changes don't need to be reviewed by others
-                if iCount == 0:
-
-                    # This means that any changes may be implemented right away
-                    for oTransfer in transfer_changes:
-                        type = oTransfer.get("type")
-                        src_field = oTransfer.get("src")
-                        dst_field = oTransfer.get("dst")
-                        src_value = cleaned_data.get(src_field)
+                # This means that any changes may be implemented right away
+                for oTransfer in transfer_changes:
+                    type = oTransfer.get("type")
+                    src_field = oTransfer.get("src")
+                    dst_field = oTransfer.get("dst")
+                    src_value = cleaned_data.get(src_field)
                         
-                        # Transfer the value
-                        if type == "fk" or type == "text":
-                            # Is there any change?
-                            prev_value = getattr(instance, dst_field)
-                            if src_value != prev_value:
-                                # Special cases
-                                if dst_field == "author":
-                                    authornameLC = instance.author.name.lower()
-                                    # Determine what to do in terms of 'moved'.
-                                    if authornameLC != "undecided":
-                                        # Create a copy of the object I used to be
-                                        moved = Austat.create_moved(instance)
+                    # Transfer the value
+                    if type == "fk" or type == "text":
+                        # Is there any change?
+                        prev_value = getattr(instance, dst_field)
+                        if src_value != prev_value:
+                            # Special cases
+                            if dst_field == "author":
+                                authornameLC = instance.author.name.lower()
+                                # Determine what to do in terms of 'moved'.
+                                if authornameLC != "undecided":
+                                    # Create a copy of the object I used to be
+                                    moved = Austat.create_moved(instance)
 
-                                # Perform the actual change
-                                setattr(form.instance, dst_field, src_value)
+                            # Perform the actual change
+                            setattr(form.instance, dst_field, src_value)
 
-                    # Check for author
-                    if instance.author == None:
-                        # Set to "undecided" author if possible
-                        author = Author.get_undecided()
-                        instance.author = author
+                # Check for author
+                if instance.author == None:
+                    # Set to "undecided" author if possible
+                    author = Author.get_undecided()
+                    instance.author = author
 
-                    # Issue #473: automatic assignment of project for particular editor(s)
-                    projlist = form.cleaned_data.get("projlist")
-                    bBack, msg = evaluate_projlist(profile, instance, projlist, "Authority File")
+                # Issue #473: automatic assignment of project for particular editor(s)
+                projlist = form.cleaned_data.get("projlist")
+                bBack, msg = evaluate_projlist(profile, instance, projlist, "Authoritative statement")
 
-                else:
-                    # The changes may *NOT* be committed
-                    msg = None   # "The suggested changes will be reviewed by the other projects' editors"
-                    bBack = False
-
-                    # Changes may not be commited: reset the changes in the transfer_changes formfields
-                    for oTransfer in transfer_changes:
-                        type = oTransfer.get("type")
-                        src_field = oTransfer.get("src")
-                        dst_field = oTransfer.get("dst")
-                        key_reset = "{}-{}".format(form.prefix, src_field)
-                        value_reset = None
-                        if type == "text":
-                            value_reset = getattr(instance, dst_field)
-                        elif dst_field == "author":
-                            value_reset = str(instance.author.id)
-                        if value_reset != None:
-                            form.data[key_reset] = value_reset
-
-                    ## The author gets a special treatment: [newauthor] should equal [author]
-                    #key_newauthor = '{}-newauthor'.format(form.prefix)
-                    #form.data[key_newauthor] = str(instance.author.id)
-
-                    # NOTE (EK): the following (redirection) is no longer needed, since all the changes are shown in the EDIT view
-                    ## Make sure redirection takes place
-                    #self.redirect_to = reverse('austat_details', kwargs={'pk': instance.id})
         except:
             msg = oErr.get_error_message()
             oErr.DoError("AustatEdit/before_save")
@@ -4075,8 +3990,7 @@ class AustatEdit(BasicDetails):
             oErr = ErrHandle()
 
             try:
-                allow_adding = []
-                iCountAdd = approval_parse_adding(profile, projlist, instance, allow_adding) 
+                allow_adding = projlist
                 if len(allow_adding) > 0:
                     # Some combinations of Project-SSG may be added right away
                     with transaction.atomic():
@@ -4095,8 +4009,7 @@ class AustatEdit(BasicDetails):
 
             try:
                 if instance.projects.count() > 1:
-                    allow_removing = []
-                    iCountAddB = approval_parse_removing(profile, projlist, instance, allow_removing) 
+                    allow_removing = projlist
                     if len(allow_removing) > 0:
                         # There are some project-SSG associations that may be removed right away
                         delete_id = []
@@ -4284,7 +4197,7 @@ class AustatDetails(AustatEdit):
                 ManuscriptCorpus.objects.filter(super=instance).delete()
                 ManuscriptCorpusLock.objects.filter(profile=profile, super=instance).delete()
 
-                # List of manuscripts related to the SSG via sermon descriptions
+                # List of manuscripts related to the SSG via canwit descriptions
                 manuscripts = dict(title="Manuscripts", prefix="manu", gridclass="resizable")
 
                 # WAS: Get all Canwit instances linking to the correct eqg instance
@@ -4292,15 +4205,14 @@ class AustatDetails(AustatEdit):
 
                 # New: Get all the Canwit instances linked with equality to SSG:
                 # But make sure the EXCLUDE those with `mtype` = `tem`
-                qs_s = CanwitAustat.objects.filter(super=instance).exclude(sermon__mtype="tem").order_by('sermon__msitem__manu__idno', 'sermon__locus')
+                qs_s = CanwitAustat.objects.filter(super=instance).exclude(canwit__mtype="tem").order_by('canwit__msitem__manu__idno', 'canwit__locus')
                 rel_list =[]
                 method = "FourColumns"
                 method = "Issue216"
-                for sermonlink in qs_s:
-                    sermon = sermonlink.sermon
+                for canwitlink in qs_s:
+                    canwit = canwitlink.canwit
                     # Get the 'item': the manuscript
-                    # OLD: item = sermon.manu
-                    item = sermon.msitem.manu
+                    item = canwit.msitem.manu
                     rel_item = []
                 
                     if method == "FourColumns":
@@ -4310,7 +4222,7 @@ class AustatDetails(AustatEdit):
                                          'link': reverse('manuscript_details', kwargs={'pk': item.id})})
 
                         # Location number and link to the correct point in the manuscript details view...
-                        itemloc = "{}/{}".format(sermon.order, item.get_sermon_count())
+                        itemloc = "{}/{}".format(sermon.order, item.get_canwit_count())
                         rel_item.append({'value': itemloc, 'align': "right", 'title': 'Jump to the sermon in the manuscript',
                                          'link': "{}#sermon_{}".format(reverse('manuscript_details', kwargs={'pk': item.id}), sermon.id)  })
 
@@ -4345,28 +4257,28 @@ class AustatDetails(AustatEdit):
                         rel_item.append({'value': coll_info, 'initial': 'small'})
 
                         # Location number and link to the correct point in the manuscript details view...
-                        itemloc = "{}/{}".format(sermon.msitem.order, item.get_sermon_count())
-                        link_on_manu_page = "{}#sermon_{}".format(reverse('manuscript_details', kwargs={'pk': item.id}), sermon.id)
-                        link_to_sermon = reverse('canwit_details', kwargs={'pk': sermon.id})
-                        rel_item.append({'value': itemloc, 'align': "right", 'title': 'Jump to the sermon in the manuscript', 'initial': 'small',
+                        itemloc = "{}/{}".format(canwit.msitem.order, item.get_canwit_count())
+                        link_on_manu_page = "{}#canwit_{}".format(reverse('manuscript_details', kwargs={'pk': item.id}), canwit.id)
+                        link_to_canwit = reverse('canwit_details', kwargs={'pk': canwit.id})
+                        rel_item.append({'value': itemloc, 'align': "right", 'title': 'Jump to the canwit in the manuscript', 'initial': 'small',
                                          'link': link_to_sermon })
 
                         # Folio number of the item
-                        rel_item.append({'value': sermon.locus, 'initial': 'small'})
+                        rel_item.append({'value': canwit.locus, 'initial': 'small'})
 
                         # Attributed author
-                        rel_item.append({'value': sermon.get_author(), 'initial': 'small'})
+                        rel_item.append({'value': canwit.get_author(), 'initial': 'small'})
 
-                        # Incipit
-                        rel_item.append({'value': sermon.get_incipit_markdown()}) #, 'initial': 'small'})
+                        # Ftext
+                        rel_item.append({'value': canwit.get_ftext_markdown()}) #, 'initial': 'small'})
 
-                        # Explicit
-                        rel_item.append({'value': sermon.get_explicit_markdown()}) #, 'initial': 'small'})
+                        # Ftrans
+                        rel_item.append({'value': canwit.get_ftrans_markdown()}) #, 'initial': 'small'})
 
                         # Keywords
-                        rel_item.append({'value': sermon.get_keywords_markdown(), 'initial': 'small'})
+                        rel_item.append({'value': canwit.get_keywords_markdown(), 'initial': 'small'})
 
-                    # Add this Manu/Sermon line to the list
+                    # Add this Manu/Canwit line to the list
                     rel_list.append(dict(id=item.id, cols=rel_item))
                 manuscripts['rel_list'] = rel_list
 
@@ -4381,8 +4293,8 @@ class AustatDetails(AustatEdit):
                         '<span title="Item">item</span>', 
                         '<span title="Folio number">ff.</span>', 
                         '<span title="Attributed author">auth.</span>', 
-                        '<span title="Incipit">inc.</span>', 
-                        '<span title="Explicit">expl.</span>', 
+                        '<span title="Full text">txt.</span>', 
+                        '<span title="Translation">trns.</span>', 
                         '<span title="Keywords of the Sermon manifestation">keyw.</span>', 
                         ]
 
@@ -4467,7 +4379,7 @@ class AustatListView(BasicList):
     """List super sermon gold instances"""
 
     model = Austat
-    listform = SuperSermonGoldForm
+    listform = AustatForm
     has_select2 = True  # Check
     use_team_group = True
     template_help = "seeker/filter_help.html"
@@ -4475,36 +4387,30 @@ class AustatListView(BasicList):
     bUseFilter = True  
     plural_name = "Authoritative statements"
     sg_name = "Authoritative statement"
-    order_cols = ['code', 'author', 'firstsig', 'srchftext', '', 'scount', 'sgcount', 'ssgcount', 'hccount', 'stype']
+    order_cols = ['code', 'author', 'firstsig', 'srchftext', '', 'scount', 'ssgcount', 'hccount', 'stype']
     order_default= order_cols
     order_heads = [
         {'name': 'Author',                  'order': 'o=1', 'type': 'str', 'custom': 'author', 'linkdetails': True},
-
-        # Issue #212: remove sermon number from listview
-        # {'name': 'Number',                  'order': 'o=2', 'type': 'int', 'custom': 'number', 'linkdetails': True},
-
         {'name': 'Code',                    'order': 'o=2', 'type': 'str', 'custom': 'code',   'linkdetails': True},
-        {'name': 'Gryson/Clavis',           'order': 'o=3', 'type': 'str', 'custom': 'sig', 'allowwrap': True, 'options': "abcd",
+        {'name': 'Gryson/Clavis',           'order': 'o=3', 'type': 'str', 'custom': 'sig',    'allowwrap': True, 'options': "abcd",
          'title': "The Gryson/Clavis codes of all the Sermons Gold in this equality set"},
-        {'name': 'Incipit ... Explicit',    'order': 'o=4', 'type': 'str', 'custom': 'incexpl', 'main': True, 'linkdetails': True,
-         'title': "The incipit...explicit that has been chosen for this Authority file"},
-        {'name': 'HC', 'title': "Historical collections associated with this Authority file", 
+        {'name': 'Full text',               'order': 'o=4', 'type': 'str', 'custom': 'ftext',  'main': True, 'linkdetails': True,
+         'title': "The full text that has been chosen for this Authoritative statement"},
+        {'name': 'HC', 'title': "Historical collections associated with this Authoritative statement", 
          'order': '', 'allowwrap': True, 'type': 'str', 'custom': 'hclist'},
         {'name': 'Sermons',                 'order': 'o=6'   , 'type': 'int', 'custom': 'scount',
-         'title': "Number of Sermon (manifestation)s that are connected with this Authority file"},
-        {'name': 'Gold',                    'order': 'o=7'   , 'type': 'int', 'custom': 'size',
-         'title': "Number of Sermons Gold that are part of the equality set of this Authority file"},
+         'title': "Number of Sermon (manifestation)s that are connected with this Authoritative statement"},
         {'name': 'Authority',                   'order': 'o=8'   , 'type': 'int', 'custom': 'ssgcount',
-         'title': "Number of other Authority files this Authority file links to"},
+         'title': "Number of other Authoritative statements this Authoritative statement links to"},
         {'name': 'HCs',                     'order': 'o=9'   , 'type': 'int', 'custom': 'hccount',
-         'title': "Number of historical collections associated with this Authority file"},
+         'title': "Number of historical collections associated with this Authoritative statement"},
         {'name': 'Status',                  'order': 'o=10',   'type': 'str', 'custom': 'status'}        
         ]
     filters = [
         {"name": "Author",          "id": "filter_author",            "enabled": False},
-        {"name": "Incipit",         "id": "filter_incipit",           "enabled": False},
-        {"name": "Explicit",        "id": "filter_explicit",          "enabled": False},
-        {"name": "lila code",     "id": "filter_code",              "enabled": False},
+        {"name": "Full text",       "id": "filter_ftext",             "enabled": False},
+        {"name": "Translation",     "id": "filter_ftrans",            "enabled": False},
+        {"name": "lila code",       "id": "filter_code",              "enabled": False},
         {"name": "Number",          "id": "filter_number",            "enabled": False},
         {"name": "Gryson/Clavis",   "id": "filter_signature",         "enabled": False},
         {"name": "Keyword",         "id": "filter_keyword",           "enabled": False},
@@ -4515,41 +4421,37 @@ class AustatListView(BasicList):
         {"name": "Collection...",   "id": "filter_collection",        "enabled": False, "head_id": "none"},
         {"name": "Manuscript",      "id": "filter_collmanu",          "enabled": False, "head_id": "filter_collection"},
         {"name": "Sermon",          "id": "filter_collsermo",         "enabled": False, "head_id": "filter_collection"},
-        {"name": "Sermon Gold",     "id": "filter_collgold",          "enabled": False, "head_id": "filter_collection"},
-        {"name": "Authority file",  "id": "filter_collsuper",         "enabled": False, "head_id": "filter_collection"},
+        #{"name": "Sermon Gold",     "id": "filter_collgold",          "enabled": False, "head_id": "filter_collection"},
+        {"name": "Authoritative statement",  "id": "filter_collsuper",         "enabled": False, "head_id": "filter_collection"},
         {"name": "Historical",      "id": "filter_collhist",          "enabled": False, "head_id": "filter_collection"},
                ]
     searches = [
         {'section': '', 'filterlist': [
-            {'filter': 'incipit',   'dbfield': 'srchftext',       'keyS': 'incipit',  'regex': adapt_regex_incexp},
-            {'filter': 'explicit',  'dbfield': 'srchftrans',      'keyS': 'explicit', 'regex': adapt_regex_incexp},
+            {'filter': 'ftext',     'dbfield': 'srchftext',         'keyS': 'ftext',    'regex': adapt_regex_incexp},
+            {'filter': 'ftrans',    'dbfield': 'srchftrans',        'keyS': 'ftrans',   'regex': adapt_regex_incexp},
             {'filter': 'code',      'dbfield': 'code',              'keyS': 'code',     'help': 'lilacode',
              'keyList': 'lilalist', 'infield': 'id'},
             {'filter': 'number',    'dbfield': 'number',            'keyS': 'number',
              'title': 'The per-author-sermon-number (these numbers are assigned automatically and have no significance)'},
             {'filter': 'scount',    'dbfield': 'soperator',         'keyS': 'soperator'},
             {'filter': 'scount',    'dbfield': 'scount',            'keyS': 'scount',
-             'title': 'The number of sermons (manifestations) belonging to this Authority file'},
+             'title': 'The number of sermons (manifestations) belonging to this Authoritative statement'},
             {'filter': 'ssgcount',  'dbfield': 'ssgoperator',       'keyS': 'ssgoperator'},
             {'filter': 'ssgcount',  'dbfield': 'ssgcount',          'keyS': 'ssgcount',
-             'title': 'The number of links an Authority file has to other Authority files'},
+             'title': 'The number of links an Authoritative statement has to other Authoritative statements'},
             {'filter': 'keyword',   'fkfield': 'keywords',          'keyFk': 'name', 'keyList': 'kwlist', 'infield': 'id'},
             {'filter': 'author',    'fkfield': 'author',            
              'keyS': 'authorname', 'keyFk': 'name', 'keyList': 'authorlist', 'infield': 'id', 'external': 'gold-authorname' },
             {'filter': 'stype',     'dbfield': 'stype',             'keyList': 'stypelist', 'keyType': 'fieldchoice', 'infield': 'abbr' },
-            {'filter': 'signature', 'fkfield': 'equal_goldsermons__goldsignatures',    'help': 'signature',
-             'keyS': 'signature', 'keyFk': 'code', 'keyId': 'signatureid', 'keyList': 'siglist', 'infield': 'code'},
             {'filter': 'project',  'fkfield': 'projects',   'keyFk': 'name', 'keyList': 'projlist', 'infield': 'name'}            
             ]},
         {'section': 'collection', 'filterlist': [
             {'filter': 'collmanu',  'fkfield': 'equal_goldsermons__canwit__manu__collections',  
              'keyS': 'collection','keyFk': 'name', 'keyList': 'collist_m', 'infield': 'name' }, 
             {'filter': 'collsermo', 'fkfield': 'austat_sermons__canwit_col__collection',        
-            # issue #466: fkfield was 'equal_goldsermons__canwit__collections'
-            #             changed into 'austat_sermons__canwit_col__collection'
              'keyS': 'collection','keyFk': 'name', 'keyList': 'collist_s', 'infield': 'name' }, 
-            {'filter': 'collgold',  'fkfield': 'equal_goldsermons__collections',                     
-             'keyS': 'collection','keyFk': 'name', 'keyList': 'collist_sg', 'infield': 'name' }, 
+            #{'filter': 'collgold',  'fkfield': 'equal_goldsermons__collections',                     
+            # 'keyS': 'collection','keyFk': 'name', 'keyList': 'collist_sg', 'infield': 'name' }, 
             {'filter': 'collsuper', 'fkfield': 'collections',                                        
              'keyS': 'collection','keyFk': 'name', 'keyList': 'collist_ssg', 'infield': 'name' }, 
             {'filter': 'collhist', 'fkfield': 'collections',                                        
@@ -4634,9 +4536,6 @@ class AustatListView(BasicList):
                 html.append(instance.author.name)
             else:
                 html.append("<i>(not specified)</i>")
-        elif custom == "size":
-            iSize = instance.sgcount
-            html.append("{}".format(iSize))
         elif custom == "scount":
             sCount = instance.scount
             if sCount == None: sCount = 0
@@ -4652,11 +4551,8 @@ class AustatListView(BasicList):
         elif custom == "code":
             sCode = "-" if instance.code  == None else instance.code
             html.append("{}".format(sCode))
-        elif custom == "incexpl":
-            html.append("<span>{}</span>".format(instance.get_incipit_markdown()))
-            dots = "..." if instance.incipit else ""
-            html.append("<span style='color: blue;'>{}</span>".format(dots))
-            html.append("<span>{}</span>".format(instance.get_explicit_markdown()))
+        elif custom == "ftext":
+            html.append("<span>{}</span>".format(instance.get_ftext_markdown()))
         elif custom == "sig":
             # Get all the associated signatures
             qs = Signature.objects.filter(gold__equal=instance).order_by('-editype', 'code')
@@ -5012,7 +4908,7 @@ class CollAnyEdit(BasicDetails):
                 manu=dict(sg_name="Manuscript", pl_name="Manuscripts"),
                 sermo=dict(sg_name="Sermon manifestation", pl_name="Sermons"),
                 gold=dict(sg_name="Sermon Gold", pl_name="Sermons Gold"),
-                super=dict(sg_name="Authority file", pl_name="Authority files")
+                super=dict(sg_name="Authoritative statement", pl_name="Authoritative statements")
                 )
             # Add a button + text
             context['datasettype'] = instance.type
@@ -5067,7 +4963,7 @@ class CollAnyEdit(BasicDetails):
         if instance.settype == "hc" and context['is_app_editor'] and self.manu == None and self.codico == None:
             context['mainitems'].append(
                     {'type': 'safe', 'label': "Show/hide:", 'value': self.get_hc_buttons(instance),
-                     'title': 'Optionally show and edit the Authority files in this collection'}
+                     'title': 'Optionally show and edit the Authoritative statements in this collection'}
                     )
 
 
@@ -5111,7 +5007,7 @@ class CollAnyEdit(BasicDetails):
         lHtml = []
         abbr = None
         button_list = [
-            {'label': 'Authority files', 'id': 'basic_super_set', 'show': False},
+            {'label': 'Authoritative statements', 'id': 'basic_super_set', 'show': False},
             {'label': 'codicological unites','id': 'basic_codi_set',  'show': True},
             ]
         oErr = ErrHandle()
@@ -5614,7 +5510,7 @@ class CollPrivDetails(CollAnyEdit):
 
             elif instance.type == "super":
                 # Get all sermons that are part of this PD
-                supers = dict(title="Authority files within this dataset", prefix="super")   #prefix="sermo")
+                supers = dict(title="Authoritative statements within this dataset", prefix="super")   #prefix="sermo")
                 if resizable: supers['gridclass'] = "resizable dragdrop"
                 supers['savebuttons'] = True
                 supers['saveasbutton'] = True
@@ -5714,7 +5610,7 @@ class CollPrivDetails(CollAnyEdit):
             elif custom == "daterange":
                 sBack = "{}-{}".format(instance.yearstart, instance.yearfinish)
             elif custom == "sermons":
-                sBack = instance.get_sermon_count()
+                sBack = instance.get_canwit_count()
         elif type == "sermo":
             sBack, sTitle = SermonListView.get_field_value(None, instance, custom)
         elif type == "gold":
@@ -5831,7 +5727,7 @@ class CollHistDetails(CollHistEdit):
                 # This is the plain historical collection details view
 
                 # Get all SSGs that are part of this PD
-                supers = dict(title="Authority files within this historical collection", prefix="super")   #prefix="sermo")
+                supers = dict(title="Authoritative statements within this historical collection", prefix="super")   #prefix="sermo")
                 if resizable: supers['gridclass'] = "resizable dragdrop"
                 supers['savebuttons'] = True
                 supers['saveasbutton'] = True
@@ -5932,7 +5828,7 @@ class CollHistDetails(CollHistEdit):
                         '<span title="Origin/Provenance">or./prov.</span>', 
                         '<span title="Date range">date</span>', 
                         '<span title="Sermons in this codicological unit">sermons</span>',
-                        '<span title="Authority file links">ssgs.</span>', 
+                        '<span title="Authoritative statement links">ssgs.</span>', 
                         ]
                     related_objects.append(codicos)
 
@@ -5986,7 +5882,7 @@ class CollHistDetails(CollHistEdit):
                         '<span title="Origin/Provenance">or./prov.</span>', 
                         '<span title="Date range">date</span>', 
                         '<span title="Sermons in this manuscript">sermons</span>',
-                        '<span title="Authority file links">ssgs.</span>', 
+                        '<span title="Authoritative statement links">ssgs.</span>', 
                         ]
                     related_objects.append(manuscripts)
             elif self.manu != None:
@@ -6084,9 +5980,9 @@ class CollHistDetails(CollHistEdit):
 
                 # Set the columns
                 sermons['columns'] = ['Order', 'Locus', 'Title', 
-                                      '<span title="Authority file">ssg</span>',
+                                      '<span title="Authoritative statement">ssg</span>',
                                       '<span title="Incipit + explicit of sermon manifestation">inc/exp. s</span>', 
-                                      '<span title="Incipit + explicit of Authority file">inc/exp. ssg</span>',
+                                      '<span title="Incipit + explicit of Authoritative statement">inc/exp. ssg</span>',
                                       '<span title="Comparison ratio between inc/exp of S and SSG">ratio</span>']
                 # Add to related objects
                 related_objects.append(sermons)
@@ -6186,10 +6082,10 @@ class CollHistDetails(CollHistEdit):
 
                 # Set the columns
                 sermons['columns'] = ['Order', 'Locus', 'Title', 
-                                      '<span title="Authority file">ssg</span>',
+                                      '<span title="Authoritative statement">ssg</span>',
                                       '<span title="Incipit + explicit of sermon manifestation">inc/exp. s</span>', 
-                                      '<span title="Incipit + explicit of Authority file">inc/exp. ssg</span>',
-                                      '<span title="Comparison ratio between inc/exp of S and Authority fileSSG">ratio</span>']
+                                      '<span title="Incipit + explicit of Authoritative statement">inc/exp. ssg</span>',
+                                      '<span title="Comparison ratio between inc/exp of S and Authoritative statementSSG">ratio</span>']
                 # Add to related objects
                 related_objects.append(sermons)
 
@@ -6237,7 +6133,7 @@ class CollHistDetails(CollHistEdit):
             #elif custom == "daterange":
             #    sBack = "{}-{}".format(instance.yearstart, instance.yearfinish)
             elif custom == "sermons":
-                sBack = instance.get_sermon_count()
+                sBack = instance.get_canwit_count()
         elif type == "manucodicos":
             lCombi = []
             if custom == "origprov":
@@ -6257,7 +6153,7 @@ class CollHistDetails(CollHistEdit):
             elif custom == "manuscript":
                 sBack = "<span class='signature'>{}</span>".format(instance.manuscript.get_full_name())
             elif custom == "sermons":
-                sBack = instance.get_sermon_count()
+                sBack = instance.get_canwit_count()
 
         elif type == "super":
             sBack, sTitle = AustatListView.get_field_value(None, instance, custom)
@@ -6398,8 +6294,8 @@ class CollectionListView(BasicList):
             self.sg_name = "Sermon gold collection"
             self.searches[0]['filterlist'][1]['keyList'] = "collist_sg"
         elif self.prefix == "super":
-            self.plural_name = "Authority file Collections"
-            self.sg_name = "Authority file collection"        
+            self.plural_name = "Authoritative statement Collections"
+            self.sg_name = "Authoritative statement collection"        
             self.searches[0]['filterlist'][1]['keyList'] = "collist_ssg"
         elif self.prefix == "any":
             self.new_button = False
@@ -6485,7 +6381,7 @@ class CollectionListView(BasicList):
             self.filters = [ 
                 {"name": "Collection",             "id": "filter_collection",  "enabled": False},
                 {"name": "Project",                "id": "filter_project",     "enabled": False},
-                {"name": "Authority file...",      "id": "filter_super",    "enabled": False, "head_id": "none"},
+                {"name": "Authoritative statement...",      "id": "filter_super",    "enabled": False, "head_id": "none"},
                 {"name": "Sermon...",              "id": "filter_sermo",    "enabled": False, "head_id": "none"},
                 {"name": "Manuscript...",          "id": "filter_manu",     "enabled": False, "head_id": "none"},
                 # Section SSG
@@ -6642,7 +6538,7 @@ class CollectionListView(BasicList):
 
                 fields['bibrefbk'] = Q(id__in=collectionlist)
             
-            # Make sure we only use the Authority Files with accepted modifications
+            # Make sure we only use the Authoritative statements with accepted modifications
             # This means that atype should be 'acc' (and not: 'mod', 'rej' or 'def') 
             # With this condition we make sure ALL historical collections are in de unfiltered listview
             if fields['ssgcode'] != '':
@@ -7050,7 +6946,7 @@ class BasketUpdateSuper(BasketUpdate):
     MainModel = Austat
     clsBasket = BasketSuper
     s_view = AustatListView
-    s_form = SuperSermonGoldForm
+    s_form = AustatForm
     s_field = "super"
     colltype = "super"
     form_objects = [{'form': CollectionForm, 'prefix': colltype, 'readonly': True}]

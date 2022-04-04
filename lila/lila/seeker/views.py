@@ -67,7 +67,7 @@ from lila.seeker.forms import SearchCollectionForm, SearchManuscriptForm, Search
     ReportEditForm, SourceEditForm, ManuscriptProvForm, LocationForm, LocationRelForm, OriginForm, \
     LibraryForm, ManuscriptExtForm, ManuscriptLitrefForm, CanwitKeywordForm, KeywordForm, \
     ManuscriptKeywordForm, DaterangeForm, ProjectForm, CanwitCollectionForm, CollectionForm, \
-    SuperSermonGoldForm, ManuscriptCollectionForm, CollectionLitrefForm, \
+    AustatForm, ManuscriptCollectionForm, CollectionLitrefForm, \
     SuperSermonGoldCollectionForm, ProfileForm, UserKeywordForm, ProvenanceForm, ProvenanceManForm, \
     TemplateForm, TemplateImportForm, ManuReconForm,  ManuscriptProjectForm, \
     CodicoForm, CodicoProvForm, ProvenanceCodForm, OriginCodForm, CodicoOriginForm
@@ -498,39 +498,6 @@ def get_breadcrumbs(request, name, is_menu, lst_crumb=[], **kwargs):
     # Return the breadcrumbs
     return p_list
 
-def get_previous_page(request, top=False):
-    """Find the previous page for this user"""
-
-    username = "anonymous" if request.user == None else request.user.username
-    if username != "anonymous" and request.user.username != "":
-        # Get the current path list
-        p_list = Profile.get_stack(username)
-        p_item = []
-        if len(p_list) < 2:
-            prevpage = request.META.get('HTTP_REFERER') 
-        elif top:
-            p_item = p_list[len(p_list)-1]
-            prevpage = p_item['url']
-        else:
-            p_item = p_list[len(p_list)-2]
-            prevpage = p_item['url']
-        # Possibly add arguments
-        if 'kwargs' in p_item:
-            # First strip off any arguments (anything after ?) in the url
-            if "?" in prevpage:
-                prevpage = prevpage.split("?")[0]
-            bFirst = True
-            for k,v in p_item['kwargs'].items():
-                if bFirst:
-                    addsign = "?"
-                    bFirst = False
-                else:
-                    addsign = "&"
-                prevpage = "{}{}{}={}".format(prevpage, addsign, k, v)
-    else:
-        prevpage = request.META.get('HTTP_REFERER') 
-    # Return the path
-    return prevpage
 
 
 # ================ OTHER VIEW HELP FUNCTIONS ============================
@@ -1561,7 +1528,7 @@ class UserKeywordEdit(BasicDetails):
             # Sermon identification
             url = reverse('canwit_details', kwargs = {'pk': instance.sermo.id})
             # value = "{}/{}".format(instance.sermo.order, instance.sermo.manu.manusermons.all().count())
-            value = "{}/{}".format(instance.sermo.order, instance.sermo.manu.get_sermon_count())
+            value = "{}/{}".format(instance.sermo.order, instance.sermo.manu.get_canwit_count())
             sermo = "<span><a href='{}'>sermon {}</a></span>".format(url, value)
             # Manuscript shelfmark
             url = reverse('manuscript_details', kwargs = {'pk': instance.sermo.manu.id})
@@ -1687,7 +1654,7 @@ class UserKeywordListView(BasicList):
             # Sermon identification
             url = reverse('canwit_details', kwargs = {'pk': instance.sermo.id})
             manu_obj = instance.sermo.get_manuscript()
-            value = "{}/{}".format(instance.sermo.order, manu_obj.get_sermon_count())
+            value = "{}/{}".format(instance.sermo.order, manu_obj.get_canwit_count())
             sermo = "<span><a href='{}'>sermon {}</a></span>".format(url, value)
             # Manuscript shelfmark
             url = reverse('manuscript_details', kwargs = {'pk': manu_obj.id})
@@ -2823,11 +2790,12 @@ class ProjectListView(BasicList):
     # page_function = "ru.lila.seeker.search_paged_start"
     order_cols = ['name', '']
     order_default = order_cols
-    order_heads = [{'name': 'Project',                'order': 'o=1', 'type': 'str', 'custom': 'project',   'main': True, 'linkdetails': True},
-                   {'name': 'Manuscripts',            'order': 'o=2', 'type': 'str', 'custom': 'manulink',  'align': 'right' },
-                   {'name': 'Sermons',                'order': 'o=3', 'type': 'str', 'custom': 'sermolink', 'align': 'right'},
-                   {'name': 'Authority files',        'order': 'o=4', 'type': 'str', 'custom': 'ssglink',   'align': 'right'},
-                   {'name': 'Historical collections', 'order': 'o=5', 'type': 'str', 'custom': 'hclink',    'align': 'right'}]
+    order_heads = [
+        {'name': 'Project',                  'order': 'o=1', 'type': 'str', 'custom': 'project',   'main': True, 'linkdetails': True},
+        {'name': 'Manuscripts',              'order': 'o=2', 'type': 'str', 'custom': 'manulink',  'align': 'right' },
+        {'name': 'Sermons',                  'order': 'o=3', 'type': 'str', 'custom': 'sermolink', 'align': 'right'},
+        {'name': 'Authoritative statements', 'order': 'o=4', 'type': 'str', 'custom': 'ssglink',   'align': 'right'},
+        {'name': 'Historical collections',   'order': 'o=5', 'type': 'str', 'custom': 'hclink',    'align': 'right'}]
                    
     filters = [ {"name": "Project",         "id": "filter_project",     "enabled": False},
                 {"name": "Shelfmark",       "id": "filter_manuid",      "enabled": False, "head_id": "filter_other"},
@@ -2864,11 +2832,11 @@ class ProjectListView(BasicList):
                         url, instance.id, count, count))
             
             elif custom == "ssglink":
-                # Link to the authority files in this project
+                # Link to the Authoritative statements in this project
                 count = instance.project_austat.count() 
                 url = reverse('austat_list')
                 if count > 0:                 
-                    html.append("<a href='{}?ssg-projlist={}'><span class='badge jumbo-3 clickable' title='{} authority files in this project'>{}</span></a>".format(
+                    html.append("<a href='{}?ssg-projlist={}'><span class='badge jumbo-3 clickable' title='{} Authoritative statements in this project'>{}</span></a>".format(
                         url, instance.id, count, count))
 
             elif custom == "hclink":
@@ -2907,7 +2875,7 @@ class CommentSend(BasicPart):
                      "gold": "sermongold_details", "super": "austat_details",
                      "codi": "codico_details"}
         obj_names = {"manu": "Manuscript", "sermo": "Sermon",
-                     "gold": "Sermon Gold", "super": "Authority file",
+                     "gold": "Sermon Gold", "super": "Authoritative statement",
                      "codi": "codicological unit"}
         def get_object(otype, objid):
             obj = None
