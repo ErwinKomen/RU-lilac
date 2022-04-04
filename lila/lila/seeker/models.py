@@ -44,7 +44,7 @@ STANDARD_LENGTH=100
 LONG_STRING=255
 MAX_TEXT_LEN = 200
 ABBR_LENGTH = 5
-lila_CODE_LENGTH = 20
+LILAC_CODE_LENGTH = 20
 VISIT_MAX = 1400
 VISIT_REDUCE = 1000
 
@@ -785,8 +785,8 @@ def add_ssg_equal2equal(src, dst_eq, ltype):
                     obj = AustatLink(src=grp_src, dst=grp_dst, linktype=ltype)
                     obj.save()
                     # Bookkeeping
-                    lst_total.append("<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format( 
-                        added+1, obj.src.equal_goldsermons.first().siglist, obj.dst.equal_goldsermons.first().siglist, ltype, "add" ))
+                    lst_total.append("<tr><td>{}</td><td>{}</td><td>{}</td></tr>".format( 
+                        added+1, ltype, "add" ))
                     prt_added += 1
                 else:
                     # (3b) There is a link, but possibly of a different type
@@ -851,8 +851,8 @@ def add_equal2equal(src, dst_eq, ltype):
                     obj = AustatLink(src=grp_src, dst=grp_dst, linktype=ltype)
                     obj.save()
                     # Bookkeeping
-                    lst_total.append("<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format( 
-                        added+1, obj.src.equal_goldsermons.first().siglist, obj.dst.equal_goldsermons.first().siglist, ltype, "add" ))
+                    lst_total.append("<tr><td>{}</td><td>{}</td><td>{}</td></tr>".format( 
+                        added+1, ltype, "add" ))
                     prt_added += 1
                 else:
                     # (3b) There is a link, but possibly of a different type
@@ -2855,11 +2855,6 @@ class Keyword(models.Model):
     def freqsermo(self):
         """Frequency in manifestation sermons"""
         freq = self.keywords_sermon.all().count()
-        return freq
-
-    def freqgold(self):
-        """Frequency in Gold sermons"""
-        freq = self.keywords_gold.all().count()
         return freq
 
     def freqmanu(self):
@@ -5206,6 +5201,48 @@ class Free(models.Model):
         return sCombi
 
 
+class Genre(models.Model):
+    """Christian feast commemmorated in one of the Latin texts or sermons"""
+
+    # [1] Name of the genre in English
+    name = models.CharField("Name", max_length=LONG_STRING)
+    # [0-1] A genre may have an additional description
+    description = models.TextField("Description", null=True, blank=True)
+    # [1] And a date: the date of saving this relation
+    created = models.DateTimeField(default=get_current_datetime)
+
+    def __str__(self):
+        return self.name
+
+    def freqsermo(self):
+        """Frequency in manifestation sermons"""
+        freq = 0 # self.keywords_sermon.all().count()
+        return freq
+
+    def freqmanu(self):
+        """Frequency in Manuscripts"""
+        freq = 0 # self.keywords_manu.all().count()
+        return freq
+
+    def freqsuper(self):
+        """Frequency in Authoritative Statements"""
+        freq = self.genres_super.all().count()
+        return freq
+
+    def get_created(self):
+        """REturn the creation date in a readable form"""
+
+        sDate = self.created.strftime("%d/%b/%Y %H:%M")
+        return sDate
+
+    def get_one(sGenre):
+        sGenre = sGenre.strip()
+        obj = Genre.objects.filter(name__iexact=sGenre).first()
+        if obj == None:
+            obj = Genre.objects.create(name=sGenre)
+        return obj
+
+
 class Provenance(models.Model):
     """The 'origin' is a location where manuscripts were originally created"""
 
@@ -5263,16 +5300,18 @@ class Austat(models.Model):
     # [0-1] We would like to know the FULL TEXT TRANSLATION
     ftrans = models.TextField("Translation", null=True, blank=True)
     srchftrans = models.TextField("Translation (searchable)", null=True, blank=True)
-    # [0-1] The 'lila-code' for a sermon - see instructions (16-01-2020 4): [lila aaa.nnnn]
-    code = models.CharField("lila code", blank=True, null=True, max_length=lila_CODE_LENGTH, default="ZZZ_DETERMINE")
-    # [0-1] The number of this SSG (numbers are 1-based, per author)
+    # [0-1] The 'lila-code' for a sermon - see PASSIM instructions (16-01-2020 4): [lila aaa.nnnn]
+    code = models.CharField("Lilac code", blank=True, null=True, max_length=LILAC_CODE_LENGTH, default="ZZZ_DETERMINE")
+    # [0-1] The 'key' for this authoritative statement
+    keycode = models.CharField("Statement code", blank=True, null=True, max_length=STANDARD_LENGTH)
+    # [0-1] The number of this AuStat (numbers are 1-based, per author)
     number = models.IntegerField("Number", blank=True, null=True)
     # [0-1] The sermon to which this one has moved
     moved = models.ForeignKey('self', on_delete=models.SET_NULL, related_name="moved_ssg", blank=True, null=True)
 
-    # [1] Every SSG has a status - this is *NOT* related to model 'Status'
+    # [1] Every AuStat has a status - this is *NOT* related to model 'Status'
     stype = models.CharField("Status", choices=build_abbr_list(STATUS_TYPE), max_length=5, default="-")
-    # [1] Every SSG has an approval type
+    # [1] Every AuStat has an approval type
     atype = models.CharField("Approval", choices=build_abbr_list(APPROVAL_TYPE), max_length=5, default="def")
     # [0-1] Status note
     snote = models.TextField("Status note(s)", default="[]")
@@ -5285,11 +5324,14 @@ class Austat(models.Model):
     # [1] The number of Canwit linked to me
     scount = models.IntegerField("Sermon set size", default=0)
     # [1] The number of Austat linked to me (i.e. relations.count)
-    ssgcount = models.IntegerField("SSG set size", default=0)
+    ssgcount = models.IntegerField("AuStat set size", default=0)
 
     # ============= MANY_TO_MANY FIELDS ============
     # [m] Many-to-many: all the gold sermons linked to me
     relations = models.ManyToManyField("self", through="AustatLink", symmetrical=False, related_name="related_to")
+
+    # [0-n] Many-to-many: genres per Austat
+    genres = models.ManyToManyField(Genre, through="AustatGenre", related_name="genres_super")
 
     # [0-n] Many-to-many: keywords per Austat
     keywords = models.ManyToManyField(Keyword, through="AustatKeyword", related_name="keywords_super")
@@ -5336,10 +5378,10 @@ class Austat(models.Model):
                         was_undecided = False if prev_auth == None else (prev_auth.name.lower() == "undecided")
                     if self.number == None or was_undecided:
                         # This may be a mistake: see if there is a code already
-                        if self.code != None and "lila" in self.code:
+                        if self.code != None and "LILAC" in self.code:
                             # There already is a code: get the number from here
                             arPart = re.split("\s|\.", self.code)
-                            if len(arPart) == 3 and arPart[0] == "lila":
+                            if len(arPart) == 3 and arPart[0] == "LILAC":
                                 # Get the author number
                                 self.number = int(arPart[2])
                         if self.number == None or was_undecided:
@@ -5348,7 +5390,7 @@ class Austat(models.Model):
                     else:
                         # we have a code and [auth_num]: are these the same?
                         arPart = re.split("\s|\.", self.code)
-                        if len(arPart) == 3 and arPart[0] == "lila":
+                        if len(arPart) == 3 and arPart[0] == "LILAC":
                             # Get the author code from here
                             existing_auth_num = int(arPart[1])
                             if auth_num != existing_auth_num:
@@ -5445,7 +5487,7 @@ class Austat(models.Model):
 
       sBack = ""
       if self.code == None:
-        sBack = "ssg_{}".format(self.id)
+        sBack = "austat_{}".format(self.id)
       else:
         sBack = self.code
       return sBack
@@ -5456,7 +5498,7 @@ class Austat(models.Model):
         # Visit all collections that I have access to
         mycoll__id = Collection.get_scoped_queryset('super', username, team_group, settype = settype).values('id')
         for col in self.collections.filter(id__in=mycoll__id).order_by('name'):
-            url = "{}?ssg-collist_ssg={}".format(reverse('austat_list'), col.id)
+            url = "{}?as-collist_ssg={}".format(reverse('austat_list'), col.id)
             lHtml.append("<span class='collection'><a href='{}'>{}</a></span>".format(url, col.name))
         sBack = ", ".join(lHtml)
         return sBack
@@ -5514,12 +5556,36 @@ class Austat(models.Model):
             sBack = adapt_markdown(self.srchftext)
         return sBack
 
+    def get_genres_markdown(self):
+        lHtml = []
+        oErr = ErrHandle()
+        try:
+            # Visit all genres
+            for genre in self.genres.all().order_by('name'):
+                # Determine where clicking should lead to
+                url = "{}?as-genrelist={}".format(reverse('austat_list'), genre.id)
+                # Create a display for this topic
+                lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,genre.name))
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_genres_markdown")
+
+        sBack = ", ".join(lHtml)
+        return sBack
+
+    def get_keycode(self):
+        """Get the user-defined Authoritative Statement code"""
+
+        sBack = self.keycode
+        # Any processing...
+        return sBack
+
     def get_keywords_markdown(self):
         lHtml = []
         # Visit all keywords
         for keyword in self.keywords.all().order_by('name'):
             # Determine where clicking should lead to
-            url = "{}?ssg-kwlist={}".format(reverse('austat_list'), keyword.id)
+            url = "{}?as-kwlist={}".format(reverse('austat_list'), keyword.id)
             # Create a display for this topic
             lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,keyword.name))
 
@@ -5532,7 +5598,7 @@ class Austat(models.Model):
         for kwlink in self.super_userkeywords.filter(profile=profile).order_by('keyword__name'):
             keyword = kwlink.keyword
             # Determine where clicking should lead to
-            url = "{}?ssg-ukwlist={}".format(reverse('austat_list'), keyword.id)
+            url = "{}?as-ukwlist={}".format(reverse('austat_list'), keyword.id)
             # Create a display for this topic
             lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,keyword.name))
 
@@ -5546,13 +5612,18 @@ class Austat(models.Model):
 
         # Treat lila code
         sLabel = self.code
-        if sLabel == None: sLabel = "(Undecided {})".format(self.id)
+        if sLabel == None: 
+            sLabel = "(Undecided {})".format(self.id)
         lHtml.append("{} ".format(sLabel))
 
-        # Treat signatures
-        equal_set = self.equal_goldsermons.all()
-        siglist = [x.short() for x in Signature.objects.filter(gold__in=equal_set).order_by('-editype', 'code').distinct()]
-        lHtml.append(" | ".join(siglist))
+        # Add the keycode
+        sKeycode = "-" if self.keycode is None else self.keycode
+        lHtml.append("{} ".format(sKeycode))
+
+        ## Treat signatures
+        #equal_set = self.equal_goldsermons.all()
+        #siglist = [x.short() for x in Signature.objects.filter(gold__in=equal_set).order_by('-editype', 'code').distinct()]
+        #lHtml.append(" | ".join(siglist))
 
         # Treat the author
         if self.author:
@@ -5590,7 +5661,7 @@ class Austat(models.Model):
         return sBack
 
     def get_moved_url(self):
-        """Get the URL of the SSG to which I have been moved"""
+        """Get the URL of the AuStat to which I have been moved"""
 
         url = ""
         if self.moved:
@@ -5598,7 +5669,7 @@ class Austat(models.Model):
         return url
 
     def get_previous_code(self):
-        """Get information on the SSG from which I derive"""
+        """Get information on the AuStat from which I derive"""
 
         sBack = ""
         # Find out if I have moved from anywhere or not
@@ -5611,7 +5682,7 @@ class Austat(models.Model):
         return sBack
 
     def get_previous_url(self):
-        """Get information on the SSG from which I derive"""
+        """Get information on the AuStat from which I derive"""
 
         sBack = ""
         # Find out if I have moved from anywhere or not
@@ -5625,7 +5696,7 @@ class Austat(models.Model):
         # Visit all project items
         for project in self.projects.all().order_by('name'):
             # Determine where clicking should lead to
-            url = "{}?ssg-projlist={}".format(reverse('austat_list'), project.id) 
+            url = "{}?as-projlist={}".format(reverse('austat_list'), project.id) 
             # Create a display for this topic
             lHtml.append("<span class='project'><a href='{}'>{}</a></span>".format(url, project.name))
         sBack = ", ".join(lHtml)
@@ -5675,7 +5746,7 @@ class Austat(models.Model):
         return sBack
 
     def get_superlinks_markdown(self):
-        """Return all the SSG links = type + dst"""
+        """Return all the AuStat links = type + dst"""
 
         lHtml = []
         sBack = ""
@@ -5765,19 +5836,19 @@ class Austat(models.Model):
         """Determine what the sermon number *would be* for the indicated author"""
 
         # Check the highest sermon number for this author
-        qs_ssg = Austat.objects.filter(author=author).order_by("-number")
-        if qs_ssg.count() == 0:
+        qs_as= Austat.objects.filter(author=author).order_by("-number")
+        if qs_as.count() == 0:
             iNumber = 1
         else:
-            iNumber = qs_ssg.first().number + 1
+            iNumber = qs_as.first().number + 1
         return iNumber
 
-    def set_ssgcount(self):
-        # Calculate and set the ssgcount
-        ssgcount = self.ssgcount
+    def set_ascount(self):
+        # Calculate and set the austat count
+        ascount = self.ascount
         iSize = self.relations.count()
-        if iSize != ssgcount:
-            self.ssgcount = iSize
+        if iSize != ascount:
+            self.ascount = iSize
             self.save()
         return True
 
@@ -5816,8 +5887,8 @@ class AustatLink(models.Model):
             # Perform the actual save() method on [self]
             response = super(AustatLink, self).save(force_insert, force_update, using, update_fields)
             # Adapt the ssgcount
-            self.src.set_ssgcount()
-            self.dst.set_ssgcount()
+            self.src.set_ascount()
+            self.dst.set_ascount()
         # Return the actual save() method response
         return response
 
@@ -5825,7 +5896,7 @@ class AustatLink(models.Model):
         eqg_list = [self.src, self.dst]
         response = super(AustatLink, self).delete(using, keep_parents)
         for obj in eqg_list:
-            obj.set_ssgcount()
+            obj.set_ascount()
         return response
 
     def get_label(self, do_incexpl=False):
@@ -5840,6 +5911,17 @@ class AustatKeyword(models.Model):
     equal = models.ForeignKey(Austat, related_name="equal_kw", on_delete=models.CASCADE)
     # [1] ...and a keyword instance
     keyword = models.ForeignKey(Keyword, related_name="equal_kw", on_delete=models.CASCADE)
+    # [1] And a date: the date of saving this relation
+    created = models.DateTimeField(default=get_current_datetime)
+
+
+class AustatGenre(models.Model):
+    """Relation between an Austat and a Keyword"""
+
+    # [1] The link is between a Austat instance ...
+    equal = models.ForeignKey(Austat, related_name="equal_genre", on_delete=models.CASCADE)
+    # [1] ...and a keyword instance
+    genre = models.ForeignKey(Genre, related_name="equal_genre", on_delete=models.CASCADE)
     # [1] And a date: the date of saving this relation
     created = models.DateTimeField(default=get_current_datetime)
 
@@ -8305,13 +8387,13 @@ class UserKeyword(models.Model):
 
 
 class CanwitAustat(models.Model):
-    """Link from sermon description (S) to super sermon gold (SSG)"""
+    """Link from canwit description (S) to Authoritative Statement (SSG)"""
 
     # [1] The canwit
     canwit = models.ForeignKey(Canwit, related_name="canwit_austat", on_delete=models.CASCADE)
     # [0-1] The manuscript in which the canwit resides
     manu = models.ForeignKey(Manuscript, related_name="canwit_austat", blank=True, null=True, on_delete=models.SET_NULL)
-    # [1] The gold sermon
+    # [1] The Authoritative Statement
     super = models.ForeignKey(Austat, related_name="canwit_austat", on_delete=models.CASCADE)
     # [1] Each sermon-to-gold link must have a linktype, with default "equal"
     linktype = models.CharField("Link type", choices=build_abbr_list(LINK_TYPE), max_length=5, default="uns")
@@ -8319,8 +8401,8 @@ class CanwitAustat(models.Model):
     def __str__(self):
         # Temporary fix: sermon.id
         # Should be changed to something more significant in the future
-        # E.G: manuscript+locus?? (assuming each sermon has a locus)
-        combi = "sermon {} {} {}".format(self.sermon.id, self.get_linktype_display(), self.super.__str__())
+        # E.G: manuscript+locus?? (assuming each canwit has a locus)
+        combi = "canwit {} {} {}".format(self.canwit.id, self.get_linktype_display(), self.super.__str__())
         return combi
     
     def do_scount(self, super):
@@ -8350,8 +8432,8 @@ class CanwitAustat(models.Model):
         return response
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
-        # Automatically provide the value for the manuscript through the sermon
-        manu = self.sermon.msitem.manu
+        # Automatically provide the value for the manuscript through the canwit
+        manu = self.canwit.msitem.manu
         if self.manu != manu:
             self.manu = manu
         # First do the saving
@@ -8372,7 +8454,7 @@ class CanwitAustat(models.Model):
         """Get a list of links that are unique in terms of combination [ssg] [linktype]"""
 
         # We're not really giving unique ones
-        uniques = CanwitAustat.objects.exclude(sermon__mtype="tem").order_by('linktype', 'sermon__author__name', 'sermon__siglist')
+        uniques = CanwitAustat.objects.exclude(canwit__mtype="tem").order_by('linktype', 'canwit__author__name')
         return uniques
 
 

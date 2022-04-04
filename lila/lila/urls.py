@@ -171,6 +171,10 @@ urlpatterns = [
     url(r'^keyword/details(?:/(?P<pk>\d+))?/$', KeywordDetails.as_view(), name='keyword_details'),
     url(r'^keyword/edit(?:/(?P<pk>\d+))?/$', KeywordEdit.as_view(), name='keyword_edit'),
 
+    url(r'^genre/list', GenreListView.as_view(), name='genre_list'),
+    url(r'^genre/details(?:/(?P<pk>\d+))?/$', GenreDetails.as_view(), name='genre_details'),
+    url(r'^genre/edit(?:/(?P<pk>\d+))?/$', GenreEdit.as_view(), name='genre_edit'),
+
     url(r'^userkeyword/list', UserKeywordListView.as_view(), name='userkeyword_list'),
     url(r'^userkeyword/details(?:/(?P<pk>\d+))?/$', UserKeywordDetails.as_view(), name='userkeyword_details'),
     url(r'^userkeyword/edit(?:/(?P<pk>\d+))?/$', UserKeywordEdit.as_view(), name='userkeyword_edit'),

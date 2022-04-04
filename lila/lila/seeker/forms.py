@@ -328,7 +328,7 @@ class DaterangeWidget(ModelSelect2MultipleWidget):
 
 class AustatMultiWidget(ModelSelect2MultipleWidget):
     model = Austat
-    search_fields = ['code__icontains', 'id__icontains', 'author__name__icontains', 'equal_goldsermons__siglist__icontains']
+    search_fields = ['code__icontains', 'id__icontains', 'author__name__icontains']
     addonly = False
 
     def label_from_instance(self, obj):
@@ -346,7 +346,7 @@ class AustatMultiWidget(ModelSelect2MultipleWidget):
 
 class AustatLinkAddOnlyWidget(AustatMultiWidget):
     model = AustatLink
-    search_fields = ['dst__code__icontains', 'dst__id__icontains', 'dst__author__name__icontains', 'dst__equal_goldsermons__siglist__icontains']
+    search_fields = ['dst__code__icontains', 'dst__id__icontains', 'dst__author__name__icontains']
     addonly = True
 
     def label_from_instance(self, obj):
@@ -363,7 +363,7 @@ class AustatLinkAddOnlyWidget(AustatMultiWidget):
 
 class AustatWidget(ModelSelect2Widget):
     model = Austat
-    search_fields = [ 'code__icontains', 'author__name__icontains', 'srchftext__icontains', 'srchftrans__icontains', 'equal_goldsermons__siglist__icontains' ]
+    search_fields = [ 'code__icontains', 'author__name__icontains', 'srchftext__icontains', 'srchftrans__icontains' ]
     addonly = False
     order = [F('code').asc(nulls_last=True), 'firstsig']
     exclude = None
@@ -419,6 +419,35 @@ class FreeWidget(ModelSelect2MultipleWidget):
 
     def get_queryset(self):
         qs = Free.objects.filter(main=self.main).order_by("name")
+        return qs
+
+
+class KeycodeMultiWidget(ModelSelect2MultipleWidget):
+    model = Austat
+    search_fields = ['keycode__icontains']
+    addonly = False
+
+    def label_from_instance(self, obj):
+        sLabel = obj.get_keycode()
+        return sLabel
+
+    def get_queryset(self):
+        if self.addonly:
+            qs = Austat.objects.none()
+        else:
+            qs = Austat.objects.filter(keycode__isnull=False, moved__isnull=True, atype='acc').order_by('keycode').distinct()
+        return qs
+
+
+class GenreWidget(ModelSelect2MultipleWidget):
+    model = Keyword
+    search_fields = [ 'name__icontains' ]
+
+    def label_from_instance(self, obj):
+        return obj.name
+
+    def get_queryset(self):
+        qs = Genre.objects.all().order_by('name').distinct()
         return qs
 
 
@@ -937,8 +966,8 @@ class SuperDistWidget(ModelSelect2Widget):
     model = AustatDist
     sermon = None
     search_fields = ['super__code__icontains', 'super__id__icontains', 'super__author__name__icontains', 
-                     'super__srchftext__icontains', 'super__srchftrans__icontains',
-                     'super__equal_goldsermons__siglist__icontains']
+                     'super__srchftext__icontains', 'super__srchftrans__icontains'
+                     ]
 
     def label_from_instance(self, obj):
         sLabel = obj.super.get_label(do_incexpl = True)
@@ -962,8 +991,7 @@ class SuperDistWidget(ModelSelect2Widget):
 class SuperOneWidget(ModelSelect2Widget):
     model = Austat
     search_fields = ['code__icontains', 'id__icontains', 'author__name__icontains', 
-                     'srchftext__icontains', 'srchftrans__icontains',
-                     'equal_goldsermons__siglist__icontains']
+                     'srchftext__icontains', 'srchftrans__icontains']
 
     def label_from_instance(self, obj):
         sLabel = obj.get_label(do_incexpl = True)
@@ -976,8 +1004,7 @@ class SuperOneWidget(ModelSelect2Widget):
         qs = super(SuperOneWidget, self).filter_queryset(term, queryset, **dependent_fields)
         # Adapt
         condition = Q(code__icontains=term) | Q(author__name__icontains=term) | \
-                    Q(srchftext__icontains=term) | Q(srchftrans__icontains=term) | \
-                    Q(equal_goldsermons__siglist__icontains=term)
+                    Q(srchftext__icontains=term) | Q(srchftrans__icontains=term) 
         qs = qs.annotate(
             full_string_order=Case(
                 When(condition, then=Value(1)),
@@ -1608,6 +1635,45 @@ class CodheadForm(lilaModelForm):
         return None
 
 
+class GenreForm(forms.ModelForm):
+    """Genre editing and searching"""
+
+    genre_ta = forms.CharField(label=_("Genre"), required=False,
+                widget=forms.TextInput(attrs={'class': 'typeahead searching genres input-sm', 'placeholder': 'Genre(s)...', 'style': 'width: 100%;'}))
+    genrelist     = ModelMultipleChoiceField(queryset=None, required=False, 
+                widget=GenreWidget(attrs={'data-placeholder': 'Select multiple genres...', 'style': 'width: 100%;', 'class': 'searching'}))
+    typeaheads = ["genres"]
+
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = Genre
+        fields = ['name', 'description']
+        widgets={'name':        forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
+                 'description': forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 
+                                                      'class': 'searching', 'placeholder': 'Comments on this genre...'})
+                 }
+
+    def __init__(self, *args, **kwargs):
+        # Start by executing the standard handling
+        super(GenreForm, self).__init__(*args, **kwargs)
+
+        oErr = ErrHandle()
+        try:
+            # Some fields are not required
+            self.fields['name'].required = False
+            self.fields['description'].required = False
+
+            self.fields['genrelist'].queryset = Genre.objects.all().order_by('name')
+
+            # Get the instance
+            if 'instance' in kwargs:
+                instance = kwargs['instance']
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("GenreForm/init")
+
+
 class KeywordForm(forms.ModelForm):
     """Keyword list"""
 
@@ -2156,7 +2222,7 @@ class CanwitSuperForm(forms.ModelForm):
     newlinktype = forms.ChoiceField(label=_("Linktype"), required=False, # help_text="editable", 
                widget=forms.Select(attrs={'class': 'input-sm', 'placeholder': 'Type of link...',  'style': 'width: 100%;', 'tdstyle': 'width: 100px;'}))
     # For the method "nodistance"
-    newsuper    = forms.CharField(label=_("Sermon Gold"), required=False, help_text="editable", 
+    newsuper    = forms.CharField(label=_("Canon witness"), required=False, help_text="editable", 
                 widget=SuperOneWidget(attrs={'data-placeholder': 'Select links...', 
                                                   'placeholder': 'Select an Authoritative statement...', 'style': 'width: 100%;', 'class': 'searching'}))
 
@@ -2177,9 +2243,11 @@ class CanwitSuperForm(forms.ModelForm):
             canwit_id = kwargs.pop('canwit_id', None)
         # Start by executing the standard handling
         super(CanwitSuperForm, self).__init__(*args, **kwargs)
+
         # Initialize choices for linktype
         init_choices(self, 'linktype', LINK_TYPE, bUseAbbr=True)
         init_choices(self, 'newlinktype', LINK_TYPE, bUseAbbr=True, use_helptext=False)
+
         # Set the keyword to optional for best processing
         self.fields['newlinktype'].required = False
         self.fields['super'].required = False
@@ -2266,8 +2334,13 @@ class AustatForm(lilaModelForm):
                 widget=forms.TextInput(attrs={'class': 'typeahead searching signatures input-sm', 'placeholder': 'Signature/code (Gryson, Clavis)...', 'style': 'width: 100%;'}))
     signatureid = forms.CharField(label=_("Signature ID"), required=False)
     lilalist  = ModelMultipleChoiceField(queryset=None, required=False, 
-                    widget=AustatMultiWidget(attrs={'data-placeholder': 'Select multiple lila codes...', 'style': 'width: 100%;', 
+                    widget=AustatMultiWidget(attrs={'data-placeholder': 'Select multiple Lilac codes...', 'style': 'width: 100%;', 
                                                        'class': 'searching'}))
+    keycodelist  = ModelMultipleChoiceField(queryset=None, required=False, 
+                    widget=KeycodeMultiWidget(attrs={'data-placeholder': 'Select multiple Key codes...', 'style': 'width: 100%;', 
+                                                       'class': 'searching'}))
+    genrelist     = ModelMultipleChoiceField(queryset=None, required=False, 
+                widget=GenreWidget(attrs={'data-placeholder': 'Select multiple genres...', 'style': 'width: 100%;', 'class': 'searching'}))
     kwlist     = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=KeywordWidget(attrs={'data-placeholder': 'Select multiple keywords...', 'style': 'width: 100%;', 'class': 'searching'}))
     projlist    = ModelMultipleChoiceField(queryset=None, required=False, 
@@ -2305,13 +2378,15 @@ class AustatForm(lilaModelForm):
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = Austat
-        fields = ['author', 'ftext', 'ftrans', 'code', 'number', 'stype']
-        widgets={'code':        forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 
-                                                       'placeholder': 'lila code. Use wildcards, e.g: *002.*, *003'}),
-                 'number':      forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'data-placeholder': 'Author number'}),
+        fields = ['author', 'ftext', 'ftrans', 'code', 'keycode', 'number', 'stype']
+        widgets={'code':      forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 
+                                                       'placeholder': 'Lilac code. Use wildcards, e.g: *002.*, *003'}),
+                 'keycode':   forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 
+                                                       'placeholder': 'key code. Use wildcards, e.g: *men*, *aug*'}),
+                 'number':    forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'data-placeholder': 'Author number'}),
                  'ftext':     forms.TextInput(attrs={'class': 'typeahead searching asftexts input-sm', 'placeholder': 'Full text...', 'style': 'width: 100%;'}),
                  'ftrans':    forms.TextInput(attrs={'class': 'typeahead searching asftrans input-sm', 'placeholder': 'Translation...', 'style': 'width: 100%;'}),
-                 'stype':       forms.Select(attrs={'style': 'width: 100%;'})
+                 'stype':     forms.Select(attrs={'style': 'width: 100%;'})
                  }
 
     def __init__(self, *args, **kwargs):
@@ -2336,6 +2411,8 @@ class AustatForm(lilaModelForm):
             self.fields['newauthor'].queryset = Author.objects.all().order_by('name')
             self.fields['superlist'].queryset = AustatLink.objects.none()
             self.fields['lilalist'].queryset = Austat.objects.filter(code__isnull=False, moved__isnull=True).order_by('code')
+            self.fields['keycodelist'].queryset = Austat.objects.filter(keycode__isnull=False, moved__isnull=True).order_by('code')
+            self.fields['genrelist'].queryset = Genre.objects.all().order_by('name')
             self.fields['kwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
             self.fields['ukwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
             # self.fields['superlist'].queryset = Austat.objects.all().order_by('code', 'author__name', 'number')
@@ -2399,6 +2476,7 @@ class AustatForm(lilaModelForm):
                 self.fields['collist_hist'].initial = [x.pk for x in instance.collections.filter(settype="hc").order_by('name')]
                 self.fields['superlist'].initial = [x.pk for x in instance.austat_src.all().order_by('dst__code', 'dst__author__name', 'dst__number')]
                 self.fields['superlist'].queryset = AustatLink.objects.filter(id__in=self.fields['superlist'].initial)
+                self.fields['genrelist'].initial = [x.pk for x in instance.genres.all().order_by('name')]
                 self.fields['kwlist'].initial = [x.pk for x in instance.keywords.all().order_by('name')]
                 self.fields['ukwlist'].initial = [x.keyword.pk for x in instance.super_userkeywords.filter(profile=profile).order_by('keyword__name')]
                 self.fields['projlist'].initial = [x.pk for x in instance.projects.all().order_by('name')] #

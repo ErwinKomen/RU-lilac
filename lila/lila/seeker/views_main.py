@@ -34,7 +34,7 @@ from lila.bible.models import Reference
 from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_entries, get_searchable, get_now_time, \
     add_gold2equal, add_equal2equal, add_ssg_equal2equal, get_helptext, Information, Country, City, Author, Manuscript, \
     User, Group, Origin, Canwit, MsItem, Codhead, CanwitKeyword, CanwitAustat, NewsItem, \
-    SourceInfo, AustatKeyword, ManuscriptExt, Colwit, \
+    SourceInfo, AustatKeyword, AustatGenre, ManuscriptExt, Colwit, \
     ManuscriptKeyword, Action, Austat, AustatLink, Location, LocationName, LocationIdentifier, LocationRelation, LocationType, \
     ProvenanceMan, Provenance, Daterange, CollOverlap, BibRange, Feast, Comment, AustatDist, \
     Basket, BasketMan, BasketSuper, Litref, LitrefMan, LitrefCol, Report, \
@@ -2743,10 +2743,8 @@ class CanwitEdit(BasicDetails):
                        {'formsetClass': SbrefFormSet,  'prefix': 'sbref',  'readonly': False, 'noinit': True, 'linkfield': 'canwit'}] 
 
     stype_edi_fields = ['locus', 'author', 'sectiontitle', 'title', 'subtitle', 'ftext', 'ftrans', 'postscriptum', 'quote', 
-                                'bibnotes', 'feast', 'bibleref', 'additional', 'note',  # 'manu', 
-                        #'kwlist',
+                        'bibnotes', 'feast', 'bibleref', 'additional', 'note',  # 'manu', 
                         'CanwitSignature', 'siglist',
-                        #'CollectionSerm', 'collist_s',
                         'CanwitAustat', 'superlist']
 
     def custom_init(self, instance):
@@ -3046,7 +3044,7 @@ class CanwitEdit(BasicDetails):
                                 linktype = "uns"
 
                                 # Check existence
-                                obj = CanwitAustat.objects.filter(sermon=instance, super=newsuper, linktype=linktype).first()
+                                obj = CanwitAustat.objects.filter(canwit=instance, super=newsuper, linktype=linktype).first()
                                 if obj == None:
                                     obj_super = Austat.objects.filter(id=newsuper).first()
                                     if obj_super != None:
@@ -3705,7 +3703,7 @@ class AustatEdit(BasicDetails):
         ]
 
     # Note: do not include [code] in here
-    stype_edi_fields = ['author', 'number', 'incipit', 'explicit',
+    stype_edi_fields = ['author', 'number', 'ftext', 'ftrans',
                         'AustatLink', 'superlist',
                         'goldlist', 'projlist']
 
@@ -3738,7 +3736,9 @@ class AustatEdit(BasicDetails):
                 # {'type': 'plain', 'label': "Sermon number:", 'value': instance.number, 'field_view': 'number', 
                 # 'title': 'This is the automatically assigned sermon number for this particular author' },
 
-                {'type': 'plain', 'label': "lila Code:",   'value': instance.code,   'title': 'The lila Code is automatically determined'}, 
+                {'type': 'plain', 'label': "Lilac Code:",  'value': instance.code,   'title': 'The lila Code is automatically determined'}, 
+                {'type': 'plain', 'label': "Key Code:",    'value': instance.get_keycode(), 
+                 'field_key': 'keycode'}, 
                 {'type': 'safe',  'label': "Full text:",   'value': instance.get_ftext_markdown("search"), 
                  'field_key': 'newftext',  'key_ta': 'gldftext-key', 'title': instance.get_ftext_markdown("actual")}, 
                 {'type': 'safe',  'label': "Translation:", 'value': instance.get_ftrans_markdown("search"),
@@ -3746,6 +3746,7 @@ class AustatEdit(BasicDetails):
                 # Hier project    
     
 
+                {'type': 'line',  'label': "Genre(s):",      'value': instance.get_genres_markdown(), 'field_list': 'genrelist'},
                 {'type': 'line',  'label': "Keywords:",      'value': instance.get_keywords_markdown(), 'field_list': 'kwlist'},
                 {'type': 'plain', 'label': "Keywords (user):", 'value': instance.get_keywords_user_markdown(profile),   'field_list': 'ukwlist',
                  'title': 'User-specific keywords. If the moderator accepts these, they move to regular keywords.'},
@@ -4097,6 +4098,10 @@ class AustatEdit(BasicDetails):
                         if bNeedSaving:
                           reverse.save()
 
+            # (3) 'genres'
+            genrelist = form.cleaned_data['genrelist']
+            adapt_m2m(AustatGenre, instance, "equal", genrelist, "genre")
+
             # (3) 'keywords'
             kwlist = form.cleaned_data['kwlist']
             adapt_m2m(AustatKeyword, instance, "equal", kwlist, "keyword")
@@ -4207,96 +4212,71 @@ class AustatDetails(AustatEdit):
                 # But make sure the EXCLUDE those with `mtype` = `tem`
                 qs_s = CanwitAustat.objects.filter(super=instance).exclude(canwit__mtype="tem").order_by('canwit__msitem__manu__idno', 'canwit__locus')
                 rel_list =[]
-                method = "FourColumns"
-                method = "Issue216"
                 for canwitlink in qs_s:
                     canwit = canwitlink.canwit
                     # Get the 'item': the manuscript
                     item = canwit.msitem.manu
                     rel_item = []
                 
-                    if method == "FourColumns":
-                        # Name as CITY - LIBRARY - IDNO + Name
-                        manu_name = "{}, {}, <span class='signature'>{}</span> {}".format(item.library.lcity.name, item.library.name, item.idno, item.name)
-                        rel_item.append({'value': manu_name, 'title': item.idno, 'main': True,
-                                         'link': reverse('manuscript_details', kwargs={'pk': item.id})})
+                    # Shelfmark = IDNO
+                    manu_full = "{}, {}, {}".format(item.get_city(), item.get_library(), item.idno)
+                    manu_name = "<span class='signature' title='{}'>{}</span>".format(manu_full, item.idno)
+                    # Name as CITY - LIBRARY - IDNO + Name
+                    manu_name = "{}, {}, <span class='signature'>{}</span> {}".format(item.get_city(), item.get_library(), item.idno, item.name)
+                    rel_item.append({'value': manu_name, 'title': item.idno, 'main': True, 'initial': 'small',
+                                        'link': reverse('manuscript_details', kwargs={'pk': item.id})})
 
-                        # Location number and link to the correct point in the manuscript details view...
-                        itemloc = "{}/{}".format(sermon.order, item.get_canwit_count())
-                        rel_item.append({'value': itemloc, 'align': "right", 'title': 'Jump to the sermon in the manuscript',
-                                         'link': "{}#sermon_{}".format(reverse('manuscript_details', kwargs={'pk': item.id}), sermon.id)  })
+                    # Origin
+                    or_prov = "{} ({})".format(item.get_origin(), item.get_provenance_markdown(table=False))
+                    rel_item.append({'value': or_prov, 
+                                        'title': "Origin (if known), followed by provenances (between brackets)"}) #, 'initial': 'small'})
 
-                        # date range
-                        daterange = "{}-{}".format(item.yearstart, item.yearfinish)
-                        rel_item.append({'value': daterange, 'align': "right"})
+                    # date range
+                    daterange = "{}-{}".format(item.yearstart, item.yearfinish)
+                    rel_item.append({'value': daterange, 'align': "right"}) #, 'initial': 'small'})
 
-                        # Sermon Locus + Title + link
-                        sermo_name = "<span class='signature'>{}</span>".format(sermon.locus)
-                        rel_item.append({'value': sermon.locus, 'title': sermo_name, 
-                                         'link': reverse('canwit_details', kwargs={'pk': sermon.id})})
-                    elif method == "Issue216":
-                        # Shelfmark = IDNO
-                        manu_full = "{}, {}, {}".format(item.get_city(), item.get_library(), item.idno)
-                        manu_name = "<span class='signature' title='{}'>{}</span>".format(manu_full, item.idno)
-                        # Name as CITY - LIBRARY - IDNO + Name
-                        manu_name = "{}, {}, <span class='signature'>{}</span> {}".format(item.get_city(), item.get_library(), item.idno, item.name)
-                        rel_item.append({'value': manu_name, 'title': item.idno, 'main': True, 'initial': 'small',
-                                         'link': reverse('manuscript_details', kwargs={'pk': item.id})})
+                    # Collection(s)
+                    coll_info = item.get_collections_markdown(username, team_group)
+                    rel_item.append({'value': coll_info, 'initial': 'small'})
 
-                        # Origin
-                        or_prov = "{} ({})".format(item.get_origin(), item.get_provenance_markdown(table=False))
-                        rel_item.append({'value': or_prov, 
-                                         'title': "Origin (if known), followed by provenances (between brackets)"}) #, 'initial': 'small'})
+                    # Location number and link to the correct point in the manuscript details view...
+                    itemloc = "{}/{}".format(canwit.msitem.order, item.get_canwit_count())
+                    link_on_manu_page = "{}#canwit_{}".format(reverse('manuscript_details', kwargs={'pk': item.id}), canwit.id)
+                    link_to_canwit = reverse('canwit_details', kwargs={'pk': canwit.id})
+                    rel_item.append({'value': itemloc, 'align': "right", 'title': 'Jump to the canwit in the manuscript', 'initial': 'small',
+                                        'link': link_to_sermon })
 
-                        # date range
-                        daterange = "{}-{}".format(item.yearstart, item.yearfinish)
-                        rel_item.append({'value': daterange, 'align': "right"}) #, 'initial': 'small'})
+                    # Folio number of the item
+                    rel_item.append({'value': canwit.locus, 'initial': 'small'})
 
-                        # Collection(s)
-                        coll_info = item.get_collections_markdown(username, team_group)
-                        rel_item.append({'value': coll_info, 'initial': 'small'})
+                    # Attributed author
+                    rel_item.append({'value': canwit.get_author(), 'initial': 'small'})
 
-                        # Location number and link to the correct point in the manuscript details view...
-                        itemloc = "{}/{}".format(canwit.msitem.order, item.get_canwit_count())
-                        link_on_manu_page = "{}#canwit_{}".format(reverse('manuscript_details', kwargs={'pk': item.id}), canwit.id)
-                        link_to_canwit = reverse('canwit_details', kwargs={'pk': canwit.id})
-                        rel_item.append({'value': itemloc, 'align': "right", 'title': 'Jump to the canwit in the manuscript', 'initial': 'small',
-                                         'link': link_to_sermon })
+                    # Ftext
+                    rel_item.append({'value': canwit.get_ftext_markdown()}) #, 'initial': 'small'})
 
-                        # Folio number of the item
-                        rel_item.append({'value': canwit.locus, 'initial': 'small'})
+                    # Ftrans
+                    rel_item.append({'value': canwit.get_ftrans_markdown()}) #, 'initial': 'small'})
 
-                        # Attributed author
-                        rel_item.append({'value': canwit.get_author(), 'initial': 'small'})
-
-                        # Ftext
-                        rel_item.append({'value': canwit.get_ftext_markdown()}) #, 'initial': 'small'})
-
-                        # Ftrans
-                        rel_item.append({'value': canwit.get_ftrans_markdown()}) #, 'initial': 'small'})
-
-                        # Keywords
-                        rel_item.append({'value': canwit.get_keywords_markdown(), 'initial': 'small'})
+                    # Keywords
+                    rel_item.append({'value': canwit.get_keywords_markdown(), 'initial': 'small'})
 
                     # Add this Manu/Canwit line to the list
                     rel_list.append(dict(id=item.id, cols=rel_item))
                 manuscripts['rel_list'] = rel_list
 
-                if method == "FourColumns":
-                    manuscripts['columns'] = ['Manuscript', 'Items', 'Date range', 'Sermon manifestation']
-                elif method == "Issue216":
-                    manuscripts['columns'] = [
-                        'Shelfmark', 
-                        '<span title="Origin/Provenance">or./prov.</span>', 
-                        '<span title="Date range">date</span>', 
-                        '<span title="Collection name">coll.</span>', 
-                        '<span title="Item">item</span>', 
-                        '<span title="Folio number">ff.</span>', 
-                        '<span title="Attributed author">auth.</span>', 
-                        '<span title="Full text">txt.</span>', 
-                        '<span title="Translation">trns.</span>', 
-                        '<span title="Keywords of the Sermon manifestation">keyw.</span>', 
-                        ]
+                manuscripts['columns'] = [
+                    'Shelfmark', 
+                    '<span title="Origin/Provenance">or./prov.</span>', 
+                    '<span title="Date range">date</span>', 
+                    '<span title="Collection name">coll.</span>', 
+                    '<span title="Item">item</span>', 
+                    '<span title="Folio number">ff.</span>', 
+                    '<span title="Attributed author">auth.</span>', 
+                    '<span title="Full text">txt.</span>', 
+                    '<span title="Translation">trns.</span>', 
+                    '<span title="Keywords of the Sermon manifestation">keyw.</span>', 
+                    ]
 
                 # Use the 'graph' function or not?
                 use_network_graph = True
@@ -4334,6 +4314,18 @@ class AustatDetails(AustatEdit):
 
         # Return the context we have made
         return context
+
+    def after_new(self, form, instance):
+        """Action to be performed after adding a new item"""
+
+        bResult = True
+        msg = ""
+
+        # Make sure we change the [atype] from default into 'accepted'
+        instance.atype = "acc"
+        instance.save()
+
+        return bResult, msg
 
     def before_save(self, form, instance):
         oErr = ErrHandle()
@@ -4387,13 +4379,15 @@ class AustatListView(BasicList):
     bUseFilter = True  
     plural_name = "Authoritative statements"
     sg_name = "Authoritative statement"
-    order_cols = ['code', 'author', 'firstsig', 'srchftext', '', 'scount', 'ssgcount', 'hccount', 'stype']
+    # order_cols = ['code', 'author', 'firstsig', 'srchftext', '', 'scount', 'ssgcount', 'hccount', 'stype']
+    order_cols = ['code', 'author', 'keycode', 'srchftext', '', 'scount', 'ssgcount', 'hccount', 'stype']
     order_default= order_cols
     order_heads = [
         {'name': 'Author',                  'order': 'o=1', 'type': 'str', 'custom': 'author', 'linkdetails': True},
-        {'name': 'Code',                    'order': 'o=2', 'type': 'str', 'custom': 'code',   'linkdetails': True},
-        {'name': 'Gryson/Clavis',           'order': 'o=3', 'type': 'str', 'custom': 'sig',    'allowwrap': True, 'options': "abcd",
-         'title': "The Gryson/Clavis codes of all the Sermons Gold in this equality set"},
+        {'name': 'Lilac',                   'order': 'o=2', 'type': 'str', 'custom': 'code',   'linkdetails': True},
+        #{'name': 'Gryson/Clavis',           'order': 'o=3', 'type': 'str', 'custom': 'sig',    'allowwrap': True, 'options': "abcd",
+        # 'title': "The Gryson/Clavis codes of all the Sermons Gold in this equality set"},
+        {'name': 'Key',                     'order': 'o=3', 'type': 'str', 'custom': 'keycode', 'linkdetails': True},
         {'name': 'Full text',               'order': 'o=4', 'type': 'str', 'custom': 'ftext',  'main': True, 'linkdetails': True,
          'title': "The full text that has been chosen for this Authoritative statement"},
         {'name': 'HC', 'title': "Historical collections associated with this Authoritative statement", 
@@ -4410,9 +4404,10 @@ class AustatListView(BasicList):
         {"name": "Author",          "id": "filter_author",            "enabled": False},
         {"name": "Full text",       "id": "filter_ftext",             "enabled": False},
         {"name": "Translation",     "id": "filter_ftrans",            "enabled": False},
-        {"name": "lila code",       "id": "filter_code",              "enabled": False},
+        {"name": "Lilac code",       "id": "filter_code",              "enabled": False},
         {"name": "Number",          "id": "filter_number",            "enabled": False},
-        {"name": "Gryson/Clavis",   "id": "filter_signature",         "enabled": False},
+        # {"name": "Gryson/Clavis",   "id": "filter_signature",         "enabled": False},
+        {"name": "Key code",        "id": "filter_keycode",           "enabled": False},
         {"name": "Keyword",         "id": "filter_keyword",           "enabled": False},
         {"name": "Status",          "id": "filter_stype",             "enabled": False},
         {"name": "Sermon count",    "id": "filter_scount",            "enabled": False},
@@ -4431,6 +4426,8 @@ class AustatListView(BasicList):
             {'filter': 'ftrans',    'dbfield': 'srchftrans',        'keyS': 'ftrans',   'regex': adapt_regex_incexp},
             {'filter': 'code',      'dbfield': 'code',              'keyS': 'code',     'help': 'lilacode',
              'keyList': 'lilalist', 'infield': 'id'},
+            {'filter': 'keycode',   'dbfield': 'keycode',           'keyS': 'keycode',  
+             'keyList': 'keycodelist', 'infield': 'id'},
             {'filter': 'number',    'dbfield': 'number',            'keyS': 'number',
              'title': 'The per-author-sermon-number (these numbers are assigned automatically and have no significance)'},
             {'filter': 'scount',    'dbfield': 'soperator',         'keyS': 'soperator'},
@@ -4553,14 +4550,17 @@ class AustatListView(BasicList):
             html.append("{}".format(sCode))
         elif custom == "ftext":
             html.append("<span>{}</span>".format(instance.get_ftext_markdown()))
-        elif custom == "sig":
-            # Get all the associated signatures
-            qs = Signature.objects.filter(gold__equal=instance).order_by('-editype', 'code')
-            for sig in qs:
-                editype = sig.editype
-                url = "{}?gold-siglist={}".format(reverse("gold_list"), sig.id)
-                short = sig.short()
-                html.append("<span class='badge signature {}' title='{}'><a class='nostyle' href='{}'>{}</a></span>".format(editype, short, url, short[:20]))
+        #elif custom == "sig":
+        #    # Get all the associated signatures
+        #    qs = Signature.objects.filter(gold__equal=instance).order_by('-editype', 'code')
+        #    for sig in qs:
+        #        editype = sig.editype
+        #        url = "{}?gold-siglist={}".format(reverse("gold_list"), sig.id)
+        #        short = sig.short()
+        #        html.append("<span class='badge signature {}' title='{}'><a class='nostyle' href='{}'>{}</a></span>".format(editype, short, url, short[:20]))
+        elif custom == "keycode":
+            sKeyCode = "-" if instance.keycode  == None else instance.keycode
+            html.append("{}".format(sKeyCode))
         elif custom == "status":
             # Provide the status traffic light
             html.append(instance.get_stype_light())

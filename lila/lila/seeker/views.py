@@ -62,7 +62,7 @@ from lila.utils import ErrHandle
 from lila.seeker.forms import SearchCollectionForm, SearchManuscriptForm, SearchManuForm, SearchSermonForm, LibrarySearchForm, SignUpForm, \
     AuthorSearchForm, UploadFileForm, UploadFilesForm, ManuscriptForm, CanwitForm, CommentForm, \
     AuthorEditForm, BibRangeForm, FeastForm, \
-    CanwitSuperForm, SearchUrlForm, \
+    CanwitSuperForm, SearchUrlForm, GenreForm, \
     CanwitSignatureForm, AustatLinkForm, \
     ReportEditForm, SourceEditForm, ManuscriptProvForm, LocationForm, LocationRelForm, OriginForm, \
     LibraryForm, ManuscriptExtForm, ManuscriptLitrefForm, CanwitKeywordForm, KeywordForm, \
@@ -79,7 +79,7 @@ from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_
     ProvenanceMan, Provenance, Daterange, CollOverlap, BibRange, Feast, Comment, AustatDist, \
     Basket, BasketMan, BasketSuper, Litref, LitrefMan, LitrefCol, Report, \
     Visit, Profile, Keyword, CanwitSignature, Status, Library, Collection, CollectionSerm, \
-    CollectionMan, CollectionSuper, UserKeyword, Template, \
+    CollectionMan, CollectionSuper, UserKeyword, Template, Genre, \
     ManuscriptCorpus, ManuscriptCorpusLock, AustatCorpus, ProjectEditor, \
     Codico, ProvenanceCod, OriginCodico, CodicoKeyword, Reconstruction, \
     Project, ManuscriptProject, CollectionProject, AustatProject, CanwitProject, \
@@ -1334,6 +1334,94 @@ class OriginCodDetails(OriginCodEdit):
     """Like OriginCodico Edit, but then html output"""
     rtype = "html"
         
+
+# ============= EDITOR PROVIDED GENRE VIEWS ============================
+
+
+class GenreEdit(BasicDetails):
+    """The details of one genre"""
+
+    model = Genre
+    mForm = GenreForm
+    prefix = 'gnr'
+    title = "GenreEdit"
+    rtype = "json"
+    history_button = True
+    mainitems = []
+    
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+
+        # Define the main items to show and edit
+        context['mainitems'] = [
+            {'type': 'plain', 'label': "Name:",       'value': instance.name,                     'field_key': 'name'},
+            {'type': 'plain', 'label': "Description:",'value': instance.description,              'field_key': 'description'}
+            ]
+        # Return the context we have made
+        return context
+
+    def action_add(self, instance, details, actiontype):
+        """User can fill this in to his/her liking"""
+        lila_action_add(self, instance, details, actiontype)
+
+    def get_history(self, instance):
+        return lila_get_history(instance)
+
+
+class GenreDetails(GenreEdit):
+    """Like Genre Edit, but then html output"""
+    rtype = "html"
+    
+
+class GenreListView(BasicList):
+    """Search and list genres"""
+
+    model = Genre
+    listform = GenreForm
+    prefix = "gnr"
+    has_select2 = True
+    in_team = False
+    order_cols = ['name', '']
+    order_default = order_cols
+    order_heads = [{'name': 'Genre',     'order': 'o=1', 'type': 'str', 'field': 'name', 'default': "(unnamed)", 'main': True, 'linkdetails': True},
+                   {'name': 'Frequency', 'order': '', 'type': 'str', 'custom': 'links'}]
+    filters = [ {"name": "Genre",         "id": "filter_genre",     "enabled": False},
+               ]
+    searches = [
+        {'section': '', 'filterlist': [
+            {'filter': 'genre',    'dbfield': 'name',   'keyS': 'genre_ta', 'keyList': 'kwlist', 'infield': 'name' },
+            ]}
+        ]
+
+    def initializations(self):
+        return None
+
+    def get_field_value(self, instance, custom):
+        sBack = ""
+        sTitle = ""
+        if custom == "links":
+            html = []
+            # Get the HTML code for the links of this instance
+            #number = instance.freqsermo()
+            #if number > 0:
+            #    url = reverse('canwit_list')
+            #    html.append("<a href='{}?sermo-genrelist={}'>".format(url, instance.id))
+            #    html.append("<span class='badge jumbo-1 clickable' title='Frequency in manifestation sermons'>{}</span></a>".format(number))
+            #number = instance.freqmanu()
+            #if number > 0:
+            #    url = reverse('manuscript_list')
+            #    html.append("<a href='{}?manu-genrelist={}'>".format(url, instance.id))
+            #    html.append("<span class='badge jumbo-3 clickable' title='Frequency in manuscripts'>{}</span></a>".format(number))
+            number = instance.freqsuper()
+            if number > 0:
+                url = reverse('austat_list')
+                html.append("<a href='{}?as-genrelist={}'>".format(url, instance.id))
+                html.append("<span class='badge jumbo-4 clickable' title='Frequency in manuscripts'>{}</span></a>".format(number))
+            # Combine the HTML code
+            sBack = "\n".join(html)
+
+        return sBack, sTitle
+
 
 # ============= EDITOR PROVIDED KEYWORD VIEWS ============================
 
