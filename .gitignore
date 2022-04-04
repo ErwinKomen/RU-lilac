@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/lila/lila/seeker/migrations/0004_auto_20220330_1541.py
+/lila/lila/seeker/migrations/0003_auto_20220316_1525.py
+/lila/static/seeker/scripts
