@@ -22,8 +22,8 @@ from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_
     ManuscriptKeyword, Action, Austat, AustatLink, Location, LocationName, LocationIdentifier, LocationRelation, LocationType, \
     ProvenanceMan, Provenance, Daterange, CollOverlap, BibRange, Feast, Comment, AustatDist, \
     Project, Basket, BasketMan, BasketAustat, Litref, LitrefMan, LitrefCol, Report, \
-    Visit, Profile, Keyword, CanwitSignature, Status, Library, Collection, CollectionSerm, \
-    CollectionMan, CollectionSuper, UserKeyword, Template, ManuscriptCorpus, ManuscriptCorpusLock, \
+    Visit, Profile, Keyword, CanwitSignature, Status, Library, Collection, CollectionCanwit, \
+    CollectionMan, CollectionAustat, UserKeyword, Template, ManuscriptCorpus, ManuscriptCorpusLock, \
     AustatCorpus, AustatCorpusItem, \
    LINK_EQUAL, LINK_PRT, LINK_BIDIR, LINK_PARTIAL, STYPE_IMPORTED, STYPE_EDITED, LINK_UNSPECIFIED
 from lila.stylo.corpus import Corpus

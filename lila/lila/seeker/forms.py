@@ -215,12 +215,12 @@ class CollectionManuWidget(CollectionWidget):
     type = "manu"
 
 
-class CollectionSermoWidget(CollectionWidget):
+class CollectionCanwitWidget(CollectionWidget):
     """Like Collection, but then for: Sermon"""
     type = "sermo"
 
 
-class CollectionSuperWidget(CollectionWidget):
+class CollectionAustatWidget(CollectionWidget):
     """Like Collection, but then for: Austat = super sermon gold"""
     type = "austat"
 
@@ -1235,13 +1235,13 @@ class SearchManuForm(lilaModelForm):
             self.fields['manutype'].queryset = FieldChoice.objects.filter(field=MANUSCRIPT_TYPE).exclude(abbr='tem').order_by("english_name")
 
             # Set the widgets correctly
-            self.fields['collist_hist'].widget = CollectionSuperWidget( attrs={'username': username, 'team_group': team_group, 'settype': 'hc',
+            self.fields['collist_hist'].widget = CollectionAustatWidget( attrs={'username': username, 'team_group': team_group, 'settype': 'hc',
                         'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
             self.fields['collist_m'].widget = CollectionManuWidget( attrs={'username': username, 'team_group': team_group, 'settype': 'pd',
                         'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
-            self.fields['collist_s'].widget = CollectionSermoWidget( attrs={'username': username, 'team_group': team_group,'settype': 'pd',
+            self.fields['collist_s'].widget = CollectionCanwitWidget( attrs={'username': username, 'team_group': team_group,'settype': 'pd',
                         'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
-            self.fields['collist_ssg'].widget = CollectionSuperWidget( attrs={'username': username, 'team_group': team_group,'settype': 'pd',
+            self.fields['collist_ssg'].widget = CollectionAustatWidget( attrs={'username': username, 'team_group': team_group,'settype': 'pd',
                         'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
             self.fields['collone'].widget = CollOneManuWidget( attrs={'username': username, 'team_group': team_group,
                         'data-placeholder': 'Select a dataset...', 'style': 'width: 100%;', 'class': 'searching'})
@@ -1519,11 +1519,11 @@ class CanwitForm(lilaModelForm):
             # Set the widgets correctly
             self.fields['collist_m'].widget = CollectionManuWidget( attrs={'username': username, 'team_group': team_group,
                         'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
-            self.fields['collist_s'].widget = CollectionSermoWidget( attrs={'username': username, 'team_group': team_group,
+            self.fields['collist_s'].widget = CollectionCanwitWidget( attrs={'username': username, 'team_group': team_group,
                         'data-placeholder': 'Select multiple sermon manifestation collections...', 'style': 'width: 100%;', 'class': 'searching'})
-            self.fields['collist_ssg'].widget = CollectionSuperWidget( attrs={'username': username, 'team_group': team_group, 'settype': 'pd',
+            self.fields['collist_ssg'].widget = CollectionAustatWidget( attrs={'username': username, 'team_group': team_group, 'settype': 'pd',
                         'data-placeholder': 'Select multiple Authoritative statement collections...', 'style': 'width: 100%;', 'class': 'searching'})
-            self.fields['collist_hist'].widget = CollectionSuperWidget( attrs={'username': username, 'team_group': team_group, 'settype': 'hc',
+            self.fields['collist_hist'].widget = CollectionAustatWidget( attrs={'username': username, 'team_group': team_group, 'settype': 'hc',
                         'data-placeholder': 'Select multiple historical collections...', 'style': 'width: 100%;', 'class': 'searching'})
             self.fields['collone'].widget = CollOneSermoWidget( attrs={'username': username, 'team_group': team_group,
                         'data-placeholder': 'Select a dataset...', 'style': 'width: 100%;', 'class': 'searching'})
@@ -1940,9 +1940,9 @@ class CollectionForm(lilaModelForm):
                 widget=CollectionWidget(attrs={'data-placeholder': 'Select multiple collections...', 'style': 'width: 100%;', 'class': 'searching'}))
     collist_m =  ModelMultipleChoiceField(queryset=None, required=False)
     collist_s =  ModelMultipleChoiceField(queryset=None, required=False, 
-                widget=CollectionSermoWidget(attrs={'data-placeholder': 'Select multiple sermon collections...', 'style': 'width: 100%;', 'class': 'searching'}))
+                widget=CollectionCanwitWidget(attrs={'data-placeholder': 'Select multiple sermon collections...', 'style': 'width: 100%;', 'class': 'searching'}))
     collist_ssg =  ModelMultipleChoiceField(queryset=None, required=False, 
-                widget=CollectionSuperWidget(attrs={'data-placeholder': 'Select multiple super sg collections...', 'style': 'width: 100%;', 'class': 'searching'}))
+                widget=CollectionAustatWidget(attrs={'data-placeholder': 'Select multiple super sg collections...', 'style': 'width: 100%;', 'class': 'searching'}))
     collone     = ModelChoiceField(queryset=None, required=False)   #, 
     ownlist     = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=ProfileWidget(attrs={'data-placeholder': 'Select multiple profiles...', 'style': 'width: 100%;', 'class': 'searching'}))
@@ -2064,9 +2064,9 @@ class CollectionForm(lilaModelForm):
         # Set the widgets correctly
         self.fields['collist_m'].widget = CollectionManuWidget( attrs={'username': username, 'team_group': team_group,
                     'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
-        self.fields['collist_s'].widget = CollectionSermoWidget( attrs={'username': username, 'team_group': team_group,
+        self.fields['collist_s'].widget = CollectionCanwitWidget( attrs={'username': username, 'team_group': team_group,
                     'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
-        self.fields['collist_ssg'].widget = CollectionSuperWidget( attrs={'username': username, 'team_group': team_group,
+        self.fields['collist_ssg'].widget = CollectionAustatWidget( attrs={'username': username, 'team_group': team_group,
                     'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
 
         # Project:
@@ -2433,11 +2433,11 @@ class AustatForm(lilaModelForm):
             # Set the widgets correctly
             self.fields['collist_m'].widget = CollectionManuWidget( attrs={'username': username, 'team_group': team_group, 'data-allow-clear': 'false',
                         'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
-            self.fields['collist_s'].widget = CollectionSermoWidget( attrs={'username': username, 'team_group': team_group, 'data-allow-clear': 'false',
+            self.fields['collist_s'].widget = CollectionCanwitWidget( attrs={'username': username, 'team_group': team_group, 'data-allow-clear': 'false',
                         'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
-            self.fields['collist_ssg'].widget = CollectionSuperWidget( attrs={'username': username, 'team_group': team_group, 'data-allow-clear': 'false',
+            self.fields['collist_ssg'].widget = CollectionAustatWidget( attrs={'username': username, 'team_group': team_group, 'data-allow-clear': 'false',
                         'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
-            self.fields['collist_hist'].widget = CollectionSuperWidget( attrs={'username': username, 'team_group': team_group, 'data-allow-clear': 'false',
+            self.fields['collist_hist'].widget = CollectionAustatWidget( attrs={'username': username, 'team_group': team_group, 'data-allow-clear': 'false',
                         'settype': 'hc', 'data-debug': 'true', 'data-ajax--cache': "false",
                         'data-placeholder': 'Select multiple historical collections...', 'style': 'width: 100%;', 'class': 'searching'})
             self.fields['collone'].widget = CollOneSuperWidget( attrs={'username': username, 'team_group': team_group,
@@ -2604,7 +2604,7 @@ class SuperSermonGoldCollectionForm(forms.ModelForm):
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
-        model = CollectionSuper
+        model = CollectionAustat
         fields = ['austat', 'collection']
 
     def __init__(self, *args, **kwargs):
@@ -2660,7 +2660,7 @@ class CanwitCollectionForm(forms.ModelForm):
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
-        model = CollectionSerm
+        model = CollectionCanwit
         fields = ['canwit', 'collection']
 
     def __init__(self, *args, **kwargs):

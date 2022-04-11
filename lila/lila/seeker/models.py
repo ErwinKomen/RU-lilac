@@ -5334,7 +5334,7 @@ class Austat(models.Model):
     keywords = models.ManyToManyField(Keyword, through="AustatKeyword", related_name="keywords_super")
 
     # [m] Many-to-many: one sermon can be a part of a series of collections
-    collections = models.ManyToManyField("Collection", through="CollectionSuper", related_name="collections_austat")
+    collections = models.ManyToManyField("Collection", through="CollectionAustat", related_name="collections_austat")
 
     # [m] Many-to-many: one Austat can belong to one or more projects
     projects = models.ManyToManyField(Project, through="AustatProject", related_name="project_austat")
@@ -6075,14 +6075,14 @@ class Collection(models.Model):
                     CollectionMan.objects.create(collection=new_copy, manuscript=obj.manuscript, order=obj.order)
             elif self.type == "sermo":
                 # Copy sermons
-                qs = CollectionSerm.objects.filter(collection=self).order_by("order")
+                qs = CollectionCanwit.objects.filter(collection=self).order_by("order")
                 for obj in qs:
-                    CollectionSerm.objects.create(collection=new_copy, sermon=obj.sermon, order=obj.order)
+                    CollectionCanwit.objects.create(collection=new_copy, sermon=obj.sermon, order=obj.order)
             elif self.type == "austat":
                 # Copy SSGs
-                qs = CollectionSuper.objects.filter(collection=self).order_by("order")
+                qs = CollectionAustat.objects.filter(collection=self).order_by("order")
                 for obj in qs:
-                    CollectionSuper.objects.create(collection=new_copy, super=obj.austat, order=obj.order)
+                    CollectionAustat.objects.create(collection=new_copy, super=obj.austat, order=obj.order)
 
             # Change the name
             new_copy.name = "{}_{}".format(new_copy.name, new_copy.id)
@@ -6526,7 +6526,7 @@ class Canwit(models.Model):
     austats = models.ManyToManyField(Austat, through="CanwitAustat", related_name="austat_canwits")
 
     # [m] Many-to-many: one sermon can be a part of a series of collections 
-    collections = models.ManyToManyField("Collection", through="CollectionSerm", related_name="collections_sermon")
+    collections = models.ManyToManyField("Collection", through="CollectionCanwit", related_name="collections_sermon")
 
     # [m] Many-to-many: one manuscript can have a series of user-supplied comments
     comments = models.ManyToManyField(Comment, related_name="comments_sermon")
@@ -6875,7 +6875,7 @@ class Canwit(models.Model):
                     # Add manuscript to collection
                     highest = collection.collections_sermon.all().order_by('-order').first()
                     order = 1 if higest == None else highest + 1
-                    CollectionSerm.objects.create(collection=collection, sermon=self, order=order)
+                    CollectionCanwit.objects.create(collection=collection, sermon=self, order=order)
             elif path == "ssglinks":
                 ssglink_names = value_lst #  get_json_list(value)
                 for ssg_code in ssglink_names:
@@ -8736,7 +8736,7 @@ class NewsItem(models.Model):
         return True
 
 
-class CollectionSerm(models.Model):
+class CollectionCanwit(models.Model):
     """The link between a collection item and a S (sermon)"""
 
     # [1] The sermon to which the collection item refers
@@ -8758,7 +8758,7 @@ class CollectionMan(models.Model):
     order = models.IntegerField("Order", default = -1)
 
 
-class CollectionSuper(models.Model):
+class CollectionAustat(models.Model):
     """The link between a collection item and a SSG (super sermon gold)"""
 
     # [1] The gold sermon to which the coll

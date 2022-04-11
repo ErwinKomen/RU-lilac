@@ -38,8 +38,8 @@ from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_
     ManuscriptKeyword, Action, Austat, AustatLink, Location, LocationName, LocationIdentifier, LocationRelation, LocationType, \
     ProvenanceMan, Provenance, Daterange, CollOverlap, BibRange, Feast, Comment, AustatDist, \
     Basket, BasketMan, BasketAustat, Litref, LitrefMan, LitrefCol, Report, \
-    Visit, Profile, Keyword, CanwitSignature, Status, Library, Collection, CollectionSerm, \
-    CollectionMan, CollectionSuper, UserKeyword, Template, \
+    Visit, Profile, Keyword, CanwitSignature, Status, Library, Collection, CollectionCanwit, \
+    CollectionMan, CollectionAustat, UserKeyword, Template, \
     ManuscriptCorpus, ManuscriptCorpusLock, AustatCorpus, ProjectEditor, \
     Codico, ProvenanceCod, OriginCodico, CodicoKeyword, Reconstruction, \
     Project, ManuscriptProject, CollectionProject, AustatProject, CanwitProject, \
@@ -2197,7 +2197,7 @@ class ColwitEdit(BasicDetails):
                                 'bibnotes', 'feast', 'bibleref', 'additional', 'note',
                         #'kwlist',
                         'ColwitSignature', 'siglist',
-                        #'CollectionSerm', 'collist_s',
+                        #'CollectionCanwit', 'collist_s',
                         'ColwitAustat', 'superlist']
 
     def add_to_context(self, context, instance):
@@ -2724,7 +2724,7 @@ class CanwitEdit(BasicDetails):
     SDkwFormSet = inlineformset_factory(Canwit, CanwitKeyword,
                                        form=CanwitKeywordForm, min_num=0,
                                        fk_name="canwit", extra=0)
-    SDcolFormSet = inlineformset_factory(Canwit, CollectionSerm,
+    SDcolFormSet = inlineformset_factory(Canwit, CollectionCanwit,
                                        form=CanwitCollectionForm, min_num=0,
                                        fk_name="canwit", extra=0)
     SDsignFormSet = inlineformset_factory(Canwit, CanwitSignature,
@@ -3167,7 +3167,7 @@ class CanwitEdit(BasicDetails):
 
                 # (5) 'collections'
                 collist_s = form.cleaned_data['collist_s']
-                adapt_m2m(CollectionSerm, instance, "canwit", collist_s, "collection")
+                adapt_m2m(CollectionCanwit, instance, "canwit", collist_s, "collection")
 
                 # (6) 'projects'
                 projlist = form.cleaned_data['projlist']
@@ -3685,7 +3685,7 @@ class AustatEdit(BasicDetails):
     use_team_group = True
     history_button = True
     
-    EqgcolFormSet = inlineformset_factory(Austat, CollectionSuper,
+    EqgcolFormSet = inlineformset_factory(Austat, CollectionAustat,
                                        form=SuperSermonGoldCollectionForm, min_num=0,
                                        fk_name="austat", extra=0)
     SsgLinkFormSet = inlineformset_factory(Austat, AustatLink,
@@ -4046,7 +4046,7 @@ class AustatEdit(BasicDetails):
             collist_ssg_id = form.cleaned_data['collist_ssg'].values('id') 
             collist_hist_id = form.cleaned_data['collist_hist'].values('id')
             collist_ssg = Collection.objects.filter(Q(id__in=collist_ssg_id) | Q(id__in=collist_hist_id))
-            adapt_m2m(CollectionSuper, instance, "austat", collist_ssg, "collection")
+            adapt_m2m(CollectionAustat, instance, "austat", collist_ssg, "collection")
 
             # (2) links from one SSG to another SSG
             superlist = form.cleaned_data['superlist']
@@ -4760,8 +4760,8 @@ class CollAnyEdit(BasicDetails):
     mainitems = []
     hlistitems = [
         {'type': 'manu',    'clsColl': CollectionMan,   'field': 'manuscript'},
-        {'type': 'sermo',   'clsColl': CollectionSerm,  'field': 'sermon'},
-        {'type': 'austat',  'clsColl': CollectionSuper, 'field': 'austat'},
+        {'type': 'sermo',   'clsColl': CollectionCanwit,  'field': 'sermon'},
+        {'type': 'austat',  'clsColl': CollectionAustat, 'field': 'austat'},
         ]
 
     ClitFormSet = inlineformset_factory(Collection, LitrefCol,
@@ -6771,13 +6771,13 @@ class BasketUpdate(BasicPart):
                     # Link the collection with the correct model
                     kwargs = {'collection': coll}
                     if self.colltype == "sermo":
-                        clsColl = CollectionSerm
+                        clsColl = CollectionCanwit
                         field = "sermon"
                     elif self.colltype == "manu":
                         clsColl = CollectionMan
                         field = "manuscript"
                     elif self.colltype == "austat":
-                        clsColl = CollectionSuper
+                        clsColl = CollectionAustat
                         field = "austat"
 
                     # THis is only needed for collections
