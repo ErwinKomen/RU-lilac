@@ -37,7 +37,7 @@ from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_
     SourceInfo, AustatKeyword, AustatGenre, ManuscriptExt, Colwit, \
     ManuscriptKeyword, Action, Austat, AustatLink, Location, LocationName, LocationIdentifier, LocationRelation, LocationType, \
     ProvenanceMan, Provenance, Daterange, CollOverlap, BibRange, Feast, Comment, AustatDist, \
-    Basket, BasketMan, BasketSuper, Litref, LitrefMan, LitrefCol, Report, \
+    Basket, BasketMan, BasketAustat, Litref, LitrefMan, LitrefCol, Report, \
     Visit, Profile, Keyword, CanwitSignature, Status, Library, Collection, CollectionSerm, \
     CollectionMan, CollectionSuper, UserKeyword, Template, \
     ManuscriptCorpus, ManuscriptCorpusLock, AustatCorpus, ProjectEditor, \
@@ -2374,7 +2374,7 @@ class ColwitListView(BasicList):
     def view_queryset(self, qs):
         search_id = [x['id'] for x in qs.values('id')]
         profile = Profile.get_user_profile(self.request.user.username)
-        profile.search_sermo = json.dumps(search_id)
+        profile.search_canwit = json.dumps(search_id)
         profile.save()
         return None
 
@@ -2691,7 +2691,7 @@ class CodheadListView(BasicList):
     def view_queryset(self, qs):
         search_id = [x['id'] for x in qs.values('id')]
         profile = Profile.get_user_profile(self.request.user.username)
-        profile.search_sermo = json.dumps(search_id)
+        profile.search_canwit = json.dumps(search_id)
         profile.save()
         return None
 
@@ -3662,7 +3662,7 @@ class CanwitListView(BasicList):
     def view_queryset(self, qs):
         search_id = [x['id'] for x in qs.values('id')]
         profile = Profile.get_user_profile(self.request.user.username)
-        profile.search_sermo = json.dumps(search_id)
+        profile.search_canwit = json.dumps(search_id)
         profile.save()
         return None
 
@@ -4458,9 +4458,9 @@ class AustatListView(BasicList):
     def add_to_context(self, context, initial):
         # Find out who the user is
         profile = Profile.get_user_profile(self.request.user.username)
-        context['basketsize'] = 0 if profile == None else profile.basketsize_super
-        context['basket_show'] = reverse('basket_show_super')
-        context['basket_update'] = reverse('basket_update_super')
+        context['basketsize'] = 0 if profile == None else profile.basketsize_austat
+        context['basket_show'] = reverse('basket_show_austat')
+        context['basket_update'] = reverse('basket_update_austat')
         context['histogram_data'] = self.get_histogram_data('d3')
         return context
 
@@ -4506,7 +4506,7 @@ class AustatListView(BasicList):
     def get_basketqueryset(self):
         if self.basketview:
             profile = Profile.get_user_profile(self.request.user.username)
-            qs = profile.basketitems_super.all()
+            qs = profile.basketitems_austat.all()
         else:
             qs = Austat.objects.all()
         return qs
@@ -4776,7 +4776,9 @@ class CollAnyEdit(BasicDetails):
 
     def custom_init(self, instance):
         if instance != None and instance.settype == "hc":
-            self.formset_objects.append({'formsetClass': self.ClitFormSet,  'prefix': 'clit',  'readonly': False, 'noinit': True, 'linkfield': 'collection'})
+            self.formset_objects.append(
+                {'formsetClass': self.ClitFormSet,  'prefix': 'clit',  
+                 'readonly': False, 'noinit': True, 'linkfield': 'collection'})
         if instance != None:
             self.datasettype = instance.type
         return None
@@ -4862,128 +4864,129 @@ class CollAnyEdit(BasicDetails):
         prefix_readonly = ['any', 'manu', 'sermo', 'gold', 'austat']
         prefix_elevate = ['any', 'austat', 'priv', 'publ']
 
-        # Need to know who this is
-        profile = Profile.get_user_profile(self.request.user.username)
+        oErr = ErrHandle()
+        try:
 
-        # Define the main items to show and edit
-        context['mainitems'] = [
-            {'type': 'plain', 'label': "Name:",        'value': instance.name, 'field_key': 'name'},
-            {'type': 'plain', 'label': "Description:", 'value': instance.descrip, 'field_key': 'descrip'},
-            {'type': 'plain', 'label': "URL:",         'value': instance.url, 'field_key': 'url'}, 
-            ]
+            # Need to know who this is
+            profile = Profile.get_user_profile(self.request.user.username)
 
-        # Optionally add Scope: but only for the actual *owner* of this one
-        if self.prefix in prefix_scope and instance.owner.user == self.request.user:
+            # Define the main items to show and edit
+            context['mainitems'] = [
+                {'type': 'plain', 'label': "Name:",        'value': instance.name, 'field_key': 'name'},
+                {'type': 'plain', 'label': "Description:", 'value': instance.descrip, 'field_key': 'descrip'},
+                {'type': 'plain', 'label': "URL:",         'value': instance.url, 'field_key': 'url'}, 
+                ]
+
+            # Optionally add Scope: but only for the actual *owner* of this one
+            if self.prefix in prefix_scope and instance.owner.user == self.request.user:
+                context['mainitems'].append(
+                {'type': 'plain', 'label': "Scope:",       'value': instance.get_scope_display, 'field_key': 'scope'})
+
+            # Always add Type, but its value may not be changed
             context['mainitems'].append(
-            {'type': 'plain', 'label': "Scope:",       'value': instance.get_scope_display, 'field_key': 'scope'})
+                {'type': 'plain', 'label': "Type:",        'value': instance.get_type_display})
 
-        # Always add Type, but its value may not be changed
-        context['mainitems'].append(
-            {'type': 'plain', 'label': "Type:",        'value': instance.get_type_display})
+            # Optionally add Readonly
+            if self.prefix in prefix_readonly:
+                context['mainitems'].append(
+                {'type': 'plain', 'label': "Readonly:",    'value': instance.readonly, 'field_key': 'readonly'})
 
-        # Always add project label(s)
-        #context['mainitems'].append(
-        #    {'type': 'plain', 'label': "Project:",     'value': instance.get_project_markdown(), 'field_key': 'project'})
-
-        # Optionally add Readonly
-        if self.prefix in prefix_readonly:
-            context['mainitems'].append(
-            {'type': 'plain', 'label': "Readonly:",    'value': instance.readonly, 'field_key': 'readonly'})
-
-        # This is only for private PDs:
-        if self.prefix == "priv" and instance != None and instance.settype == "pd" and instance.id != None:
-            name_choice = dict(
-                manu=dict(sg_name="Manuscript", pl_name="Manuscripts"),
-                sermo=dict(sg_name="Sermon manifestation", pl_name="Sermons"),
-                gold=dict(sg_name="Sermon Gold", pl_name="Sermons Gold"),
-                super=dict(sg_name="Authoritative statement", pl_name="Authoritative statements")
-                )
-            # Add a button + text
-            context['datasettype'] = instance.type
-            context['sg_name'] = name_choice[instance.type]['sg_name']
-            context['pl_name'] = name_choice[instance.type]['pl_name']
+            # This is only for private PDs:
+            if self.prefix == "priv" and instance != None and instance.settype == "pd" and instance.id != None:
+                name_choice = dict(
+                    manu=dict(sg_name="Manuscript", pl_name="Manuscripts"),
+                    canwit=dict(sg_name="Canon witness", pl_name="Canon witnesses"),
+                    austat=dict(sg_name="Authoritative statement", pl_name="Authoritative statements")
+                    )
+                # Add a button + text
+                context['datasettype'] = instance.type
+                context['sg_name'] = name_choice[instance.type]['sg_name']
+                context['pl_name'] = name_choice[instance.type]['pl_name']
             
-            context['size'] = instance.get_size_markdown()
-            size_value = render_to_string("seeker/collpriv.html", context, self.request)
-        else:
-            size_value = instance.get_size_markdown()
+                context['size'] = instance.get_size_markdown()
+                size_value = render_to_string("seeker/collpriv.html", context, self.request)
+            else:
+                size_value = instance.get_size_markdown()
         
-        # Always add Created and Size
-        context['mainitems'].append( {'type': 'plain', 'label': "Created:",     'value': instance.get_created})
-        context['mainitems'].append( {'type': 'line',  'label': "Size:",        'value': size_value})
+            # Always add Created and Size
+            context['mainitems'].append( {'type': 'plain', 'label': "Created:",     'value': instance.get_created})
+            context['mainitems'].append( {'type': 'line',  'label': "Size:",        'value': size_value})
 
-        # If this is a historical collection,and an app-editor gets here, add a link to a button to create a manuscript
-        if instance.settype == "hc" and context['is_app_editor']:
-            # If 'manu' is set, then this procedure is called from 'collhist_compare'
-            if self.manu == None:
-                context['mainitems'].append({'type': 'safe', 'label': 'Manuscript', 'value': instance.get_manuscript_link()})
-        # Historical collections may have literature references
-        if instance.settype == "hc":
-            oLitref = {'type': 'plain', 'label': "Literature:",   'value': instance.get_litrefs_markdown() }
-            if context['is_app_editor']:
-                oLitref['multiple'] = True
-                oLitref['field_list'] = 'litlist'
-                oLitref['fso'] = self.formset_objects[0]
-                oLitref['template_selection'] = 'ru.lila.litref_template'
-            context['mainitems'].append(oLitref)        
+            # If this is a historical collection,and an app-editor gets here, add a link to a button to create a manuscript
+            if instance.settype == "hc" and context['is_app_editor']:
+                # If 'manu' is set, then this procedure is called from 'collhist_compare'
+                if self.manu == None:
+                    context['mainitems'].append({'type': 'safe', 'label': 'Manuscript', 'value': instance.get_manuscript_link()})
+            # Historical collections may have literature references
+            if instance.settype == "hc" and len(self.formset_objects) > 0:
+                oLitref = {'type': 'plain', 'label': "Literature:",   'value': instance.get_litrefs_markdown() }
+                if context['is_app_editor']:
+                    oLitref['multiple'] = True
+                    oLitref['field_list'] = 'litlist'
+                    oLitref['fso'] = self.formset_objects[0]
+                    oLitref['template_selection'] = 'ru.lila.litref_template'
+                context['mainitems'].append(oLitref)        
         
-        # Historical collections have a project assigned to them
-        if instance.settype == "hc":
-            oProject =  {'type': 'plain', 'label': "Project:",     'value': instance.get_project_markdown2()}
-            if may_edit_project(self.request, profile, instance):
-                oProject['field_list'] = 'projlist'
-            context['mainitems'].append(oProject)        
+            # Historical collections have a project assigned to them
+            if instance.settype == "hc":
+                oProject =  {'type': 'plain', 'label': "Project:",     'value': instance.get_project_markdown2()}
+                if may_edit_project(self.request, profile, instance):
+                    oProject['field_list'] = 'projlist'
+                context['mainitems'].append(oProject)        
                         
 
-        # Any dataset may optionally be elevated to a historical collection
-        # BUT: only if a person has permission
-        if instance.settype == "pd" and self.prefix in prefix_elevate and instance.type in prefix_elevate and \
-            context['authenticated'] and context['is_app_editor']:
-            context['mainitems'].append(
-                {'type': 'safe', 'label': "Historical:", 'value': instance.get_elevate()}
-                )
-        # Buttons to switch to a listview of M/S/SG/SSG based on this collection
-        context['mainitems'].append(
-                {'type': 'safe', 'label': "Listviews:", 'value': self.get_listview_buttons(instance),
-                 'title': 'Open a listview that is filtered on this dataset'}
-                )
-        # For HC: buttons to switch between related listviews
-        if instance.settype == "hc" and context['is_app_editor'] and self.manu == None and self.codico == None:
-            context['mainitems'].append(
-                    {'type': 'safe', 'label': "Show/hide:", 'value': self.get_hc_buttons(instance),
-                     'title': 'Optionally show and edit the Authoritative statements in this collection'}
+            # Any dataset may optionally be elevated to a historical collection
+            # BUT: only if a person has permission
+            if instance.settype == "pd" and self.prefix in prefix_elevate and instance.type in prefix_elevate and \
+                context['authenticated'] and context['is_app_editor']:
+                context['mainitems'].append(
+                    {'type': 'safe', 'label': "Historical:", 'value': instance.get_elevate()}
                     )
+            # Buttons to switch to a listview of M/S/SG/SSG based on this collection
+            context['mainitems'].append(
+                    {'type': 'safe', 'label': "Listviews:", 'value': self.get_listview_buttons(instance),
+                     'title': 'Open a listview that is filtered on this dataset'}
+                    )
+            # For HC: buttons to switch between related listviews
+            if instance.settype == "hc" and context['is_app_editor'] and self.manu == None and self.codico == None:
+                context['mainitems'].append(
+                        {'type': 'safe', 'label': "Show/hide:", 'value': self.get_hc_buttons(instance),
+                         'title': 'Optionally show and edit the Authoritative statements in this collection'}
+                        )
 
 
-        # Signal that we have select2
-        context['has_select2'] = True
+            # Signal that we have select2
+            context['has_select2'] = True
 
-        # Determine what the permission level is of this collection for the current user
-        # (1) Is this user a different one than the one who created the collection?
-        profile_owner = instance.owner
-        profile_user = Profile.get_user_profile(self.request.user.username)
-        # (2) Set default permission
-        permission = ""
-        if profile_owner.id == profile_user.id:
-            # (3) Any creator of the collection may write it
-            permission = "write"
-        else:
-            # (4) permission for different users
-            if context['is_app_editor']:
-                # (5) what if the user is an app_editor?
-                if instance.scope == "publ":
-                    # Editors may read/write collections with 'public' scope
-                    permission = "write"
-                elif instance.scope == "team":
-                    # Editors may read collections with 'team' scope
-                    permission = "read"
+            # Determine what the permission level is of this collection for the current user
+            # (1) Is this user a different one than the one who created the collection?
+            profile_owner = instance.owner
+            profile_user = Profile.get_user_profile(self.request.user.username)
+            # (2) Set default permission
+            permission = ""
+            if profile_owner.id == profile_user.id:
+                # (3) Any creator of the collection may write it
+                permission = "write"
             else:
-                # (5) any other users
-                if instance.scope == "publ":
-                    # All users may read collections with 'public' scope
-                    permission = "read"
+                # (4) permission for different users
+                if context['is_app_editor']:
+                    # (5) what if the user is an app_editor?
+                    if instance.scope == "publ":
+                        # Editors may read/write collections with 'public' scope
+                        permission = "write"
+                    elif instance.scope == "team":
+                        # Editors may read collections with 'team' scope
+                        permission = "read"
+                else:
+                    # (5) any other users
+                    if instance.scope == "publ":
+                        # All users may read collections with 'public' scope
+                        permission = "read"
 
-        context['permission'] = permission
+            context['permission'] = permission
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CollAnyEdit/add_to_context")
           
         # Return the context we have made
         return context    
@@ -5020,27 +5023,21 @@ class CollAnyEdit(BasicDetails):
         try:
             url_m = reverse("manuscript_list")
             url_s = reverse("canwit_list")
-            url_sg = reverse("gold_list")
             url_ssg = reverse("austat_list")
             if instance.type == "manu":
                 # collection of manuscripts
                 abbr = "m"
-            elif instance.type == "sermo":
-                # collection of sermons
+            elif instance.type == "canwit":
+                # collection of canwits
                 abbr = "s"
             elif instance.type == "austat":
                 # collection of SSG
                 abbr = "ssg"
                 if self.settype == "hc": abbr = "hist"
-            if url_m != None and url_s != None and url_sg != None and url_ssg != None and abbr != None:
+            if url_m != None and url_s != None and url_ssg != None and abbr != None:
                 context['url_manu'] = "{}?manu-collist_{}={}".format(url_m, abbr, instance.id)
-                context['url_sermo'] = "{}?sermo-collist_{}={}".format(url_s, abbr, instance.id)
-                context['url_gold'] = "{}?gold-collist_{}={}".format(url_sg, abbr, instance.id)
-                context['url_super'] = "{}?ssg-collist_{}={}".format(url_ssg, abbr, instance.id) # TH zit het hier?
-                #if self.settype == "hc":
-                #    context['url_super'] = "{}?ssg-collist_{}={}".format(url_ssg, "hc", instance.id)
-                #else:
-                #    context['url_super'] = "{}?ssg-collist_{}={}".format(url_ssg, abbr, instance.id)
+                context['url_canwit'] = "{}?canwit-collist_{}={}".format(url_s, abbr, instance.id)
+                context['url_austat'] = "{}?au-collist_{}={}".format(url_ssg, abbr, instance.id) # TH zit het hier?
 
                 sBack = render_to_string('seeker/coll_buttons.html', context, self.request)
 
@@ -6869,7 +6866,7 @@ class BasketUpdateSuper(BasketUpdate):
     """Update contents of the Austat basket"""
 
     MainModel = Austat
-    clsBasket = BasketSuper
+    clsBasket = BasketAustat
     s_view = AustatListView
     s_form = AustatForm
     s_field = "austat"
@@ -6878,8 +6875,8 @@ class BasketUpdateSuper(BasketUpdate):
 
     def get_basketsize(self, profile):
         # Adapt the basket size
-        basketsize = profile.basketitems_super.count()
-        profile.basketsize_super = basketsize
+        basketsize = profile.basketitems_austat.count()
+        profile.basketsize_austat = basketsize
         profile.save()
         # Return the basketsize
         return basketsize

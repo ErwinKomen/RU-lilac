@@ -128,14 +128,14 @@ urlpatterns = [
     url(r'^collection/hist/template(?:/(?P<pk>\d+))?/$', CollHistTemp.as_view(), name='collhist_temp'),
     url(r'^collection/hist/compare(?:/(?P<pk>\d+))?/$', CollHistCompare.as_view(), name='collhist_compare'),
     
-    url(r'^basket/sermo/update', BasketUpdate.as_view(), name='basket_update'),
-    url(r'^basket/sermo/show', BasketView.as_view(), name='basket_show'),
+    url(r'^basket/canwit/update', BasketUpdate.as_view(), name='basket_update'),
+    url(r'^basket/canwit/show', BasketView.as_view(), name='basket_show'),
 
     url(r'^basket/manu/update', BasketUpdateManu.as_view(), name='basket_update_manu'),
     url(r'^basket/manu/show', BasketViewManu.as_view(), name='basket_show_manu'),
 
-    url(r'^basket/super/update', BasketUpdateSuper.as_view(), name='basket_update_super'),
-    url(r'^basket/super/show', BasketViewSuper.as_view(), name='basket_show_super'),
+    url(r'^basket/austat/update', BasketUpdateSuper.as_view(), name='basket_update_austat'),
+    url(r'^basket/austat/show', BasketViewSuper.as_view(), name='basket_show_austat'),
     
     # ============================== VIEWS ============================================
     

@@ -1133,36 +1133,33 @@ class Profile(models.Model):
 
     # [1] Stringified JSON lists for M/S/SG/SSG search results, to facilitate basket operations
     search_manu = models.TextField("Search results Manu", default = "[]")
-    search_sermo = models.TextField("Search results Sermo", default = "[]")
-    search_austat = models.TextField("Search results Super", default = "[]")
+    search_canwit = models.TextField("Search results Canwit", default = "[]")
+    search_austat = models.TextField("Search results Austat", default = "[]")
 
     # [0-1] Affiliation of this user with as many details as needed
     affiliation = models.TextField("Affiliation", blank=True, null=True)
 
     # [1] Each of the four basket types has a history
-    historysermo = models.TextField("Sermon history", default="[]")
+    historycanwit = models.TextField("Canwit history", default="[]")
     historymanu = models.TextField("Manuscript history", default="[]")
-    historysuper = models.TextField("Super sermon Gold history", default="[]")
+    historyaustat = models.TextField("Austat history", default="[]")
 
     # [1] Current size of the user's basket
-    basketsize = models.IntegerField("Basket size", default=0)
+    basketsize = models.IntegerField("Basket size canon witnesses", default=0)
 
     # [1] Current size of the user's basket (manuscripts)
     basketsize_manu = models.IntegerField("Basket size manuscripts", default=0)
 
-    # [1] Current size of the user's basket (sermons gold)
-    basketsize_gold = models.IntegerField("Basket size sermons gold", default=0)
-
     # [1] Current size of the user's basket (super sermons gold)
-    basketsize_super = models.IntegerField("Basket size super sermons gold", default=0)
+    basketsize_austat = models.IntegerField("Basket size authoritative statement", default=0)
     
     # ------------------- MANY_TO_MANY fields ==========================================================
-    # Many-to-many field for the contents of a search basket per user (sermons)
+    # Many-to-many field for the contents of a search basket per user (canwits)
     basketitems = models.ManyToManyField("Canwit", through="Basket", related_name="basketitems_user")    
     # Many-to-many field for the contents of a search basket per user (manuscripts)
     basketitems_manu = models.ManyToManyField("Manuscript", through="BasketMan", related_name="basketitems_user_manu")
-    # Many-to-many field for the contents of a search basket per user (super sermons gold)
-    basketitems_super = models.ManyToManyField("Austat", through="BasketSuper", related_name="basketitems_user_super")
+    # Many-to-many field for the contents of a search basket per user (austats)
+    basketitems_austat = models.ManyToManyField("Austat", through="BasketAustat", related_name="basketitems_user_austat")
 
     # Many-to-many field that links this person/profile with particular projects
     projects = models.ManyToManyField("Project", through="ProjectEditor", related_name="projects_profile")
@@ -8542,7 +8539,7 @@ class BasketMan(models.Model):
         return combi
 
 
-class BasketSuper(models.Model):
+class BasketAustat(models.Model):
     """The basket is the user's vault of search results (of super sermon gold items)"""
     
     # [1] The SSG / Authority file / Authoritative statement

@@ -14,7 +14,7 @@ from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_
     SourceInfo, AustatKeyword, ManuscriptExt, \
     ManuscriptKeyword, Action, Austat, AustatLink, Location, LocationName, LocationIdentifier, LocationRelation, LocationType, \
     ProvenanceMan, Provenance, Daterange, CollOverlap, BibRange, Feast, Comment, AustatDist, \
-    Basket, BasketMan, BasketSuper, Litref, LitrefMan, LitrefCol, Report,  \
+    Basket, BasketMan, BasketAustat, Litref, LitrefMan, LitrefCol, Report,  \
     Visit, Profile, Keyword, CanwitSignature, Status, Library, Collection, CollectionSerm, \
     CollectionMan, CollectionSuper, UserKeyword, Template, \
     ManuscriptCorpus, ManuscriptCorpusLock, AustatCorpus, \
