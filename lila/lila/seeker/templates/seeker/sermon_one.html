@@ -6,7 +6,7 @@
          class="tree {% if lean_method and level > 1 %} hidden{% endif %}">
 
       <!-- Possible start of a new codicological unit -->
-      {% if msitem.codistart %}
+      {% if msitem.codistart and dit_is_geen_passim %}
         <div class="codi-start {% if is_app_editor and msitem.codiorder > 1 %}draggable{% endif %}" 
              {% if is_app_editor and msitem.codiorder > 1 %}
                 draggable="true"
@@ -14,7 +14,7 @@
              {% endif %}
              order="{{msitem.codiorder}}"
              targetid="{{msitem.codistart}}">
-          <hr />
+          <span>{{msitem.codiorder}} CES </span><hr title="Codicological unit order={{msitem.codiorder}}" />
         </div>
       {% endif %}
 

@@ -26,6 +26,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 # Other basic imports
 import json
+import copy
 
 
 # ======= imports from my own application ======
@@ -760,6 +761,8 @@ class ManuscriptDetails(ManuscriptEdit):
         super(ManuscriptDetails, self).add_to_context(context, instance)
 
         oErr = ErrHandle()
+        method = "one_canwit_list"
+        method = "canwit_per_codico"
         try:
             # Additional sections
             context['sections'] = []
@@ -776,15 +779,37 @@ class ManuscriptDetails(ManuscriptEdit):
  
             # The following only goes for the correct mtype
             if instance.mtype in ["man", "tem"]:
-                # Add instances to the list, noting their childof and order
-                context['canwit_list'] = canwit_list
-                context['sermon_count'] = len(canwit_list)
-                # List of codicological unites that are not yet linked to data
-                codi_empty_list = []
-                for codi in instance.manuscriptcodicounits.all().order_by('order'):
-                    if codi.codicoitems.count() == 0:
-                        codi_empty_list.append(codi)
-                context['codi_empty_list'] = codi_empty_list
+
+                # Action depends on the method of processing
+                if method == "one_canwit_list":
+                    # Traditional (Passim) Method: one global canwit_list
+
+                    # Add instances to the list, noting their childof and order
+                    context['canwit_list'] = canwit_list
+                    context['sermon_count'] = len(canwit_list)
+                    # List of codicological unites that are not yet linked to data
+                    codi_empty_list = []
+                    for codi in instance.manuscriptcodicounits.all().order_by('order'):
+                        if codi.codicoitems.count() == 0:
+                            codi_empty_list.append(codi)
+                    context['codi_empty_list'] = codi_empty_list
+
+                elif method == "canwit_per_codico":
+                    # New method for Lilac: canwit_list per codico
+                    codi_list = []
+                    # Iterate over the codicological units
+                    for codico in instance.manuscriptcodicounits.all().order_by('order'):
+                        oCodico = dict(codico=codico)
+                        oCodico['canwit_list'] = codico.get_canwit_list(username, team_group)
+                        codi_list.append(oCodico)
+                    context['codi_list'] = codi_list
+
+                    # Get the overal sermon count
+                    context['sermon_count'] = Canwit.objects.filter(msitem__codico__manuscript=instance).count()
+                    # The empty list is no longer used for this method
+                    context['codi_empty_list'] = []
+                    # There must also be a canwit list
+                    context['canwit_list'] = canwit_list
 
                 # Add the list of sermons and the comment button
                 context['add_to_details'] = render_to_string("seeker/manuscript_sermons.html", context, self.request)

@@ -148,25 +148,32 @@
             </thead>
           </table>
         </div>
-        <!-- This is where the MsItem hierarchy is put-->
+
+
         <div id="sermon_tree_main">
-          {% for msitem in canwit_list %}
-            {% if msitem.childof == 1 %}
-              {% include 'seeker/sermon_one.html' with msitem=msitem canwit_list=canwit_list level=1 %}
-            {% endif %}
+          {% for codi in codi_list %}
+            <!-- Draw the codicological unit break -->
+            <div class="tree codi-start {% if is_app_editor and codi.codico.order > 1 %}draggable{% endif %} " 
+                 id="codi_{{codi.codico.id}}" sermonid="" sermontype="codi"
+                 targetid="{{codi.codico.id}}" order="{{codi.codico.order}}"
+                 {% if is_app_editor and codi.codico.order > 1 %}
+                    draggable="true"
+                    ondragstart="ru.lila.seeker.sermon_drag(event);"             
+                 {% endif %}>
+              <span>Part {{codi.codico.order}}</span> 
+              <hr  title="Codicological unit order={{codi.codico.order}}" />
+
+            </div>
+
+            <!-- This is where the MsItem hierarchy is put-->
+              {% for msitem in codi.canwit_list %}
+                {% if msitem.childof == 1 %}
+                  {% include 'seeker/sermon_one.html' with msitem=msitem canwit_list=codi.canwit_list level=1 %}
+                {% endif %}
+              {% endfor %}
+
           {% endfor %}
         </div>
-
-        <!-- Possible start of a new codicological unit -->
-        {% for codi in codi_empty_list %}
-          <div class="tree codi-start {% if is_app_editor and codi.order > 1 %}draggable{% endif %} " 
-               id="codi_{{codi.id}}" sermonid="" sermontype="codi"
-               targetid="{{codi.id}}" order="{{codi.order}}"
-               {% if is_app_editor and codi.order > 1 %}
-                  draggable="true"
-                  ondragstart="ru.lila.seeker.sermon_drag(event);"             
-               {% endif %}><hr /></div>
-        {% endfor %}
 
       </div>
 

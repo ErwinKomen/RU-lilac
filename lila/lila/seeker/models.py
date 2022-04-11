@@ -4597,6 +4597,118 @@ class Codico(models.Model):
             bResult = False
         return bResult
 
+    def get_canwit_list(self, username, team_group):
+        """Create a list of sermons with hierarchical information"""
+
+        oErr = ErrHandle()
+        canwit_list = []
+        maxdepth = 0
+        msitem_dict = {}
+
+        try:
+            if self.manuscript.mtype == "rec":
+                method = "codicos"      # NEW: Take codicological unites as a starting point
+            else:
+                method = "msitem"       # CURRENT: there is a level of [MsItem] between Manuscript and Canwit/Codhead
+
+            # Create a well sorted list of canwits for this codico
+            if method == "msitem":
+                # OLD: qs = self.manuitems.filter(order__gte=0).order_by('order')
+
+                # Create a list of MsItem objects that belong to this codicological unit
+                qs = []
+                for obj in self.codicoitems.filter(order__gte=0).order_by('order'):
+                    qs.append(obj)
+                    # Make sure to put this MsItem in the dictionary with the right Codico target
+                    msitem_dict[obj.id] = self
+
+            elif method == "codicos":
+                # TODO: check this adaptation - I think it works the same now 'per codico'
+
+                # Create a list of MsItem objects that belong to this codicological unit
+                qs = []
+                for obj in self.codicoitems.filter(order__gte=0).order_by('order'):
+                    qs.append(obj)
+                    # Make sure to put this MsItem in the dictionary with the right Codico target
+                    msitem_dict[obj.id] = self
+                ## Look for the Reconstruction codico's
+                #codico_lst = [x['codico__id'] for x in self.manuscriptreconstructions.order_by('order').values('codico__id')]
+                ## Create a list of MsItem objects that belong to this reconstruction manuscript
+                #qs = []
+                #for codico_id in codico_lst:
+                #    codico = Codico.objects.filter(id=codico_id).first()
+                #    for obj in MsItem.objects.filter(codico__id=codico_id, order__gte=0).order_by('order'):
+                #        qs.append(obj)
+                #        # Make sure to put this MsItem in the dictionary with the right Codico target
+                #        msitem_dict[obj.id] = codico
+
+
+            prev_level = 0
+            for idx, sermon in enumerate(qs):
+                # Need this first, because it also REPAIRS possible parent errors
+                level = sermon.getdepth()
+
+                parent = sermon.parent
+                firstchild = False
+                if parent:
+                    if method == "msitem":
+                        # Old: qs_siblings = self.manuitems.filter(parent=parent).order_by('order')
+
+                        # New method for Lilac: per codico
+                        # N.B: note that 'sermon' is not really a sermon but the MsItem
+                        qs_siblings = msitem_dict[sermon.id].codicoitems.filter(parent=parent).order_by('order')
+                    elif method == "codicos":
+                        # N.B: note that 'sermon' is not really a sermon but the MsItem
+                        qs_siblings = msitem_dict[sermon.id].codicoitems.filter(parent=parent).order_by('order')
+                    if sermon.id == qs_siblings.first().id:
+                        firstchild = True
+
+                # Only then continue!
+                oSermon = {}
+                if method == "msitem" or method == "codicos":
+                    # The 'obj' always is the MsItem itself
+                    oSermon['obj'] = sermon
+                    # Now we need to add a reference to the actual Canwit object
+                    oSermon['sermon'] = sermon.itemsermons.first()
+                    # And we add a reference to the Codhead object
+                    oSermon['shead'] = sermon.itemheads.first()
+                oSermon['nodeid'] = sermon.order + 1
+                oSermon['number'] = idx + 1
+                oSermon['childof'] = 1 if sermon.parent == None else sermon.parent.order + 1
+                oSermon['level'] = level
+                oSermon['pre'] = (level-1) * 20
+                # If this is a new level, indicate it
+                oSermon['group'] = firstchild   # (sermon.firstchild != None)
+                # Is this one a parent of others?
+                if method == "msitem" or method == "codicos":
+                    if method == "msitem":
+                        # OLD: oSermon['isparent'] = self.manuitems.filter(parent=sermon).exists()
+                        # New method for Lilac
+                        oSermon['isparent'] = msitem_dict[sermon.id].codicoitems.filter(parent=sermon).exists()
+                    elif method == "codicos":
+                        oSermon['isparent'] = msitem_dict[sermon.id].codicoitems.filter(parent=sermon).exists()
+                    codi = sermon.get_codistart()
+                    oSermon['codistart'] = "" if codi == None else codi.id
+                    oSermon['codiorder'] = -1 if codi == None else codi.order
+
+                # Add the user-dependent list of associated collections to this sermon descriptor
+                oSermon['hclist'] = [] if oSermon['sermon'] == None else oSermon['sermon'].get_hcs_plain(username, team_group)
+
+                canwit_list.append(oSermon)
+                # Bookkeeping
+                if level > maxdepth: maxdepth = level
+                prev_level = level
+            # Review them all and fill in the colspan
+            for oSermon in canwit_list:
+                oSermon['cols'] = maxdepth - oSermon['level'] + 1
+                if oSermon['group']: oSermon['cols'] -= 1
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Codico/get_canwit_list")
+        
+            # Return the result
+        return canwit_list
+
     def get_dates(self):
         lhtml = []
         # Get all the date ranges in the correct order
