@@ -123,7 +123,7 @@ def get_watermark():
 class DrawPieChart(BasicPart):
     """Fetch data for a particular type of pie-chart for the home page
     
-    Current types: 'sermo', 'super', 'manu'
+    Current types: 'sermo', 'austat', 'manu'
     """
 
     pass
@@ -368,8 +368,8 @@ class AustatTrans(BasicPart):
 
                 # Create an AustatCorpus based on the SSGs in these manuscripts
                 ssg_list = CanwitAustat.objects.filter(manu__id__in=manu_list).order_by(
-                    'super_id').distinct().values('super_id')
-                ssg_list_id = [x['super_id'] for x in ssg_list]
+                    'austat_id').distinct().values('austat_id')
+                ssg_list_id = [x['austat_id'] for x in ssg_list]
                 with transaction.atomic():
                     for ssg in Austat.objects.filter(id__in=ssg_list_id):
                         # Get the name of the author
@@ -474,9 +474,9 @@ class AustatTrans(BasicPart):
                 manu_id = manu_item["manu_id"]
                 # Get a list of all SSGs in this manuscript
                 ssg_list = CanwitAustat.objects.filter(manu__id=manu_id).order_by(
-                    'super_id').distinct()
+                    'austat_id').distinct()
                 # Add the SSG id list to the manuset
-                manu_set[manu_id] = [x.super for x in ssg_list]
+                manu_set[manu_id] = [x.austat for x in ssg_list]
 
             # Create a list of edges based on the above
             link_dict = {}
@@ -596,8 +596,8 @@ class AustatGraph(BasicPart):
 
                 # Create an AustatCorpus based on the SSGs in these manuscripts
                 ssg_list = CanwitAustat.objects.filter(manu__id__in=manu_list).order_by(
-                    'super_id').distinct().values('super_id')
-                ssg_list_id = [x['super_id'] for x in ssg_list]
+                    'austat_id').distinct().values('austat_id')
+                ssg_list_id = [x['austat_id'] for x in ssg_list]
                 all_words = {}
                 with transaction.atomic():
                     for ssg in Austat.objects.filter(id__in=ssg_list_id):
@@ -729,8 +729,8 @@ class AustatGraph(BasicPart):
                 manu_id = manu_item["manu_id"]
                 # Get a list of all SSGs in this manuscript
                 ssg_list = CanwitAustat.objects.filter(manu__id=manu_id).order_by(
-                    'super_id').distinct().values('super_id')
-                ssg_list_id = [x['super_id'] for x in ssg_list]
+                    'austat_id').distinct().values('austat_id')
+                ssg_list_id = [x['austat_id'] for x in ssg_list]
                 # evaluate links between a source and target SSG
                 for idx_s, source_id in enumerate(ssg_list_id):
                     # sanity check
@@ -847,8 +847,8 @@ class AustatPca(BasicPart):
 
                 # Create an AustatCorpus based on the SSGs in these manuscripts
                 ssg_list = CanwitAustat.objects.filter(manu__id__in=manu_list).order_by(
-                    'super_id').distinct().values('super_id')
-                ssg_list_id = [x['super_id'] for x in ssg_list]
+                    'austat_id').distinct().values('austat_id')
+                ssg_list_id = [x['austat_id'] for x in ssg_list]
                 all_words = {}
                 with transaction.atomic():
                     for ssg in Austat.objects.filter(id__in=ssg_list_id):

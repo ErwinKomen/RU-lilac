@@ -18,9 +18,8 @@
             </span>
             <h4 class="modal-title">
               Submit a comment on this
-              {% if commentForm.otype.value == "sermo" %}Sermon
-              {% elif commentForm.otype.value == "gold" %}Sermon Gold
-              {% elif commentForm.otype.value == "super" %}Super Sermon Gold
+              {% if commentForm.otype.value == "canwit" %}Canon witness
+              {% elif commentForm.otype.value == "austat" %}Authoritative statement
               {% elif commentForm.otype.value == "manu" %}Manuscript
               {% else %}Item
               {% endif %}

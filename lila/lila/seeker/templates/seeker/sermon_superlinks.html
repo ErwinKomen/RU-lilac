@@ -26,7 +26,7 @@
                 {% endif %}
                 <!-- The standard details of the SSG -->
                 <span>
-                  <a href="{% url 'austat_details' instance.super.id %}">{{instance.super.get_view|safe}}</a>
+                  <a href="{% url 'austat_details' instance.austat.id %}">{{instance.austat.get_view|safe}}</a>
                 </span>
               </div>
 
@@ -36,9 +36,9 @@
                   <div>
                     <span>The information that will be copied is:</span>
                     <table>
-                      <tr><td>Author</td><td>{{instance.super.author.name}}</td></tr>
-                      <tr><td>Incipit</td><td>{{instance.super.get_incipit_markdown}}</td></tr>
-                      <tr><td>Explicit</td><td>{{instance.super.get_explicit_markdown}}</td></tr>
+                      <tr><td>Author</td><td>{{instance.austat.author.name}}</td></tr>
+                      <tr><td>Full text</td><td>{{instance.austat.get_ftext_markdown}}</td></tr>
+                      <tr><td>Translation</td><td>{{instance.austat.get_ftrans_markdown}}</td></tr>
                     </table>
                   </div>
                   <div>
@@ -49,7 +49,7 @@
                     <span>
                       <a class="btn btn-xs jumbo-4" 
                          onclick="ru.lila.seeker.elevate_confirm(this)"
-                         href="{% url 'canwit_details' object_id %}?supercopy={{instance.super.id}}"
+                         href="{% url 'canwit_details' object_id %}?supercopy={{instance.austat.id}}"
                          title="Copy information from this Super Sermon Gold to this Canon witness (Author, full text, translation)">
                         Copy <span class="glyphicon glyphicon-share-alt"></span>
                       </a>

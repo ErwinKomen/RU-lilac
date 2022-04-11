@@ -1175,7 +1175,7 @@ class ManuscriptListView(BasicList):
             {'filter': 'project',       'fkfield': 'projects',               'keyFk': 'name', 'keyList': 'projlist', 'infield': 'name'},
             {'filter': 'daterange',     'dbfield': 'manuscriptcodicounits__codico_dateranges__yearstart__gte',         'keyS': 'date_from'},
             {'filter': 'daterange',     'dbfield': 'manuscriptcodicounits__codico_dateranges__yearfinish__lte',        'keyS': 'date_until'},
-            {'filter': 'code',          'fkfield': 'manuitems__itemsermons__canwit_super__super',    'help': 'lilacode',
+            {'filter': 'code',          'fkfield': 'manuitems__itemsermons__canwit_super__austat',    'help': 'lilacode',
              'keyS': 'lilacode', 'keyFk': 'code', 'keyList': 'lilalist', 'infield': 'id'},
             {'filter': 'manutype',      'dbfield': 'mtype',                  'keyS': 'manutype', 'keyType': 'fieldchoice', 'infield': 'abbr'},
             {'filter': 'stype',         'dbfield': 'stype',                  'keyList': 'stypelist', 'keyType': 'fieldchoice', 'infield': 'abbr'}
@@ -1215,7 +1215,7 @@ class ManuscriptListView(BasicList):
         {'section': 'other', 'filterlist': [
             #{'filter': 'other_project',   'fkfield': 'project',  'keyS': 'project', 'keyFk': 'id', 'keyList': 'prjlist', 'infield': 'name' },
             {'filter': 'source',    'fkfield': 'source',   'keyS': 'source',  'keyFk': 'id', 'keyList': 'srclist', 'infield': 'id' },
-            {'filter': 'atype',     'dbfield': 'manuitems__itemsermons__canwit_super__super__atype',    'keyS': 'atype'},
+            {'filter': 'atype',     'dbfield': 'manuitems__itemsermons__canwit_super__austat__atype',    'keyS': 'atype'},
             {'filter': 'mtype', 'dbfield': 'mtype', 'keyS': 'mtype'}
             ]}
          ]
@@ -1456,7 +1456,7 @@ class ManuscriptListView(BasicList):
                             # Make sure to actually *calculate* the overlap between the different collections and manuscripts
 
                             # (1) Get a list of SSGs associated with these manuscripts
-                            base_ssg_list = Austat.objects.filter(canwit_super__sermon__msitem__manu__in=base_manu_list).values('id')
+                            base_ssg_list = Austat.objects.filter(canwit_austat__canwit__msitem__manu__in=base_manu_list).values('id')
                             base_ssg_list = [x['id'] for x in base_ssg_list]
                             base_count = len(base_ssg_list)
                 
@@ -1474,7 +1474,7 @@ class ManuscriptListView(BasicList):
                             with transaction.atomic():
                                 for manu in manu_list:
                                     # Get a list of SSG id's associated with this particular manuscript
-                                    manu_ssg_list = [x['id'] for x in Austat.objects.filter(canwit_super__sermon__msitem__manu__id=manu.id).values('id')]
+                                    manu_ssg_list = [x['id'] for x in Austat.objects.filter(canwit_austat__canwit__msitem__manu__id=manu.id).values('id')]
                                     if get_overlap_ptc(base_ssg_list, manu_ssg_list) >= overlap:
                                         # Add this manuscript to the list 
                                         if not manu.id in manu_include:
@@ -3029,14 +3029,14 @@ class CanwitEdit(BasicDetails):
                                 # Convert from newsuperdist to actual super (SSG)
                                 superdist = AustatDist.objects.filter(id=newsuperdist).first()
                                 if superdist != None:
-                                    super = superdist.super
+                                    austat = superdist.austat
 
                                     # Check existence of link between S-SSG
-                                    obj = CanwitAustat.objects.filter(sermon=instance, super=super, linktype=linktype).first()
+                                    obj = CanwitAustat.objects.filter(sermon=instance, austat=austat, linktype=linktype).first()
                                     if obj == None:
                                         # Set the right parameters for creation later on
                                         form.instance.linktype = linktype
-                                        form.instance.super = super
+                                        form.instance.austat = austat
                         elif method == "nodistance":
                             if 'newsuper' in cleaned and cleaned['newsuper'] != "":
                                 newsuper = cleaned['newsuper']
@@ -3044,13 +3044,13 @@ class CanwitEdit(BasicDetails):
                                 linktype = "uns"
 
                                 # Check existence
-                                obj = CanwitAustat.objects.filter(canwit=instance, super=newsuper, linktype=linktype).first()
+                                obj = CanwitAustat.objects.filter(canwit=instance, austat=newsuper, linktype=linktype).first()
                                 if obj == None:
-                                    obj_super = Austat.objects.filter(id=newsuper).first()
-                                    if obj_super != None:
+                                    obj_austat = Austat.objects.filter(id=newsuper).first()
+                                    if obj_austat != None:
                                         # Set the right parameters for creation later on
                                         form.instance.linktype = linktype
-                                        form.instance.super = obj_super
+                                        form.instance.austat = obj_austat
 
                         # Note: it will get saved with form.save()
                     elif prefix == "sbref":
@@ -3161,13 +3161,9 @@ class CanwitEdit(BasicDetails):
                 profile = Profile.get_user_profile(self.request.user.username)
                 adapt_m2m(UserKeyword, instance, "canwit", ukwlist, "keyword", qfilter = {'profile': profile}, extrargs = {'profile': profile, 'type': 'sermo'})
 
-                ## (3) 'Links to Sermon (not 'Gold') Signatures'
-                #siglist = form.cleaned_data['siglist']
-                #adapt_m2m(CanwitSignature, instance, "sermon", siglist, "gsig", extra = ['editype', 'code'])
-
-                # (4) 'Links to Gold Sermons'
+                # (4) 'Links to Austat'
                 superlist = form.cleaned_data['superlist']
-                adapt_m2m(CanwitAustat, instance, "canwit", superlist, "super", extra = ['linktype'], related_is_through=True)
+                adapt_m2m(CanwitAustat, instance, "canwit", superlist, "austat", extra = ['linktype'], related_is_through=True)
 
                 # (5) 'collections'
                 collist_s = form.cleaned_data['collist_s']
@@ -3443,7 +3439,7 @@ class CanwitListView(BasicList):
             {'filter': 'mtype',     'dbfield': 'mtype',    'keyS': 'mtype'},
             {'filter': 'sigauto',   'fkfield': 'austats__equal_goldsermons__goldsignatures', 'keyList':  'siglist_a', 'infield': 'id'},
             {'filter': 'sigmanu',   'fkfield': 'canwitsignatures',                              'keyList':  'siglist_m', 'infield': 'id'},
-            {'filter': 'atype',     'dbfield': 'canwit_super__super__atype',    'keyS': 'atype'}
+            {'filter': 'atype',     'dbfield': 'canwit_super__austat__atype',    'keyS': 'atype'}
             #{'filter': 'appr_type', 'fkfield': 'austats__', 'keyList':' ', 'infield': }
             ]}
          ]
@@ -3691,14 +3687,14 @@ class AustatEdit(BasicDetails):
     
     EqgcolFormSet = inlineformset_factory(Austat, CollectionSuper,
                                        form=SuperSermonGoldCollectionForm, min_num=0,
-                                       fk_name="super", extra=0)
+                                       fk_name="austat", extra=0)
     SsgLinkFormSet = inlineformset_factory(Austat, AustatLink,
                                          form=AustatLinkForm, min_num=0,
                                          fk_name = "src",
                                          extra=0, can_delete=True, can_order=False)
         
     formset_objects = [
-        {'formsetClass': EqgcolFormSet,  'prefix': 'eqgcol',  'readonly': False, 'noinit': True, 'linkfield': 'super'},
+        {'formsetClass': EqgcolFormSet,  'prefix': 'eqgcol',  'readonly': False, 'noinit': True, 'linkfield': 'austat'},
         {'formsetClass': SsgLinkFormSet, 'prefix': 'ssglink', 'readonly': False, 'noinit': True, 'initial': [{'linktype': LINK_PARTIAL }], 'clean': True},     
         ]
 
@@ -3780,9 +3776,9 @@ class AustatEdit(BasicDetails):
                     context['permission'] = self.permission
 
                 # Add comment modal stuff
-                initial = dict(otype="super", objid=instance.id, profile=profile)
+                initial = dict(otype="austat", objid=instance.id, profile=profile)
                 context['commentForm'] = CommentForm(initial=initial, prefix="com")
-                context['comment_list'] = get_usercomments('super', instance, profile)
+                context['comment_list'] = get_usercomments('austat', instance, profile)
                 lhtml = []
                 lhtml.append(render_to_string("seeker/comment_add.html", context, self.request))
                 context['after_details'] = "\n".join(lhtml)
@@ -3790,13 +3786,6 @@ class AustatEdit(BasicDetails):
             # Signal that we have select2
             context['has_select2'] = True
 
-            ## SPecification of the new button
-            #context['new_button_title'] = "Sermon Gold"
-            #context['new_button_name'] = "gold"
-            #context['new_button_url'] = reverse("gold_details")
-            #context['new_button_params'] = [
-            #    {'name': 'gold-n-equal', 'value': instance.id}
-            #    ]
         except:
             msg = oErr.get_error_message()
             oErr.DoError("AustatEdit/add_to_context")
@@ -3828,7 +3817,7 @@ class AustatEdit(BasicDetails):
                             if obj == None:
                                 # TODO: add profile here
                                 profile = Profile.get_user_profile(request.user.username)
-                                obj = Collection.objects.create(name=newcol, type='super', owner=profile)
+                                obj = Collection.objects.create(name=newcol, type='austat', owner=profile)
                             # Make sure we set the keyword
                             form.instance.collection = obj
                             # Note: it will get saved with formset.save()
@@ -3900,7 +3889,7 @@ class AustatEdit(BasicDetails):
         if prefix == "ssglink":
             if self.object != None:
                 # Make sure to return the ID of the Austat
-                oBack = dict(super_id=self.object.id)
+                oBack = dict(austat_id=self.object.id)
 
         return oBack
 
@@ -3996,7 +3985,7 @@ class AustatEdit(BasicDetails):
                     # Some combinations of Project-SSG may be added right away
                     with transaction.atomic():
                         for oItem in allow_adding:
-                            equal = oItem.get("super")
+                            equal = oItem.get("austat")
                             project = oItem.get("project")
                             if not equal is None and not project is None:
                                 obj = AustatProject.objects.create(equal=equal, project=project)
@@ -4015,7 +4004,7 @@ class AustatEdit(BasicDetails):
                         # There are some project-SSG associations that may be removed right away
                         delete_id = []
                         for oItem in allow_removing:
-                            equal = oItem.get("super")
+                            equal = oItem.get("austat")
                             project = oItem.get("project")
                             if not equal is None and not project is None:
                                 obj = AustatProject.objects.filter(equal=equal, project=project).first()
@@ -4057,7 +4046,7 @@ class AustatEdit(BasicDetails):
             collist_ssg_id = form.cleaned_data['collist_ssg'].values('id') 
             collist_hist_id = form.cleaned_data['collist_hist'].values('id')
             collist_ssg = Collection.objects.filter(Q(id__in=collist_ssg_id) | Q(id__in=collist_hist_id))
-            adapt_m2m(CollectionSuper, instance, "super", collist_ssg, "collection")
+            adapt_m2m(CollectionSuper, instance, "austat", collist_ssg, "collection")
 
             # (2) links from one SSG to another SSG
             superlist = form.cleaned_data['superlist']
@@ -4109,8 +4098,8 @@ class AustatEdit(BasicDetails):
             # (4) user-specific 'keywords'
             ukwlist = form.cleaned_data['ukwlist']
             profile = Profile.get_user_profile(self.request.user.username)
-            adapt_m2m(UserKeyword, instance, "super", ukwlist, "keyword", qfilter = {'profile': profile}, 
-                      extrargs = {'profile': profile, 'type': 'super'})
+            adapt_m2m(UserKeyword, instance, "austat", ukwlist, "keyword", qfilter = {'profile': profile}, 
+                      extrargs = {'profile': profile, 'type': 'austat'})
 
             # (6) 'projects'
             projlist = form.cleaned_data['projlist']
@@ -4773,7 +4762,7 @@ class CollAnyEdit(BasicDetails):
     hlistitems = [
         {'type': 'manu',    'clsColl': CollectionMan,   'field': 'manuscript'},
         {'type': 'sermo',   'clsColl': CollectionSerm,  'field': 'sermon'},
-        {'type': 'super',   'clsColl': CollectionSuper, 'field': 'super'},
+        {'type': 'austat',  'clsColl': CollectionSuper, 'field': 'austat'},
         ]
 
     ClitFormSet = inlineformset_factory(Collection, LitrefCol,
@@ -4869,10 +4858,10 @@ class CollAnyEdit(BasicDetails):
     def add_to_context(self, context, instance):
         """Add to the existing context"""
 
-        prefix_scope = ['any', 'manu', 'sermo', 'gold', 'super', 'priv', 'publ']
-        prefix_type = ['any', 'manu', 'sermo', 'gold', 'super', 'priv', 'publ']
-        prefix_readonly = ['any', 'manu', 'sermo', 'gold', 'super']
-        prefix_elevate = ['any', 'super', 'priv', 'publ']
+        prefix_scope = ['any', 'manu', 'sermo', 'gold', 'austat', 'priv', 'publ']
+        prefix_type = ['any', 'manu', 'sermo', 'gold', 'austat', 'priv', 'publ']
+        prefix_readonly = ['any', 'manu', 'sermo', 'gold', 'austat']
+        prefix_elevate = ['any', 'austat', 'priv', 'publ']
 
         # Need to know who this is
         profile = Profile.get_user_profile(self.request.user.username)
@@ -5040,10 +5029,7 @@ class CollAnyEdit(BasicDetails):
             elif instance.type == "sermo":
                 # collection of sermons
                 abbr = "s"
-            elif instance.type == "gold":
-                # collection of gold sermons
-                abbr = "sg"
-            elif instance.type == "super":
+            elif instance.type == "austat":
                 # collection of SSG
                 abbr = "ssg"
                 if self.settype == "hc": abbr = "hist"
@@ -5106,13 +5092,13 @@ class CollAnyEdit(BasicDetails):
                 type = form.cleaned_data.get("type", "")
                 if type == "":
                     if self.prefix == "hist":
-                        form.instance.type = "super"
+                        form.instance.type = "austat"
                     elif self.prefix == "publ":
                         form.instance.type = self.datasettype
                     elif self.prefix == "priv":
                         type = self.qd.get("datasettype", "")
                         if type == "": type = self.datasettype
-                        if type == "": type = "super"
+                        if type == "": type = "austat"
                         form.instance.type = type
                     else:
                         form.instance.type = self.prefix
@@ -5210,7 +5196,7 @@ class CollPublEdit(CollAnyEdit):
 
 
 class CollHistEdit(CollAnyEdit):
-    prefix = "super"
+    prefix = "austat"
     settype = "hc"
     basic_name = "collhist"
     title = "Historical collection"
@@ -5268,8 +5254,8 @@ class CollHistEdit(CollAnyEdit):
 class CollSuperEdit(CollAnyEdit):
     """Super: Austat collections = super sermon gold """
 
-    prefix = "super"
-    title = "Super collection"
+    prefix = "austat"
+    title = "Authoritative Statement collection"
 
 
 class CollAnyDetails(CollAnyEdit):
@@ -5298,7 +5284,7 @@ class CollPrivDetails(CollAnyEdit):
                 # This is a historical collection
                 self.redirectpage = reverse("collhist_details", kwargs={'pk': instance.id})
 
-            if instance.type == "super":
+            if instance.type == "austat":
                 self.custombuttons = [{"name": "scount_histogram", "title": "Sermon Histogram", 
                       "icon": "th-list", "template_name": "seeker/scount_histogram.html" }]
 
@@ -5454,95 +5440,39 @@ class CollPrivDetails(CollAnyEdit):
                     ]
                 related_objects.append(sermons)
 
-            elif instance.type == "gold":
+            elif instance.type == "austat":
                 # Get all sermons that are part of this PD
-                goldsermons = dict(title="Gold sermons within this dataset", prefix="gold")   # prefix="sermo") 
-                if resizable: goldsermons['gridclass'] = "resizable dragdrop"
-                goldsermons['savebuttons'] = True
-                goldsermons['saveasbutton'] = True
-
-                qs_sermo = instance.gold_col.all().order_by(
-                        'order', 'gold__author__name', 'gold__siglist', 'gold__equal__code', 'gold__srchftext', 'gold__srchftrans')
-                check_order(qs_sermo)
-
-                # Walk these collection sermons
-                for obj in qs_sermo:
-                    rel_item = []
-                    item = obj.gold
-
-                    # G: Order in Gold
-                    #add_one_item(rel_item, index, False, align="right")
-                    #index += 1
-                    add_one_item(rel_item, obj.order, False, align="right", draggable=True)
-
-                    # G: Author
-                    add_one_item(rel_item, self.get_field_value("gold", item, "author"), False,main=True)
-
-                    # G: Signature
-                    add_one_item(rel_item, self.get_field_value("gold", item, "signature"), False)
-
-                    # G: lila code
-                    add_one_item(rel_item, self.get_field_value("gold", item, "code"), False)
-
-                    # G: Inc/Expl
-                    add_one_item(rel_item, self.get_field_value("gold", item, "incexpl"), resizable)
-
-                    # G: Editions
-                    add_one_item(rel_item, self.get_field_value("gold", item, "edition"), False)
-
-                    # Actions that can be performed on this item
-                    add_one_item(rel_item, self.get_actions())
-
-                    # Add this line to the list
-                    rel_list.append(dict(id=item.id, cols=rel_item))
-            
-                goldsermons['rel_list'] = rel_list
-                goldsermons['columns'] = [
-                    '{}<span title="Default order">Order<span>{}'.format(sort_start_int, sort_end),
-                    '{}<span title="Associated author">Author</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="Gryson or Clavis code">Signature</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="lila code">lila</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="Incipit and explicit">inc...expl</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="Editions where this Gold Sermon is described">Editions</span>{}'.format(sort_start, sort_end), 
-                    ''
-                    ]
-                related_objects.append(goldsermons)
-
-            elif instance.type == "super":
-                # Get all sermons that are part of this PD
-                supers = dict(title="Authoritative statements within this dataset", prefix="super")   #prefix="sermo")
+                supers = dict(title="Authoritative statements within this dataset", prefix="austat")   #prefix="sermo")
                 if resizable: supers['gridclass'] = "resizable dragdrop"
                 supers['savebuttons'] = True
                 supers['saveasbutton'] = True
 
                 qs_sermo = instance.super_col.all().order_by(
-                        'order', 'super__author__name', 'super__firstsig', 'super__srchftext', 'super__srchftrans')
+                        'order', 'austat__author__name', 'austat__srchftext', 'austat__srchftrans')
                 check_order(qs_sermo)
 
                 # Walk these collection sermons
                 for obj in qs_sermo:
                     rel_item = []
-                    item = obj.super
+                    item = obj.austat
 
                     # SSG: Order in Manuscript
-                    #add_one_item(rel_item, index, False, align="right")
-                    #index += 1
                     add_one_item(rel_item, obj.order, False, align="right", draggable=True)
 
                     # SSG: Author
-                    add_one_item(rel_item, self.get_field_value("super", item, "author"), False, main=True)
+                    add_one_item(rel_item, self.get_field_value("austat", item, "author"), False, main=True)
 
                     # SSG: lila code
-                    add_one_item(rel_item, self.get_field_value("super", item, "code"), False)
+                    add_one_item(rel_item, self.get_field_value("austat", item, "code"), False)
 
                     # SSG: Gryson/Clavis = signature
-                    add_one_item(rel_item, self.get_field_value("super", item, "sig"), False)
+                    add_one_item(rel_item, self.get_field_value("austat", item, "sig"), False)
 
                     # SSG: Inc/Expl
-                    add_one_item(rel_item, self.get_field_value("super", item, "incexpl"), resizable)
+                    add_one_item(rel_item, self.get_field_value("austat", item, "incexpl"), resizable)
 
                     # SSG: Size (number of SG in equality set)
-                    add_one_item(rel_item, self.get_field_value("super", item, "size"), False)
+                    add_one_item(rel_item, self.get_field_value("austat", item, "size"), False)
 
                     # Actions that can be performed on this item
                     add_one_item(rel_item, self.get_actions())
@@ -5613,9 +5543,7 @@ class CollPrivDetails(CollAnyEdit):
                 sBack = instance.get_canwit_count()
         elif type == "sermo":
             sBack, sTitle = SermonListView.get_field_value(None, instance, custom)
-        elif type == "gold":
-            sBack, sTitle = SermonGoldListView.get_field_value(None, instance, custom)
-        elif type == "super":
+        elif type == "austat":
             sBack, sTitle = AustatListView.get_field_value(None, instance, custom)
         return sBack
 
@@ -5638,7 +5566,7 @@ class CollPublDetails(CollPrivDetails):
             elif instance.settype == "hc":
                 # This is a historical collection
                 self.redirectpage = reverse("collhist_details", kwargs={'pk': instance.id})
-            if instance.type == "super":
+            if instance.type == "austat":
                 self.custombuttons = [{"name": "scount_histogram", "title": "Sermon Histogram", 
                       "icon": "th-list", "template_name": "seeker/scount_histogram.html" }]
             # Check for hlist saving
@@ -5727,40 +5655,38 @@ class CollHistDetails(CollHistEdit):
                 # This is the plain historical collection details view
 
                 # Get all SSGs that are part of this PD
-                supers = dict(title="Authoritative statements within this historical collection", prefix="super")   #prefix="sermo")
+                supers = dict(title="Authoritative statements within this historical collection", prefix="austat")   #prefix="sermo")
                 if resizable: supers['gridclass'] = "resizable dragdrop"
                 supers['savebuttons'] = True
                 supers['saveasbutton'] = True
                 supers['classes'] = 'collapse'
 
                 qs_sermo = instance.super_col.all().order_by(
-                        'order', 'super__author__name', 'super__firstsig', 'super__srchftext', 'super__srchftrans')
+                        'order', 'austat__author__name', 'austat__srchftext', 'austat__srchftrans')
                 check_order(qs_sermo)
 
                 # Walk these collection sermons
                 for obj in qs_sermo:
                     rel_item = []
-                    item = obj.super
+                    item = obj.austat
 
                     # SSG: Order in Manuscript
-                    #add_one_item(rel_item, index, False, align="right")
-                    #index += 1
                     add_one_item(rel_item, obj.order, False, align="right", draggable=True)
 
                     # SSG: Author
-                    add_one_item(rel_item, self.get_field_value("super", item, "author"), resizable)
+                    add_one_item(rel_item, self.get_field_value("austat", item, "author"), resizable)
 
                     # SSG: lila code
-                    add_one_item(rel_item, self.get_field_value("super", item, "code"), False)
+                    add_one_item(rel_item, self.get_field_value("austat", item, "code"), False)
 
                     # SSG: Gryson/Clavis = signature
-                    add_one_item(rel_item, self.get_field_value("super", item, "sig"), False)
+                    add_one_item(rel_item, self.get_field_value("austat", item, "sig"), False)
 
                     # SSG: Inc/Expl
-                    add_one_item(rel_item, self.get_field_value("super", item, "incexpl"), False, main=True)
+                    add_one_item(rel_item, self.get_field_value("austat", item, "incexpl"), False, main=True)
 
                     # SSG: Size (number of SG in equality set)
-                    add_one_item(rel_item, self.get_field_value("super", item, "size"), False)
+                    add_one_item(rel_item, self.get_field_value("austat", item, "size"), False)
 
                     # Actions that can be performed on this item
                     if bMayEdit:
@@ -5900,7 +5826,7 @@ class CollHistDetails(CollHistEdit):
                 for item in qs_s:
                     rel_item = []
                     # Determine the matching SSG from the Historical Collection
-                    equal = Austat.objects.filter(canwit_super__super__in=qs_ssg, canwit_super__sermon__id=item.id).first()
+                    equal = Austat.objects.filter(canwit_super__austat__in=qs_ssg, canwit_austat__canwit__id=item.id).first()
                     # List of SSGs that have been dealt with already
                     if equal != None: equal_list.append(equal.id)
 
@@ -6002,7 +5928,7 @@ class CollHistDetails(CollHistEdit):
                 for item in qs_s:
                     rel_item = []
                     # Determine the matching SSG from the Historical Collection
-                    equal = Austat.objects.filter(canwit_super__super__in=qs_ssg, canwit_super__sermon__id=item.id).first()
+                    equal = Austat.objects.filter(canwit_super__austat__in=qs_ssg, canwit_austat__canwit__id=item.id).first()
                     # List of SSGs that have been dealt with already
                     if equal != None: equal_list.append(equal.id)
 
@@ -6155,7 +6081,7 @@ class CollHistDetails(CollHistEdit):
             elif custom == "sermons":
                 sBack = instance.get_canwit_count()
 
-        elif type == "super":
+        elif type == "austat":
             sBack, sTitle = AustatListView.get_field_value(None, instance, custom)
         return sBack
 
@@ -6293,7 +6219,7 @@ class CollectionListView(BasicList):
             self.plural_name = "Gold sermons Collections"
             self.sg_name = "Sermon gold collection"
             self.searches[0]['filterlist'][1]['keyList'] = "collist_sg"
-        elif self.prefix == "super":
+        elif self.prefix == "austat":
             self.plural_name = "Authoritative statement Collections"
             self.sg_name = "Authoritative statement collection"        
             self.searches[0]['filterlist'][1]['keyList'] = "collist_ssg"
@@ -6385,14 +6311,14 @@ class CollectionListView(BasicList):
                 {"name": "Sermon...",              "id": "filter_sermo",    "enabled": False, "head_id": "none"},
                 {"name": "Manuscript...",          "id": "filter_manu",     "enabled": False, "head_id": "none"},
                 # Section SSG
-                {"name": "Author",          "id": "filter_ssgauthor",       "enabled": False, "head_id": "filter_super"},
-                {"name": "Incipit",         "id": "filter_ssgincipit",      "enabled": False, "head_id": "filter_super"},
-                {"name": "Explicit",        "id": "filter_ssgexplicit",     "enabled": False, "head_id": "filter_super"},
-                {"name": "lila code",     "id": "filter_ssgcode",         "enabled": False, "head_id": "filter_super"},
-                {"name": "Number",          "id": "filter_ssgnumber",       "enabled": False, "head_id": "filter_super"},
-                {"name": "Gryson/Clavis",   "id": "filter_ssgsignature",    "enabled": False, "head_id": "filter_super"},
-                {"name": "Keyword",         "id": "filter_ssgkeyword",      "enabled": False, "head_id": "filter_super"},
-                {"name": "Status",          "id": "filter_ssgstype",        "enabled": False, "head_id": "filter_super"},
+                {"name": "Author",          "id": "filter_ssgauthor",       "enabled": False, "head_id": "filter_austat"},
+                {"name": "Incipit",         "id": "filter_ssgincipit",      "enabled": False, "head_id": "filter_austat"},
+                {"name": "Explicit",        "id": "filter_ssgexplicit",     "enabled": False, "head_id": "filter_austat"},
+                {"name": "lila code",     "id": "filter_ssgcode",         "enabled": False, "head_id": "filter_austat"},
+                {"name": "Number",          "id": "filter_ssgnumber",       "enabled": False, "head_id": "filter_austat"},
+                {"name": "Gryson/Clavis",   "id": "filter_ssgsignature",    "enabled": False, "head_id": "filter_austat"},
+                {"name": "Keyword",         "id": "filter_ssgkeyword",      "enabled": False, "head_id": "filter_austat"},
+                {"name": "Status",          "id": "filter_ssgstype",        "enabled": False, "head_id": "filter_austat"},
                 # Section S
                 {"name": "Gryson or Clavis","id": "filter_sermosignature",  "enabled": False, "head_id": "filter_sermo"},
                 {"name": "Author",          "id": "filter_sermoauthor",     "enabled": False, "head_id": "filter_sermo"},
@@ -6420,51 +6346,51 @@ class CollectionListView(BasicList):
                     {'filter': 'project',       'fkfield': 'projects', 'keyFk': 'name', 'keyList': 'projlist', 'infield': 'name'},
                     ]},
                 # Section SSG
-                {'section': 'super', 'filterlist': [
-                    {'filter': 'ssgauthor',    'fkfield': 'super_col__super__author',            
+                {'section': 'austat', 'filterlist': [
+                    {'filter': 'ssgauthor',    'fkfield': 'super_col__austat__author',            
                      'keyS': 'ssgauthorname', 'keyFk': 'name', 'keyList': 'ssgauthorlist', 'infield': 'id', 'external': 'gold-authorname' },
-                    {'filter': 'ssgincipit',   'dbfield': 'super_col__super__srchftext',   'keyS': 'ssgincipit'},
-                    {'filter': 'ssgexplicit',  'dbfield': 'super_col__super__srchftrans',  'keyS': 'ssgexplicit'},
-                    {'filter': 'ssgcode',      'fkfield': 'super_col__super', 'keyFk': 'code',           
+                    {'filter': 'ssgincipit',   'dbfield': 'super_col__austat__srchftext',   'keyS': 'ssgincipit'},
+                    {'filter': 'ssgexplicit',  'dbfield': 'super_col__austat__srchftrans',  'keyS': 'ssgexplicit'},
+                    {'filter': 'ssgcode',      'fkfield': 'super_col__austat', 'keyFk': 'code',           
                      'keyS': 'ssgcode', 'keyList': 'ssglilalist', 'infield': 'id'},
-                    {'filter': 'ssgnumber',    'dbfield': 'super_col__super__number',       'keyS': 'ssgnumber'},
-                    {'filter': 'ssgkeyword',   'fkfield': 'super_col__super__keywords',          
+                    {'filter': 'ssgnumber',    'dbfield': 'super_col__austat__number',       'keyS': 'ssgnumber'},
+                    {'filter': 'ssgkeyword',   'fkfield': 'super_col__austat__keywords',          
                      'keyFk': 'name', 'keyList': 'ssgkwlist', 'infield': 'id'},
-                    {'filter': 'ssgstype',     'dbfield': 'super_col__super__stype',             
+                    {'filter': 'ssgstype',     'dbfield': 'super_col__austat__stype',             
                      'keyList': 'ssgstypelist', 'keyType': 'fieldchoice', 'infield': 'abbr' },
                     ]},
                 # Section S
                 {'section': 'sermo', 'filterlist': [
-                    {'filter': 'sermoincipit',       'dbfield': 'super_col__super__austat_sermons__srchftext',   'keyS': 'sermoincipit'},
-                    {'filter': 'sermoexplicit',      'dbfield': 'super_col__super__austat_sermons__srchftrans',  'keyS': 'sermoexplicit'},
-                    {'filter': 'sermotitle',         'dbfield': 'super_col__super__austat_sermons__title',         'keyS': 'sermotitle'},
-                    {'filter': 'sermofeast',         'dbfield': 'super_col__super__austat_sermons__feast',         'keyS': 'sermofeast'},
+                    {'filter': 'sermoincipit',       'dbfield': 'super_col__austat__austat_sermons__srchftext',   'keyS': 'sermoincipit'},
+                    {'filter': 'sermoexplicit',      'dbfield': 'super_col__austat__austat_sermons__srchftrans',  'keyS': 'sermoexplicit'},
+                    {'filter': 'sermotitle',         'dbfield': 'super_col__austat__austat_sermons__title',         'keyS': 'sermotitle'},
+                    {'filter': 'sermofeast',         'dbfield': 'super_col__austat__austat_sermons__feast',         'keyS': 'sermofeast'},
                     {'filter': 'bibref',             'dbfield': '$dummy',                                             'keyS': 'bibrefbk'},
                     {'filter': 'bibref',             'dbfield': '$dummy',                                             'keyS': 'bibrefchvs'},
-                    {'filter': 'sermonote',          'dbfield': 'super_col__super__austat_sermons__additional',    'keyS': 'sermonote'},
-                    {'filter': 'sermoauthor',        'fkfield': 'super_col__super__austat_sermons__author',            
+                    {'filter': 'sermonote',          'dbfield': 'super_col__austat__austat_sermons__additional',    'keyS': 'sermonote'},
+                    {'filter': 'sermoauthor',        'fkfield': 'super_col__austat__austat_sermons__author',            
                      'keyS': 'sermoauthorname', 'keyFk': 'name', 'keyList': 'sermoauthorlist', 'infield': 'id', 'external': 'sermo-authorname' },
-                    {'filter': 'sermokeyword',       'fkfield': 'super_col__super__austat_sermons__keywords',          
+                    {'filter': 'sermokeyword',       'fkfield': 'super_col__austat__austat_sermons__keywords',          
                      'keyFk': 'name', 'keyList': 'sermokwlist', 'infield': 'id' }, 
-                    {'filter': 'sermostype',         'dbfield': 'super_col__super__austat_sermons__stype',             
+                    {'filter': 'sermostype',         'dbfield': 'super_col__austat__austat_sermons__stype',             
                      'keyList': 'sermostypelist', 'keyType': 'fieldchoice', 'infield': 'abbr' }                    ]},
                 # Section M
                 {'section': 'manu', 'filterlist': [
-                    {'filter': 'manuid',        'fkfield': 'super_col__super__austat_sermons__msitem__manu',                   
+                    {'filter': 'manuid',        'fkfield': 'super_col__austat__austat_sermons__msitem__manu',                   
                      'keyS': 'manuidno',    'keyFk': "idno", 'keyList': 'manuidlist', 'infield': 'id'},
-                    {'filter': 'manulibrary',       'fkfield': 'super_col__super__austat_sermons__msitem__manu__library',                
+                    {'filter': 'manulibrary',       'fkfield': 'super_col__austat__austat_sermons__msitem__manu__library',                
                      'keyS': 'libname_ta',    'keyId': 'library',     'keyFk': "name"},
-                    {'filter': 'manukeyword',       'fkfield': 'super_col__super__austat_sermons__msitem__manu__keywords',               
+                    {'filter': 'manukeyword',       'fkfield': 'super_col__austat__austat_sermons__msitem__manu__keywords',               
                      'keyFk': 'name', 'keyList': 'manukwlist', 'infield': 'name' },
-                    {'filter': 'manustype',         'dbfield': 'super_col__super__austat_sermons__msitem__manu__stype',                  
+                    {'filter': 'manustype',         'dbfield': 'super_col__austat__austat_sermons__msitem__manu__stype',                  
                      'keyList': 'manustypelist', 'keyType': 'fieldchoice', 'infield': 'abbr' },
-                    {'filter': 'manuprovenance',    'fkfield': 'super_col__super__austat_sermons__msitem__codico__provenances__location',  
+                    {'filter': 'manuprovenance',    'fkfield': 'super_col__austat__austat_sermons__msitem__codico__provenances__location',  
                      'keyS': 'prov_ta',       'keyId': 'prov',        'keyFk': "name"},
-                    {'filter': 'manuorigin',        'fkfield': 'super_col__super__austat_sermons__msitem__codico__origin',                 
+                    {'filter': 'manuorigin',        'fkfield': 'super_col__austat__austat_sermons__msitem__codico__origin',                 
                      'keyS': 'origin_ta',     'keyId': 'origin',      'keyFk': "name"},
-                    {'filter': 'manudaterange',     'dbfield': 'super_col__super__austat_sermons__msitem__codico__codico_dateranges__yearstart__gte',         
+                    {'filter': 'manudaterange',     'dbfield': 'super_col__austat__austat_sermons__msitem__codico__codico_dateranges__yearstart__gte',         
                      'keyS': 'date_from'},
-                    {'filter': 'manudaterange',     'dbfield': 'super_col__super__austat_sermons__msitem__codico__codico_dateranges__yearfinish__lte',        
+                    {'filter': 'manudaterange',     'dbfield': 'super_col__austat__austat_sermons__msitem__codico__codico_dateranges__yearfinish__lte',        
                      'keyS': 'date_until'},
                     ]},
                 # Section Other
@@ -6472,7 +6398,7 @@ class CollectionListView(BasicList):
                     {'filter': 'owner',     'fkfield': 'owner',  'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id' },
                     {'filter': 'coltype',   'dbfield': 'type',   'keyS': 'type',  'keyList': 'typelist' },
                     {'filter': 'settype',   'dbfield': 'settype','keyS': 'settype'},
-                    {'filter': 'atype',    'dbfield': 'super_col__super__atype',    'keyS': 'atype'}, 
+                    {'filter': 'atype',    'dbfield': 'super_col__austat__atype',    'keyS': 'atype'}, 
                     {'filter': 'scope',     'dbfield': 'scope',  'keyS': 'scope'}]}
                 ]
                 # ======== One-time adaptations ==============
@@ -6512,8 +6438,8 @@ class CollectionListView(BasicList):
             # The settype should be specified
             fields['settype'] = "hc"
 
-            # The collection type is 'super'
-            fields['type'] = "super"
+            # The collection type is 'austat'
+            fields['type'] = "austat"
 
             # The scope of a historical collection to be shown should be 'public'
             if user_is_authenticated(self.request) and user_is_ingroup(self.request, app_editor):
@@ -6532,8 +6458,8 @@ class CollectionListView(BasicList):
 
                 # Find out which sermons have references in this range
                 lstQ = []
-                lstQ.append(Q(super_col__super__austat_sermons__sermonbibranges__bibrangeverses__bkchvs__gte=start))
-                lstQ.append(Q(super_col__super__austat_sermons__sermonbibranges__bibrangeverses__bkchvs__lte=einde))
+                lstQ.append(Q(super_col__austat__austat_sermons__sermonbibranges__bibrangeverses__bkchvs__gte=start))
+                lstQ.append(Q(super_col__austat__austat_sermons__sermonbibranges__bibrangeverses__bkchvs__lte=einde))
                 collectionlist = [x.id for x in Collection.objects.filter(*lstQ).order_by('id').distinct()]
 
                 fields['bibrefbk'] = Q(id__in=collectionlist)
@@ -6854,9 +6780,9 @@ class BasketUpdate(BasicPart):
                     elif self.colltype == "manu":
                         clsColl = CollectionMan
                         field = "manuscript"
-                    elif self.colltype == "super":
+                    elif self.colltype == "austat":
                         clsColl = CollectionSuper
-                        field = "super"
+                        field = "austat"
 
                     # THis is only needed for collections
                     with transaction.atomic():
@@ -6947,8 +6873,8 @@ class BasketUpdateSuper(BasketUpdate):
     clsBasket = BasketSuper
     s_view = AustatListView
     s_form = AustatForm
-    s_field = "super"
-    colltype = "super"
+    s_field = "austat"
+    colltype = "austat"
     form_objects = [{'form': CollectionForm, 'prefix': colltype, 'readonly': True}]
 
     def get_basketsize(self, profile):

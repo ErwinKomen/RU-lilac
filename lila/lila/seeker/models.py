@@ -3967,7 +3967,7 @@ class Manuscript(models.Model):
 
     def get_ssg_count(self, compare_link=False, collection = None):
         # Get a list of all SSGs related to [self]
-        ssg_list_num = Austat.objects.filter(canwit_super__sermon__msitem__manu=self).order_by('id').distinct().count()
+        ssg_list_num = Austat.objects.filter(canwit_austat__canwit__msitem__manu=self).order_by('id').distinct().count()
         if compare_link:
             url = "{}?manu={}".format(reverse("collhist_compare", kwargs={'pk': collection.id}), self.id)
             sBack = "<span class='clickable'><a class='nostyle' href='{}'>{}</a></span>".format(url, ssg_list_num)
@@ -3978,7 +3978,7 @@ class Manuscript(models.Model):
 
     def get_ssg_markdown(self):
         # Get a list of all SSGs related to [self]
-        ssg_list = Austat.objects.filter(canwit_super__sermon__msitem__manu=self).order_by('id').distinct().order_by('code')
+        ssg_list = Austat.objects.filter(canwit_austat__canwit__msitem__manu=self).order_by('id').distinct().order_by('code')
         html = []
         for ssg in ssg_list:
             url = reverse('austat_details', kwargs={'pk': ssg.id})
@@ -4841,7 +4841,7 @@ class Codico(models.Model):
 
     def get_ssg_count(self, compare_link=False, collection = None):
         # Get a list of all SSGs related to [self]
-        ssg_list_num = Austat.objects.filter(canwit_super__sermon__msitem__codico=self).order_by('id').distinct().count()
+        ssg_list_num = Austat.objects.filter(canwit_austat__canwit__msitem__codico=self).order_by('id').distinct().count()
         if compare_link:
             url = "{}?codico={}".format(reverse("collhist_compare", kwargs={'pk': collection.id}), self.id)
             sBack = "<span class='clickable'><a class='nostyle' href='{}'>{}</a></span>".format(url, ssg_list_num)
@@ -5496,7 +5496,7 @@ class Austat(models.Model):
 
         lHtml = []
         # Visit all collections that I have access to
-        mycoll__id = Collection.get_scoped_queryset('super', username, team_group, settype = settype).values('id')
+        mycoll__id = Collection.get_scoped_queryset('austat', username, team_group, settype = settype).values('id')
         for col in self.collections.filter(id__in=mycoll__id).order_by('name'):
             url = "{}?as-collist_ssg={}".format(reverse('austat_list'), col.id)
             lHtml.append("<span class='collection'><a href='{}'>{}</a></span>".format(url, col.name))
@@ -6008,7 +6008,7 @@ class Collection(models.Model):
         oErr = ErrHandle()
         # Double check the number of authors, if this is settype HC
         if self.settype == "hc":
-            ssg_id = self.super_col.all().values('super__id')
+            ssg_id = self.super_col.all().values('austat__id')
             authornum = Author.objects.filter(Q(author_austats__id__in=ssg_id)).order_by('id').distinct().count()
             self.ssgauthornum = authornum
         # Adapt the save date
@@ -6045,7 +6045,7 @@ class Collection(models.Model):
     def get_authors_markdown(self):
         html = []
         if self.settype == "hc":
-            ssg_id = self.super_col.all().values('super__id')
+            ssg_id = self.super_col.all().values('austat__id')
             for author in Author.objects.filter(Q(author_austats__id__in=ssg_id)).order_by('name').distinct():
                 dots = "" if len(author.name) < 20 else "..."
                 html.append("<span class='authorname' title='{}'>{}{}</span>".format(author.name, author.name[:20], dots))
@@ -6081,11 +6081,11 @@ class Collection(models.Model):
                 qs = CollectionSerm.objects.filter(collection=self).order_by("order")
                 for obj in qs:
                     CollectionSerm.objects.create(collection=new_copy, sermon=obj.sermon, order=obj.order)
-            elif self.type == "super":
+            elif self.type == "austat":
                 # Copy SSGs
                 qs = CollectionSuper.objects.filter(collection=self).order_by("order")
                 for obj in qs:
-                    CollectionSuper.objects.create(collection=new_copy, super=obj.super, order=obj.order)
+                    CollectionSuper.objects.create(collection=new_copy, super=obj.austat, order=obj.order)
 
             # Change the name
             new_copy.name = "{}_{}".format(new_copy.name, new_copy.id)
@@ -6220,11 +6220,7 @@ class Collection(models.Model):
             size = self.freqmanu()
             # Determine where clicking should lead to
             url = "{}?manu-collist_m={}".format(reverse('manuscript_list'), self.id)
-        elif self.type == "gold":
-            size = self.freqgold()
-            # Determine where clicking should lead to
-            url = "{}?gold-collist_sg={}".format(reverse('gold_list'), self.id)
-        elif self.type == "super":
+        elif self.type == "austat":
             size = self.freqsuper()
             # Determine where clicking should lead to
             if self.settype == "hc":
@@ -6241,7 +6237,7 @@ class Collection(models.Model):
         """Create a manuscript + sermons based on the SSGs in this collection"""
 
         # Double check to see that this is a SSG collection
-        if self.settype != "hc" or self.type != "super":
+        if self.settype != "hc" or self.type != "austat":
             # THis is not the correct starting point
             return None
 
@@ -6960,13 +6956,13 @@ class Canwit(models.Model):
                     # for super in Austat.objects.all():
                     for item in eqg_list:
                         # Get an object
-                        super_id = item['id']
-                        obj = AustatDist.objects.filter(sermon=self, super=super_id).first()
+                        austat_id = item['id']
+                        obj = AustatDist.objects.filter(sermon=self, super=austat_id).first()
                         if obj == None:
                             # Get the distance
                             dist = get_dist(inc_s, exp_s, item['srchftext'], item['srchftrans'])
                             # Create object and Set this distance
-                            obj = AustatDist.objects.create(sermon=self, super_id=super_id, distance=dist)
+                            obj = AustatDist.objects.create(sermon=self, austat_id=austat_id, distance=dist)
                         elif bForceUpdate:
                             # Calculate and change the distance
                             obj.distance = get_dist(inc_s, exp_s, item['srchftext'], item['srchftrans'])
@@ -7137,7 +7133,7 @@ class Canwit(models.Model):
         lHtml = []
         lstQ = []
         # Get all the SSG to which I link
-        lstQ.append(Q(super_col__super__in=self.austats.all()))
+        lstQ.append(Q(super_col__austat__in=self.austats.all()))
         lstQ.append(Q(settype=settype))
         # Make sure we restrict ourselves to the *public* datasets
         lstQ.append(Q(scope="publ"))
@@ -7186,7 +7182,7 @@ class Canwit(models.Model):
         #    but make sure to exclude the template sermons
         for linked in CanwitAustat.objects.filter(canwit=self).exclude(canwit__mtype="tem"):
             # Add this SSG
-            ssg_list.append(linked.super.id)
+            ssg_list.append(linked.austat.id)
 
         ## Get a list of all the SG that are in these equality sets
         #gold_list = SermonGold.objects.filter(equal__in=ssg_list).order_by('id').distinct().values("id")
@@ -7326,12 +7322,12 @@ class Canwit(models.Model):
         # qs_hc = self.collections.all()
         lstQ = []
         lstQ.append(Q(settype="hc"))
-        lstQ.append(Q(collections_super__id__in=qs_ssg))
+        lstQ.append(Q(collections_austat__id__in=qs_ssg))
         
         if username == None or team_group == None:
             qs_hc = Collection.objects.filter(*lstQ )
         else:
-            qs_hc = Collection.get_scoped_queryset("super", username, team_group, settype="hc").filter(collections_super__id__in=qs_ssg)
+            qs_hc = Collection.get_scoped_queryset("austat", username, team_group, settype="hc").filter(collections_austat__id__in=qs_ssg)
         # TODO: filter on (a) public only or (b) private but from the current user
         for col in qs_hc:
             # Determine where clicking should lead to
@@ -7418,7 +7414,7 @@ class Canwit(models.Model):
 
         lHtml = []
         # Get all the SSGs to which I link with equality
-        # ssg_id = Austat.objects.filter(canwit_super__sermon=self, canwit_super__linktype=LINK_EQUAL).values("id")
+        # ssg_id = Austat.objects.filter(canwit_austat__canwit=self, canwit_super__linktype=LINK_EQUAL).values("id")
         ssg_id = self.austats.all().values("id")
         # Get all keywords attached to these SGs
         qs = Keyword.objects.filter(equal_kw__equal__id__in=ssg_id).order_by("name").distinct()
@@ -7437,7 +7433,7 @@ class Canwit(models.Model):
 
         lHtml = []
         # Get all the SSGs to which I link with equality
-        # ssg_id = Austat.objects.filter(canwit_super__sermon=self, canwit_super__linktype=LINK_EQUAL).values("id")
+        # ssg_id = Austat.objects.filter(canwit_austat__canwit=self, canwit_super__linktype=LINK_EQUAL).values("id")
         ssg_id = self.austats.all().values("id")
         # Get all keywords attached to these SGs
         qs = Keyword.objects.filter(equal_kw__equal__id__in=ssg_id).order_by("name").distinct()
@@ -8244,7 +8240,7 @@ class ManuscriptCorpus(models.Model):
     """A user-SSG-specific manuscript corpus"""
 
     # [1] Each corpus is created with a particular SSG as starting point
-    super = models.ForeignKey(Austat, related_name="supercorpora", on_delete=models.CASCADE)
+    austat = models.ForeignKey(Austat, related_name="supercorpora", on_delete=models.CASCADE)
 
     # Links: source.SSG - target.SSG - manu
     # [1] Link-item 1: source
@@ -8264,7 +8260,7 @@ class ManuscriptCorpusLock(models.Model):
     """A user-SSG-specific manuscript corpus"""
 
     # [1] Each lock is created with a particular SSG as starting point
-    super = models.ForeignKey(Austat, related_name="supercorpuslocks", on_delete=models.CASCADE)
+    austat = models.ForeignKey(Austat, related_name="supercorpuslocks", on_delete=models.CASCADE)
     # [1] Each lock belongs to a person
     profile = models.ForeignKey(Profile, related_name="profilecorpuslocks", on_delete=models.CASCADE)
     # [1] And a date: the date of saving this relation
@@ -8323,7 +8319,7 @@ class UserKeyword(models.Model):
     # [0-1] The link is with a Canwit instance ...
     canwit = models.ForeignKey(Canwit, blank=True, null=True, related_name="canwit_userkeywords", on_delete=models.SET_NULL)
     # [0-1] The link is with a Austat instance ...
-    super = models.ForeignKey(Austat, blank=True, null=True, related_name="super_userkeywords", on_delete=models.SET_NULL)
+    austat = models.ForeignKey(Austat, blank=True, null=True, related_name="super_userkeywords", on_delete=models.SET_NULL)
 
     def __str__(self):
         sBack = self.keyword.name
@@ -8334,9 +8330,8 @@ class UserKeyword(models.Model):
         # Note: only save if all obligatory elements are there
         if self.keyword_id:
             bOkay = (self.type == "manu" and self.manu != None) or \
-                    (self.type == "sermo" and self.sermo != None) or \
-                    (self.type == "gold" and self.gold != None) or \
-                    (self.type == "super" and self.super != None)
+                    (self.type == "canwit" and self.canwit != None) or \
+                    (self.type == "austat" and self.austat != None)
             if bOkay:
                 response = super(UserKeyword, self).save(force_insert, force_update, using, update_fields)
         return response
@@ -8363,10 +8358,7 @@ class UserKeyword(models.Model):
             elif self.type == "sermo":
                 tblGeneral = CanwitKeyword
                 itemfield = "sermon"
-            elif self.type == "gold":
-                tblGeneral = SermonGoldKeyword
-                itemfield = "gold"
-            elif self.type == "super":
+            elif self.type == "austat":
                 tblGeneral = AustatKeyword
                 itemfield = "equal"
             if tblGeneral != None:
@@ -8394,7 +8386,7 @@ class CanwitAustat(models.Model):
     # [0-1] The manuscript in which the canwit resides
     manu = models.ForeignKey(Manuscript, related_name="canwit_austat", blank=True, null=True, on_delete=models.SET_NULL)
     # [1] The Authoritative Statement
-    super = models.ForeignKey(Austat, related_name="canwit_austat", on_delete=models.CASCADE)
+    austat = models.ForeignKey(Austat, related_name="canwit_austat", on_delete=models.CASCADE)
     # [1] Each sermon-to-gold link must have a linktype, with default "equal"
     linktype = models.CharField("Link type", choices=build_abbr_list(LINK_TYPE), max_length=5, default="uns")
 
@@ -8402,7 +8394,7 @@ class CanwitAustat(models.Model):
         # Temporary fix: sermon.id
         # Should be changed to something more significant in the future
         # E.G: manuscript+locus?? (assuming each canwit has a locus)
-        combi = "canwit {} {} {}".format(self.canwit.id, self.get_linktype_display(), self.super.__str__())
+        combi = "canwit {} {} {}".format(self.canwit.id, self.get_linktype_display(), self.austat.__str__())
         return combi
     
     def do_scount(self, super):
@@ -8420,7 +8412,7 @@ class CanwitAustat(models.Model):
         oErr = ErrHandle()
         try:
             # Remember the current SSG for a moment
-            obj_ssg = self.super
+            obj_ssg = self.austat
             # Remove the connection
             response = super(CanwitAustat, self).delete(using, keep_parents)
             # Perform the scount
@@ -8439,15 +8431,15 @@ class CanwitAustat(models.Model):
         # First do the saving
         response = super(CanwitAustat, self).save(force_insert, force_update, using, update_fields)
         # Perform the scount
-        self.do_scount(self.super)
+        self.do_scount(self.austat)
         # Return the proper response
         return response
 
     def get_label(self, do_incexpl=False, show_linktype=False):
         if show_linktype:
-            sBack = "{}: {}".format(self.get_linktype_display(), self.super.get_label(do_incexpl))
+            sBack = "{}: {}".format(self.get_linktype_display(), self.austat.get_label(do_incexpl))
         else:
-            sBack = self.super.get_label(do_incexpl)
+            sBack = self.austat.get_label(do_incexpl)
         return sBack
 
     def unique_list():
@@ -8464,7 +8456,7 @@ class AustatDist(models.Model):
     # [1] The canwit
     canwit = models.ForeignKey(Canwit, related_name="canwitsuperdist", on_delete=models.CASCADE)
     # [1] The equal gold sermon (=SSG)
-    super = models.ForeignKey(Austat, related_name="canwitsuperdist", on_delete=models.CASCADE)
+    austat = models.ForeignKey(Austat, related_name="canwitsuperdist", on_delete=models.CASCADE)
     # [1] Each sermon-to-equal keeps track of a distance
     distance = models.FloatField("Distance", default=100.0)
 
@@ -8554,7 +8546,7 @@ class BasketSuper(models.Model):
     """The basket is the user's vault of search results (of super sermon gold items)"""
     
     # [1] The SSG / Authority file / Authoritative statement
-    super = models.ForeignKey(Austat, related_name="basket_contents_super", on_delete=models.CASCADE)
+    austat = models.ForeignKey(Austat, related_name="basket_contents_super", on_delete=models.CASCADE)
     # [1] The user
     profile = models.ForeignKey(Profile, related_name="basket_contents_super", on_delete=models.CASCADE)
 
@@ -8774,7 +8766,7 @@ class CollectionSuper(models.Model):
 
     # [1] The gold sermon to which the coll
     # ection item refers
-    super = models.ForeignKey(Austat, related_name = "super_col", on_delete=models.CASCADE)
+    austat = models.ForeignKey(Austat, related_name = "super_col", on_delete=models.CASCADE)
     # [1] The collection to which the context item refers to
     collection = models.ForeignKey(Collection, related_name= "super_col", on_delete=models.CASCADE)
     # [0-1] The order number for this S within the collection
@@ -8900,7 +8892,7 @@ class CollOverlap(models.Model):
             ptc = 0
         else:
             # Get the id's of the SSGs in the manuscript: Manu >> MsItem >> Canwit >> SSG
-            ssg_manu = Austat.objects.filter(canwit_super__sermon__msitem__manu=manuscript).values('id')
+            ssg_manu = Austat.objects.filter(canwit_austat__canwit__msitem__manu=manuscript).values('id')
             # Now calculate the overlap
             count = 0
             for item in ssg_coll:

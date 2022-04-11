@@ -222,7 +222,7 @@ class CollectionSermoWidget(CollectionWidget):
 
 class CollectionSuperWidget(CollectionWidget):
     """Like Collection, but then for: Austat = super sermon gold"""
-    type = "super"
+    type = "austat"
 
 
 class CollOneWidget(ModelSelect2Widget):
@@ -262,13 +262,13 @@ class CollOneSermoWidget(CollOneWidget):
 
 class CollOneSuperWidget(CollOneWidget):
     """Like CollOne, but then for: Austat = super sermon gold"""
-    type = "super"
+    type = "austat"
     settype = "pd"
 
 
 class CollOneHistWidget(CollOneWidget):
     """Like CollOne, but then for: Austat = super sermon gold"""
-    type = "super"
+    type = "austat"
     settype = "hc"
 
 
@@ -907,8 +907,8 @@ class CanwitSuperWidget(ModelSelect2MultipleWidget):
     model = CanwitAustat
     add_only = False
     search_fields = ['sermon__siglist__icontains',      'sermon__author__name__icontains', 
-                     'super__author__name__icontains', 'super__code__icontains',
-                     'super__srchftext__icontains',  'super__srchftrans__icontains' ]
+                     'austat__author__name__icontains', 'austat__code__icontains',
+                     'austat__srchftext__icontains',  'austat__srchftrans__icontains' ]
 
     def label_from_instance(self, obj):
         # Determine the full text
@@ -965,26 +965,29 @@ class StypeWidget(ModelSelect2MultipleWidget):
 class SuperDistWidget(ModelSelect2Widget):
     model = AustatDist
     sermon = None
-    search_fields = ['super__code__icontains', 'super__id__icontains', 'super__author__name__icontains', 
-                     'super__srchftext__icontains', 'super__srchftrans__icontains'
+    search_fields = ['austat__code__icontains', 'austat__id__icontains', 'austat__author__name__icontains', 
+                     'austat__srchftext__icontains', 'austat__srchftrans__icontains'
                      ]
 
     def label_from_instance(self, obj):
-        sLabel = obj.super.get_label(do_incexpl = True)
+        sLabel = obj.austat.get_label(do_incexpl = True)
         return sLabel
 
     def get_queryset(self):
         qs = None
         if self.sermon == None:
-            qs = AustatDist.objects.filter(super__moved__isnull=True).order_by('distance', 'super__code', 'super__author__name', 'id').distinct()
+            qs = AustatDist.objects.filter(austat__moved__isnull=True).order_by(
+                'distance', 'austat__code', 'austat__author__name', 'id').distinct()
         else:
             # Check and possibly re-calculate the set of SSG candidates
             self.sermon.do_distance()
             if self.sermon.canwitsuperdist.count() == 0:
-                qs = AustatDist.objects.filter(super__moved__isnull=True).order_by('distance', 'super__code', 'super__author__name', 'id').distinct()
+                qs = AustatDist.objects.filter(austat__moved__isnull=True).order_by(
+                    'distance', 'austat__code', 'austat__author__name', 'id').distinct()
             else:
                 # Get the ordered set of SSG candidates
-                qs = self.sermon.canwitsuperdist.all().order_by('distance', 'super__code', 'super__author__name')
+                qs = self.sermon.canwitsuperdist.all().order_by(
+                    'distance', 'austat__code', 'austat__author__name')
         return qs
 
 
@@ -1244,10 +1247,10 @@ class SearchManuForm(lilaModelForm):
                         'data-placeholder': 'Select a dataset...', 'style': 'width: 100%;', 'class': 'searching'})
 
             # Note: the collection filters must use the SCOPE of the collection
-            self.fields['collist_hist'].queryset = Collection.get_scoped_queryset('super', username, team_group, settype="hc")
+            self.fields['collist_hist'].queryset = Collection.get_scoped_queryset('austat', username, team_group, settype="hc")
             self.fields['collist_m'].queryset = Collection.get_scoped_queryset('manu', username, team_group)
             self.fields['collist_s'].queryset = Collection.get_scoped_queryset('sermo', username, team_group)
-            self.fields['collist_ssg'].queryset = Collection.get_scoped_queryset('super', username, team_group)
+            self.fields['collist_ssg'].queryset = Collection.get_scoped_queryset('austat', username, team_group)
 
             # The CollOne information is needed for the basket (add basket to collection)
             prefix = "manu"
@@ -1528,8 +1531,8 @@ class CanwitForm(lilaModelForm):
             # Note: the collection filters must use the SCOPE of the collection
             self.fields['collist_m'].queryset = Collection.get_scoped_queryset('manu', username, team_group)
             self.fields['collist_s'].queryset = Collection.get_scoped_queryset('sermo', username, team_group)
-            self.fields['collist_ssg'].queryset = Collection.get_scoped_queryset('super', username, team_group, settype='pd') 
-            self.fields['collist_hist'].queryset = Collection.get_scoped_queryset('super', username, team_group, settype='hc')
+            self.fields['collist_ssg'].queryset = Collection.get_scoped_queryset('austat', username, team_group, settype='pd') 
+            self.fields['collist_hist'].queryset = Collection.get_scoped_queryset('austat', username, team_group, settype='hc')
 
             # The CollOne information is needed for the basket (add basket to collection)
             prefix = "sermo"
@@ -1558,7 +1561,7 @@ class CanwitForm(lilaModelForm):
                 # Determine the initial collections
                 self.fields['collist_m'].initial = [x.pk for x in instance.collections.filter(type='manu').order_by('name')]
                 self.fields['collist_s'].initial = [x.pk for x in instance.collections.filter(type='sermo').order_by('name')]
-                self.fields['collist_ssg'].initial = [x.pk for x in instance.collections.filter(type='super').order_by('name')]
+                self.fields['collist_ssg'].initial = [x.pk for x in instance.collections.filter(type='austat').order_by('name')]
 
                 # Note: what we *show* are the signatures that have actually been copied -- the SERMON signatures
                 # self.fields['siglist'].initial = [x.pk for x in instance.signatures.all().order_by('-editype', 'code')]
@@ -2109,7 +2112,7 @@ class CollectionForm(lilaModelForm):
 
         elif prefix == "hist":
             # Historical collections
-            type = "super"
+            type = "austat"
             settype = "hc"
             self.fields['collist'].queryset = Collection.objects.filter(type=type, settype=settype).order_by('name')
             self.fields['collone'].queryset = Collection.objects.filter(type=type, settype=settype).order_by('name')
@@ -2129,7 +2132,7 @@ class CollectionForm(lilaModelForm):
             # Note: the collection filters must use the SCOPE of the collection
             self.fields['collist_m'].queryset = Collection.get_scoped_queryset('manu', username, team_group)
             self.fields['collist_s'].queryset = Collection.get_scoped_queryset('sermo', username, team_group)
-            self.fields['collist_ssg'].queryset = Collection.get_scoped_queryset('super', username, team_group)
+            self.fields['collist_ssg'].queryset = Collection.get_scoped_queryset('austat', username, team_group)
             
 
             # Set the initial type - provided it fits
@@ -2230,7 +2233,7 @@ class CanwitSuperForm(forms.ModelForm):
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = CanwitAustat
-        fields = ['canwit', 'linktype', 'super' ]
+        fields = ['canwit', 'linktype', 'austat' ]
         widgets={'linktype':    forms.Select(attrs={'style': 'width: 100%;'})
                  }
 
@@ -2250,7 +2253,7 @@ class CanwitSuperForm(forms.ModelForm):
 
         # Set the keyword to optional for best processing
         self.fields['newlinktype'].required = False
-        self.fields['super'].required = False
+        self.fields['austat'].required = False
         self.fields['linktype'].required = False
         self.fields['newlinktype'].initial = "uns"
 
@@ -2259,10 +2262,10 @@ class CanwitSuperForm(forms.ModelForm):
             # NEW: Taking the canwit as starting point and ordering them according to distance
             canwit = Canwit.objects.filter(id=canwit_id).first()
             if canwit != None:
-                qs = canwit.canwitsuperdist.all().order_by('distance', 'super__code', 'super__author__name')
+                qs = canwit.canwitsuperdist.all().order_by('distance', 'austat__code', 'austat__author__name')
                 self.fields['newsuperdist'].widget.canwit = canwit
             else:
-                self.fields['newsuperdist'].queryset =  AustatDist.objects.filter(super__moved__isnull=True).order_by('distance', 'super__code', 'super__author__name', 'id').distinct()
+                self.fields['newsuperdist'].queryset =  AustatDist.objects.filter(austat__moved__isnull=True).order_by('distance', 'austat__code', 'austat__author__name', 'id').distinct()
         else:
             self.fields['newsuper'].required = False
             # Initialize queryset
@@ -2278,10 +2281,11 @@ class CanwitSuperForm(forms.ModelForm):
                 #       self.fields['dst'].initial = instance.dst
 
                 if method == "superdist":
-                    if instance.super_id != None:
-                        self.fields['newsuperdist'].queryset = self.fields['newsuperdist'].queryset.exclude(super__id=instance.super.id).order_by('distance', 'super__code', 'super__author__name', 'id')
+                    if instance.austat_id != None:
+                        self.fields['newsuperdist'].queryset = self.fields['newsuperdist'].queryset.exclude(austat__id=instance.austat.id).order_by(
+                            'distance', 'austat__code', 'austat__author__name', 'id')
                     else:
-                        self.fields['newsuperdist'].queryset = self.fields['newsuperdist'].queryset.order_by('distance', 'super__code', 'super__author__name', 'id')
+                        self.fields['newsuperdist'].queryset = self.fields['newsuperdist'].queryset.order_by('distance', 'austat__code', 'austat__author__name', 'id')
                 else:
                     # Make sure we exclude the instance from the queryset
                     self.fields['newsuper'].queryset = self.fields['newsuper'].queryset.exclude(id=instance.id).order_by('code', 'author__name', 'id')
@@ -2451,12 +2455,12 @@ class AustatForm(lilaModelForm):
             # Note: the collection filters must use the SCOPE of the collection
             self.fields['collist_m'].queryset = Collection.get_scoped_queryset('manu', username, team_group)
             self.fields['collist_s'].queryset = Collection.get_scoped_queryset('sermo', username, team_group)
-            self.fields['collist_ssg'].queryset = Collection.get_scoped_queryset('super', username, team_group)
-            self.fields['collist_hist'].queryset = Collection.get_scoped_queryset('super', username, team_group, settype="hc")
+            self.fields['collist_ssg'].queryset = Collection.get_scoped_queryset('austat', username, team_group)
+            self.fields['collist_hist'].queryset = Collection.get_scoped_queryset('austat', username, team_group, settype="hc")
             self.fields['superlist'].queryset = AustatLink.objects.none()
 
             # The CollOne information is needed for the basket (add basket to collection)
-            prefix = "super"
+            prefix = "austat"
             # self.fields['collone'].queryset = Collection.objects.filter(type=prefix).order_by('name')
             self.fields['collone'].queryset = Collection.get_scoped_queryset(prefix, username, team_group)
         
@@ -2525,8 +2529,8 @@ class AustatLinkForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         oErr = ErrHandle()
         try:
-            # Read the super_id
-            super_id = kwargs.pop("super_id", "")
+            # Read the austat_id
+            austat_id = kwargs.pop("austat_id", "")
             # Start by executing the standard handling
             super(AustatLinkForm, self).__init__(*args, **kwargs)
             # Initialize choices for linktype
@@ -2546,10 +2550,10 @@ class AustatLinkForm(forms.ModelForm):
             # For searching/listing
             self.fields['newlinktype'].initial = "prt"
 
-            if super_id != None and super_id != "":
-                self.fields['newsuper'].queryset = Austat.objects.filter(moved__isnull=True).exclude(id=super_id).order_by('code')
+            if austat_id != None and austat_id != "":
+                self.fields['newsuper'].queryset = Austat.objects.filter(moved__isnull=True).exclude(id=austat_id).order_by('code')
                 # Adapt the widget QS
-                self.fields['newsuper'].widget.exclude = super_id
+                self.fields['newsuper'].widget.exclude = austat_id
             else:
                 self.fields['newsuper'].queryset = Austat.objects.filter(moved__isnull=True).order_by('code')
             # self.fields['target_list'].queryset = Austat.objects.none()
@@ -2601,7 +2605,7 @@ class SuperSermonGoldCollectionForm(forms.ModelForm):
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = CollectionSuper
-        fields = ['super', 'collection']
+        fields = ['austat', 'collection']
 
     def __init__(self, *args, **kwargs):
         # Start by executing the standard handling

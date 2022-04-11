@@ -700,7 +700,7 @@ def get_short_edit(short):
 def get_pie_data():
     """Fetch data for a particular type of pie-chart for the home page
     
-    Current types: 'sermo', 'super', 'manu'
+    Current types: 'canwit', 'austat', 'manu'
     """
 
     oErr = ErrHandle()
@@ -1623,20 +1623,13 @@ class UserKeywordEdit(BasicDetails):
             manu = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(url, instance.sermo.manu.idno)
             # Combine
             sBack = "{} {} {}".format(sermo, manu, sig)
-        elif instance.type == "gold" and instance.gold: 
+        elif instance.type == "austat" and instance.austat: 
             # Get signatures
-            sig = instance.gold.get_signatures_markdown()
+            sig = instance.austat.get_goldsigfirst()
             # Get Gold URL
-            url = reverse('gold_details', kwargs = {'pk': instance.gold.id})
+            url = reverse('austat_details', kwargs = {'pk': instance.austat.id})
             # Combine
-            sBack = "<span class='badge signature ot'><a href='{}'>{}</a></span> {}".format(url, "gold", sig)
-        elif instance.type == "super" and instance.super: 
-            # Get signatures
-            sig = instance.super.get_goldsigfirst()
-            # Get Gold URL
-            url = reverse('austat_details', kwargs = {'pk': instance.super.id})
-            # Combine
-            sBack = "<span class='badge signature ot'><a href='{}'>{}</a></span> {}".format(url, "super", sig)
+            sBack = "<span class='badge signature ot'><a href='{}'>{}</a></span> {}".format(url, "austat", sig)
         return sBack
 
     def action_add(self, instance, details, actiontype):
@@ -1749,20 +1742,13 @@ class UserKeywordListView(BasicList):
             manu = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(url, manu_obj.idno)
             # Combine
             sBack = "{} {} {}".format(sermo, manu, sig)
-        elif instance.type == "gold" and instance.gold: 
+        elif instance.type == "austat" and instance.austat: 
             # Get signatures
-            sig = instance.gold.get_signatures_markdown()
+            sig = instance.austat.get_goldsigfirst()
             # Get Gold URL
-            url = reverse('gold_details', kwargs = {'pk': instance.gold.id})
+            url = reverse('austat_details', kwargs = {'pk': instance.austat.id})
             # Combine
-            sBack = "<span class='badge signature ot'><a href='{}'>{}</a></span> {}".format(url, "gold", sig)
-        elif instance.type == "super" and instance.super: 
-            # Get signatures
-            sig = instance.super.get_goldsigfirst()
-            # Get Gold URL
-            url = reverse('austat_details', kwargs = {'pk': instance.super.id})
-            # Combine
-            sBack = "<span class='badge signature ot'><a href='{}'>{}</a></span> {}".format(url, "super", sig)
+            sBack = "<span class='badge signature ot'><a href='{}'>{}</a></span> {}".format(url, "austat", sig)
         return sBack
 
     def add_to_context(self, context, initial):
@@ -2960,10 +2946,9 @@ class CommentSend(BasicPart):
     def add_to_context(self, context):
 
         url_names = {"manu": "manuscript_details", "sermo": "canwit_details",
-                     "gold": "sermongold_details", "super": "austat_details",
-                     "codi": "codico_details"}
+                     "austat": "austat_details",   "codi": "codico_details"}
         obj_names = {"manu": "Manuscript", "sermo": "Sermon",
-                     "gold": "Sermon Gold", "super": "Authoritative statement",
+                     "austat": "Authoritative statement",
                      "codi": "codicological unit"}
         def get_object(otype, objid):
             obj = None
@@ -2971,7 +2956,7 @@ class CommentSend(BasicPart):
                 obj = Manuscript.objects.filter(id=objid).first()
             elif otype == "sermo":
                 obj = Canwit.objects.filter(id=objid).first()
-            elif otype == "super":
+            elif otype == "austat":
                 obj = Austat.objects.filter(id=objid).first()
             elif otype == "codi":
                 obj = Codico.objects.filter(id=objid).first()
@@ -3061,11 +3046,7 @@ class CommentEdit(BasicDetails):
             obj = instance.comments_sermon.first()
             url = reverse("canwit_details", kwargs={'pk': obj.id})
             label = "sermo_{}".format(obj.id)
-        elif instance.otype == "gold":
-            obj = instance.comments_gold.first()
-            url = reverse("sermongold_details", kwargs={'pk': obj.id})
-            label = "gold_{}".format(obj.id)
-        elif instance.otype == "super":
+        elif instance.otype == "austat":
             obj = instance.comments_super.first()
             url = reverse("austat_details", kwargs={'pk': obj.id})
             label = "super_{}".format(obj.id)
@@ -3121,10 +3102,8 @@ class CommentListView(BasicList):
                         obj.otype = "manu"
                     elif obj.comments_sermon.count() > 0:
                         obj.otype = "sermo"
-                    elif obj.comments_gold.count() > 0:
-                        obj.otype = "gold"
                     elif obj.comments_super.count() > 0:
-                        obj.otype = "super"
+                        obj.otype = "austat"
                     elif obj.comments_codi.count() > 0:
                         obj.otype = "codi"
                     obj.save()
@@ -3161,14 +3140,7 @@ class CommentListView(BasicList):
                     else:
                         url = reverse("canwit_details", kwargs={'pk': obj.id})
                         label = "sermo_{}".format(obj.id)
-                elif instance.otype == "gold":
-                    obj = instance.comments_gold.first()
-                    if obj is None:
-                        iStop = 1
-                    else:
-                        url = reverse("sermongold_details", kwargs={'pk': obj.id})
-                        label = "gold_{}".format(obj.id)
-                elif instance.otype == "super":
+                elif instance.otype == "austat":
                     obj = instance.comments_super.first()
                     if obj is None:
                         iStop = 1

@@ -109,7 +109,7 @@ urlpatterns = [
     url(r'^dataset/public/list', CollectionListView.as_view(prefix="publ"), name='collpubl_list'),
     url(r'^collection/hist/list', CollectionListView.as_view(prefix="hist"), name='collhist_list'),
     url(r'^collection/any/list', CollectionListView.as_view(prefix="any"), name='collany_list'),
-    url(r'^collection/super/list', CollectionListView.as_view(prefix="super"), name='collsuper_list'),
+    url(r'^collection/austat/list', CollectionListView.as_view(prefix="austat"), name='collaustat_list'),
 
     url(r'^dataset/private/details(?:/(?P<pk>\d+))?/$', CollPrivDetails.as_view(), name='collpriv_details'),
     url(r'^dataset/public/details(?:/(?P<pk>\d+))?/$', CollPublDetails.as_view(), name='collpubl_details'),

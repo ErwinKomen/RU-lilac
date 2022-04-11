@@ -396,7 +396,7 @@ def get_asdist(request):
             lstQ.append(Q(id=sId))
             dist = AustatDist.objects.filter(Q(id=sId)).first()
             if dist != None:
-                ssg = Austat.objects.filter(Q(id=dist.super.id)).first()
+                ssg = Austat.objects.filter(Q(id=dist.austat.id)).first()
                 if ssg:
                     short = ssg.get_short()
                     co_json['name'] = short

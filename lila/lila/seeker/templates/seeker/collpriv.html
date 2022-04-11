@@ -23,9 +23,7 @@
                 <a class="btn btn-xs jumbo-3" style="color: white;" href="{% url 'manuscript_list' %}">Goto manuscripts</a>
               {% elif datasettype == "sermo" %}
                 <a class="btn btn-xs jumbo-3" style="color: white;" href="{% url 'canwit_list' %}">Goto sermons</a>
-              {% elif datasettype == "gold" %}
-                <a class="btn btn-xs jumbo-3" style="color: white;" href="{% url 'gold_list' %}">Goto gold sermons</a>
-              {% elif datasettype == "super" %}
+              {% elif datasettype == "austat" %}
                 <a class="btn btn-xs jumbo-3" style="color: white;" href="{% url 'austat_list' %}">Goto super sermons gold</a>
               {% else %}
                 <i>Sorry, something went wrong. I'm not able to determine what kind of items this dataset holds.</i>
