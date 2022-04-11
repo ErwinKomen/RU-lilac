@@ -4538,17 +4538,11 @@ class AustatListView(BasicList):
             html.append("{}".format(sCode))
         elif custom == "ftext":
             html.append("<span>{}</span>".format(instance.get_ftext_markdown()))
-        #elif custom == "sig":
-        #    # Get all the associated signatures
-        #    qs = Signature.objects.filter(gold__equal=instance).order_by('-editype', 'code')
-        #    for sig in qs:
-        #        editype = sig.editype
-        #        url = "{}?gold-siglist={}".format(reverse("gold_list"), sig.id)
-        #        short = sig.short()
-        #        html.append("<span class='badge signature {}' title='{}'><a class='nostyle' href='{}'>{}</a></span>".format(editype, short, url, short[:20]))
         elif custom == "keycode":
             sKeyCode = "-" if instance.keycode  == None else instance.keycode
-            html.append("{}".format(sKeyCode))
+            url = reverse("austat_details", kwargs={'pk': instance.id})
+            html.append("<span class='badge signature'><a class='nostyle' href='{}'>{}</a></span>".format(
+                url, sKeyCode))
         elif custom == "status":
             # Provide the status traffic light
             html.append(instance.get_stype_light())
@@ -4998,11 +4992,20 @@ class CollAnyEdit(BasicDetails):
         lHtml = []
         abbr = None
         button_list = [
-            {'label': 'Authoritative statements', 'id': 'basic_super_set', 'show': False},
-            {'label': 'codicological unites','id': 'basic_codi_set',  'show': True},
             ]
         oErr = ErrHandle()
         try:
+            # Button to show AuStat
+            count_austat = instance.collections_austat.count()
+            button_list.append(dict(label='Authoritative statements ({})'.format(count_austat),
+                                    id='basic_austat_set',
+                                    show=True))
+            # Button to show Codico
+            count_codico = instance.get_count_codico()
+            button_list.append(dict(label='Codicological units ({})'.format(count_codico),
+                                    id='basic_codi_set',
+                                    show=False))
+
             for oButton in button_list:
                 lHtml.append("<a role='button' class='btn btn-xs jumbo-1' data-toggle='collapse' data-target='#{}' >{}</a>".format(
                     oButton['id'], oButton['label']))
@@ -5459,16 +5462,13 @@ class CollPrivDetails(CollAnyEdit):
                     add_one_item(rel_item, self.get_field_value("austat", item, "author"), False, main=True)
 
                     # SSG: lila code
-                    add_one_item(rel_item, self.get_field_value("austat", item, "code"), False)
+                    add_one_item(rel_item, self.get_field_value("austat", item, "keycode"), False)
 
-                    # SSG: Gryson/Clavis = signature
-                    add_one_item(rel_item, self.get_field_value("austat", item, "sig"), False)
-
-                    # SSG: Inc/Expl
-                    add_one_item(rel_item, self.get_field_value("austat", item, "incexpl"), resizable)
+                    # SSG: Full text
+                    add_one_item(rel_item, self.get_field_value("austat", item, "ftext"), resizable)
 
                     # SSG: Size (number of SG in equality set)
-                    add_one_item(rel_item, self.get_field_value("austat", item, "size"), False)
+                    add_one_item(rel_item, self.get_field_value("austat", item, "scount"), False)
 
                     # Actions that can be performed on this item
                     add_one_item(rel_item, self.get_actions())
@@ -5480,9 +5480,8 @@ class CollPrivDetails(CollAnyEdit):
                 supers['columns'] = [
                     '{}<span title="Default order">Order<span>{}'.format(sort_start_int, sort_end),
                     '{}<span title="Author">Author</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="lila code">lila</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="Gryson or Clavis codes of sermons gold in this set">Gryson/Clavis</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="Incipit and explicit">inc...expl</span>{}'.format(sort_start, sort_end), 
+                    '{}<span title="Key code">lila</span>{}'.format(sort_start, sort_end), 
+                    '{}<span title="Full text">ftext</span>{}'.format(sort_start, sort_end), 
                     '{}<span title="Number of Sermons Gold part of this set">Size</span>{}'.format(sort_start_int, sort_end), 
                     ''
                     ]
@@ -5537,7 +5536,7 @@ class CollPrivDetails(CollAnyEdit):
                 sBack = "{}-{}".format(instance.yearstart, instance.yearfinish)
             elif custom == "sermons":
                 sBack = instance.get_canwit_count()
-        elif type == "sermo":
+        elif type == "canwit":
             sBack, sTitle = SermonListView.get_field_value(None, instance, custom)
         elif type == "austat":
             sBack, sTitle = AustatListView.get_field_value(None, instance, custom)
@@ -5655,13 +5654,13 @@ class CollHistDetails(CollHistEdit):
                 if resizable: supers['gridclass'] = "resizable dragdrop"
                 supers['savebuttons'] = True
                 supers['saveasbutton'] = True
-                supers['classes'] = 'collapse'
+                supers['classes'] = 'collapse in'
 
                 qs_sermo = instance.austat_col.all().order_by(
                         'order', 'austat__author__name', 'austat__srchftext', 'austat__srchftrans')
                 check_order(qs_sermo)
 
-                # Walk these collection sermons
+                # Walk these collection austats
                 for obj in qs_sermo:
                     rel_item = []
                     item = obj.austat
@@ -5672,17 +5671,14 @@ class CollHistDetails(CollHistEdit):
                     # SSG: Author
                     add_one_item(rel_item, self.get_field_value("austat", item, "author"), resizable)
 
-                    # SSG: lila code
-                    add_one_item(rel_item, self.get_field_value("austat", item, "code"), False)
-
-                    # SSG: Gryson/Clavis = signature
-                    add_one_item(rel_item, self.get_field_value("austat", item, "sig"), False)
+                    # SSG: key code
+                    add_one_item(rel_item, self.get_field_value("austat", item, "keycode"), False)
 
                     # SSG: Inc/Expl
-                    add_one_item(rel_item, self.get_field_value("austat", item, "incexpl"), False, main=True)
+                    add_one_item(rel_item, self.get_field_value("austat", item, "ftext"), False, main=True)
 
                     # SSG: Size (number of SG in equality set)
-                    add_one_item(rel_item, self.get_field_value("austat", item, "size"), False)
+                    add_one_item(rel_item, self.get_field_value("austat", item, "scount"), False)
 
                     # Actions that can be performed on this item
                     if bMayEdit:
@@ -5695,10 +5691,9 @@ class CollHistDetails(CollHistEdit):
                 supers['columns'] = [
                     '{}<span title="Default order">Order<span>{}'.format(sort_start_int, sort_end),
                     '{}<span title="Author">Author</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="lila code">lila</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="Gryson or Clavis codes of sermons gold in this set">Gryson/Clavis</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="Incipit and explicit">inc...expl</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="Number of Sermons Gold part of this set">Size</span>{}'.format(sort_start_int, sort_end), 
+                    '{}<span title="Key code">Key</span>{}'.format(sort_start, sort_end), 
+                    '{}<span title="Full text">ftext</span>{}'.format(sort_start, sort_end), 
+                    '{}<span title="Number of Canon witnesses part of this set">Size</span>{}'.format(sort_start_int, sort_end), 
                     ''
                     ]
                 related_objects.append(supers)
@@ -5709,7 +5704,7 @@ class CollHistDetails(CollHistEdit):
                     codicos = dict(title=sTitle, prefix="codi")
                     if resizable:
                         codicos['gridclass'] = "resizable"
-                    codicos['classes'] = 'collapse in'
+                    codicos['classes'] = 'collapse'
 
                     # Get the codicos linked to these SSGs (in this historical collection)
                     lstQ = []
@@ -6069,7 +6064,7 @@ class CollHistDetails(CollHistEdit):
         elif type == "codicos":
             lCombi = []
             if custom == "origprov":
-                sBack = "origin: {} (provenance[s]: {})".format(instance.get_origin(), instance.get_provenance_markdown(table=False))
+                sBack = "origin[s]: {} (provenance[s]: {})".format(instance.get_origins(), instance.get_provenance_markdown(table=False))
             elif custom == "daterange":
                 sBack = "{}-{}".format(instance.yearstart, instance.yearfinish)
             elif custom == "manuscript":

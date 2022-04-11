@@ -4713,14 +4713,38 @@ class Codico(models.Model):
             sBack = markdown(self.notes, extensions=['nl2br'])
         return sBack
 
-    def get_origin(self):
+    #def get_origin(self):
+    #    sBack = "-"
+    #    if self.origin:
+    #        # Just take the bare name of the origin
+    #        sBack = self.origin.name
+    #        if self.origin.location:
+    #            # Add the actual location if it is known
+    #            sBack = "{}: {}".format(sBack, self.origin.location.get_loc_name())
+    #    return sBack
+
+    def get_origins(self, plain=False):
+        """One codico can have a number of origins(s)"""
+
+        oErr = ErrHandle()
         sBack = "-"
-        if self.origin:
-            # Just take the bare name of the origin
-            sBack = self.origin.name
-            if self.origin.location:
-                # Add the actual location if it is known
-                sBack = "{}: {}".format(sBack, self.origin.location.get_loc_name())
+        try:
+            lhtml = []
+
+            for origin in self.origins.all():
+                sOrg = origin.name
+                if not origin.location is None:
+                    sOrg = "{}: {}".format(sOrg, origin.location.get_loc_name())
+                if plain:
+                    lhtml.append(sOrg)
+                else:
+                    url = reverse("origin_details", kwargs={'pk': origin.id})
+                    lhtml.append("<span class='badge signature gr'><a href='{}'>{}</a></span>".format(url, sOrg))
+
+            sBack = ", ".join(lhtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_origins")
         return sBack
 
     def get_origin_markdown(self, plain=False, table=True):
@@ -5319,7 +5343,7 @@ class Austat(models.Model):
     # [1] The number of associated Historical Collections
     hccount = models.IntegerField("Historical Collection count", default=0)
     # [1] The number of Canwit linked to me
-    scount = models.IntegerField("Sermon set size", default=0)
+    scount = models.IntegerField("Canwit set size", default=0)
     # [1] The number of Austat linked to me (i.e. relations.count)
     ssgcount = models.IntegerField("AuStat set size", default=0)
 
@@ -6092,6 +6116,21 @@ class Collection(models.Model):
             msg = oErr.get_error_message()
             oErr.DoError("Collection/get_copy")
         return new_copy
+
+    def get_count_codico(self):
+        """Get the number of codicological units attached to me"""
+
+        oErr = ErrHandle()
+        iBack = 0
+        try:
+            lstQ = []
+            lstQ.append(Q(codicoitems__itemsermons__austats__collections=self))
+            lstQ.append(Q(manuscript__mtype="man"))
+            iBack = Codico.objects.filter(*lstQ).count()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Collection/get_count_codico")
+        return iBack
 
     def get_elevate(self):
         html = []
@@ -8290,8 +8329,8 @@ class AustatCorpusItem(models.Model):
     equal = models.ForeignKey(Austat, related_name="ssgcorpusequals", on_delete=models.CASCADE)
     # [1] WOrds in this SSG's ftext and ftrans - stringified JSON
     words = models.TextField("Words", default = "{}")
-    # [1] Number of sermons - the scount
-    scount = models.IntegerField("Sermon count", default = 0)
+    # [1] Number of canwit - the scount
+    scount = models.IntegerField("Canwit count", default = 0)
     # [1] Name of the author
     authorname = models.TextField("Author's name", default = "empty")
     # [1] Link to the corpus itself
@@ -8394,14 +8433,14 @@ class CanwitAustat(models.Model):
         combi = "canwit {} {} {}".format(self.canwit.id, self.get_linktype_display(), self.austat.__str__())
         return combi
     
-    def do_scount(self, super):
+    def do_scount(self, austat):
         # Now calculate the adapted scount for the SSG
-        scount = super.austat_canwits.count()
+        scount = austat.austat_canwits.count()
         # Check if adaptation is needed
-        if scount != super.scount:
+        if scount != austat.scount:
             # Adapt the scount in the SSG
-            super.scount = scount
-            super.save()
+            austat.scount = scount
+            austat.save()
         return None
 
     def delete(self, using = None, keep_parents = False):
