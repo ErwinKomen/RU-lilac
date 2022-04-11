@@ -5595,7 +5595,7 @@ class Austat(models.Model):
     def get_keywords_user_markdown(self, profile):
         lHtml = []
         # Visit all keywords
-        for kwlink in self.super_userkeywords.filter(profile=profile).order_by('keyword__name'):
+        for kwlink in self.austat_userkeywords.filter(profile=profile).order_by('keyword__name'):
             keyword = kwlink.keyword
             # Determine where clicking should lead to
             url = "{}?as-ukwlist={}".format(reverse('austat_list'), keyword.id)
@@ -6008,7 +6008,7 @@ class Collection(models.Model):
         oErr = ErrHandle()
         # Double check the number of authors, if this is settype HC
         if self.settype == "hc":
-            ssg_id = self.super_col.all().values('austat__id')
+            ssg_id = self.austat_col.all().values('austat__id')
             authornum = Author.objects.filter(Q(author_austats__id__in=ssg_id)).order_by('id').distinct().count()
             self.ssgauthornum = authornum
         # Adapt the save date
@@ -6045,7 +6045,7 @@ class Collection(models.Model):
     def get_authors_markdown(self):
         html = []
         if self.settype == "hc":
-            ssg_id = self.super_col.all().values('austat__id')
+            ssg_id = self.austat_col.all().values('austat__id')
             for author in Author.objects.filter(Q(author_austats__id__in=ssg_id)).order_by('name').distinct():
                 dots = "" if len(author.name) < 20 else "..."
                 html.append("<span class='authorname' title='{}'>{}{}</span>".format(author.name, author.name[:20], dots))
@@ -7133,7 +7133,7 @@ class Canwit(models.Model):
         lHtml = []
         lstQ = []
         # Get all the SSG to which I link
-        lstQ.append(Q(super_col__austat__in=self.austats.all()))
+        lstQ.append(Q(austat_col__austat__in=self.austats.all()))
         lstQ.append(Q(settype=settype))
         # Make sure we restrict ourselves to the *public* datasets
         lstQ.append(Q(scope="publ"))
@@ -7414,7 +7414,7 @@ class Canwit(models.Model):
 
         lHtml = []
         # Get all the SSGs to which I link with equality
-        # ssg_id = Austat.objects.filter(canwit_austat__canwit=self, canwit_super__linktype=LINK_EQUAL).values("id")
+        # ssg_id = Austat.objects.filter(canwit_austat__canwit=self, canwit_austat__linktype=LINK_EQUAL).values("id")
         ssg_id = self.austats.all().values("id")
         # Get all keywords attached to these SGs
         qs = Keyword.objects.filter(equal_kw__equal__id__in=ssg_id).order_by("name").distinct()
@@ -7433,7 +7433,7 @@ class Canwit(models.Model):
 
         lHtml = []
         # Get all the SSGs to which I link with equality
-        # ssg_id = Austat.objects.filter(canwit_austat__canwit=self, canwit_super__linktype=LINK_EQUAL).values("id")
+        # ssg_id = Austat.objects.filter(canwit_austat__canwit=self, canwit_austat__linktype=LINK_EQUAL).values("id")
         ssg_id = self.austats.all().values("id")
         # Get all keywords attached to these SGs
         qs = Keyword.objects.filter(equal_kw__equal__id__in=ssg_id).order_by("name").distinct()
@@ -8319,7 +8319,7 @@ class UserKeyword(models.Model):
     # [0-1] The link is with a Canwit instance ...
     canwit = models.ForeignKey(Canwit, blank=True, null=True, related_name="canwit_userkeywords", on_delete=models.SET_NULL)
     # [0-1] The link is with a Austat instance ...
-    austat = models.ForeignKey(Austat, blank=True, null=True, related_name="super_userkeywords", on_delete=models.SET_NULL)
+    austat = models.ForeignKey(Austat, blank=True, null=True, related_name="austat_userkeywords", on_delete=models.SET_NULL)
 
     def __str__(self):
         sBack = self.keyword.name
@@ -8766,9 +8766,9 @@ class CollectionSuper(models.Model):
 
     # [1] The gold sermon to which the coll
     # ection item refers
-    austat = models.ForeignKey(Austat, related_name = "super_col", on_delete=models.CASCADE)
+    austat = models.ForeignKey(Austat, related_name = "austat_col", on_delete=models.CASCADE)
     # [1] The collection to which the context item refers to
-    collection = models.ForeignKey(Collection, related_name= "super_col", on_delete=models.CASCADE)
+    collection = models.ForeignKey(Collection, related_name= "austat_col", on_delete=models.CASCADE)
     # [0-1] The order number for this S within the collection
     order = models.IntegerField("Order", default = -1)
 

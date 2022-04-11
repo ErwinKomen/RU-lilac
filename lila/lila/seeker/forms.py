@@ -2482,7 +2482,7 @@ class AustatForm(lilaModelForm):
                 self.fields['superlist'].queryset = AustatLink.objects.filter(id__in=self.fields['superlist'].initial)
                 self.fields['genrelist'].initial = [x.pk for x in instance.genres.all().order_by('name')]
                 self.fields['kwlist'].initial = [x.pk for x in instance.keywords.all().order_by('name')]
-                self.fields['ukwlist'].initial = [x.keyword.pk for x in instance.super_userkeywords.filter(profile=profile).order_by('keyword__name')]
+                self.fields['ukwlist'].initial = [x.keyword.pk for x in instance.austat_userkeywords.filter(profile=profile).order_by('keyword__name')]
                 self.fields['projlist'].initial = [x.pk for x in instance.projects.all().order_by('name')] #
 
                 qs = instance.austat_dst.all()

@@ -1175,7 +1175,7 @@ class ManuscriptListView(BasicList):
             {'filter': 'project',       'fkfield': 'projects',               'keyFk': 'name', 'keyList': 'projlist', 'infield': 'name'},
             {'filter': 'daterange',     'dbfield': 'manuscriptcodicounits__codico_dateranges__yearstart__gte',         'keyS': 'date_from'},
             {'filter': 'daterange',     'dbfield': 'manuscriptcodicounits__codico_dateranges__yearfinish__lte',        'keyS': 'date_until'},
-            {'filter': 'code',          'fkfield': 'manuitems__itemsermons__canwit_super__austat',    'help': 'lilacode',
+            {'filter': 'code',          'fkfield': 'manuitems__itemsermons__canwit_austat__austat',    'help': 'lilacode',
              'keyS': 'lilacode', 'keyFk': 'code', 'keyList': 'lilalist', 'infield': 'id'},
             {'filter': 'manutype',      'dbfield': 'mtype',                  'keyS': 'manutype', 'keyType': 'fieldchoice', 'infield': 'abbr'},
             {'filter': 'stype',         'dbfield': 'stype',                  'keyList': 'stypelist', 'keyType': 'fieldchoice', 'infield': 'abbr'}
@@ -1215,7 +1215,7 @@ class ManuscriptListView(BasicList):
         {'section': 'other', 'filterlist': [
             #{'filter': 'other_project',   'fkfield': 'project',  'keyS': 'project', 'keyFk': 'id', 'keyList': 'prjlist', 'infield': 'name' },
             {'filter': 'source',    'fkfield': 'source',   'keyS': 'source',  'keyFk': 'id', 'keyList': 'srclist', 'infield': 'id' },
-            {'filter': 'atype',     'dbfield': 'manuitems__itemsermons__canwit_super__austat__atype',    'keyS': 'atype'},
+            {'filter': 'atype',     'dbfield': 'manuitems__itemsermons__canwit_austat__austat__atype',    'keyS': 'atype'},
             {'filter': 'mtype', 'dbfield': 'mtype', 'keyS': 'mtype'}
             ]}
          ]
@@ -3402,7 +3402,7 @@ class CanwitListView(BasicList):
             {'filter': 'freetext',      'dbfield': '$dummy',            'keyS': 'free_term'},
             {'filter': 'freetext',      'dbfield': '$dummy',            'keyS': 'free_include'},
             {'filter': 'freetext',      'dbfield': '$dummy',            'keyS': 'free_exclude'},
-            {'filter': 'code',          'fkfield': 'canwit_super__super', 'keyS': 'lilacode', 'keyFk': 'code', 'keyList': 'lilalist', 'infield': 'id'},
+            {'filter': 'code',          'fkfield': 'canwit_austat__super', 'keyS': 'lilacode', 'keyFk': 'code', 'keyList': 'lilalist', 'infield': 'id'},
             {'filter': 'author',        'fkfield': 'author',            'keyS': 'authorname',
                                         'keyFk': 'name', 'keyList': 'authorlist', 'infield': 'id', 'external': 'sermo-authorname' },
             {'filter': 'atype',                                         'keyS': 'authortype',  'help': 'authorhelp'},
@@ -3439,7 +3439,7 @@ class CanwitListView(BasicList):
             {'filter': 'mtype',     'dbfield': 'mtype',    'keyS': 'mtype'},
             {'filter': 'sigauto',   'fkfield': 'austats__equal_goldsermons__goldsignatures', 'keyList':  'siglist_a', 'infield': 'id'},
             {'filter': 'sigmanu',   'fkfield': 'canwitsignatures',                              'keyList':  'siglist_m', 'infield': 'id'},
-            {'filter': 'atype',     'dbfield': 'canwit_super__austat__atype',    'keyS': 'atype'}
+            {'filter': 'atype',     'dbfield': 'canwit_austat__austat__atype',    'keyS': 'atype'}
             #{'filter': 'appr_type', 'fkfield': 'austats__', 'keyList':' ', 'infield': }
             ]}
          ]
@@ -5447,7 +5447,7 @@ class CollPrivDetails(CollAnyEdit):
                 supers['savebuttons'] = True
                 supers['saveasbutton'] = True
 
-                qs_sermo = instance.super_col.all().order_by(
+                qs_sermo = instance.austat_col.all().order_by(
                         'order', 'austat__author__name', 'austat__srchftext', 'austat__srchftrans')
                 check_order(qs_sermo)
 
@@ -5661,7 +5661,7 @@ class CollHistDetails(CollHistEdit):
                 supers['saveasbutton'] = True
                 supers['classes'] = 'collapse'
 
-                qs_sermo = instance.super_col.all().order_by(
+                qs_sermo = instance.austat_col.all().order_by(
                         'order', 'austat__author__name', 'austat__srchftext', 'austat__srchftrans')
                 check_order(qs_sermo)
 
@@ -5826,7 +5826,7 @@ class CollHistDetails(CollHistEdit):
                 for item in qs_s:
                     rel_item = []
                     # Determine the matching SSG from the Historical Collection
-                    equal = Austat.objects.filter(canwit_super__austat__in=qs_ssg, canwit_austat__canwit__id=item.id).first()
+                    equal = Austat.objects.filter(canwit_austat__austat__in=qs_ssg, canwit_austat__canwit__id=item.id).first()
                     # List of SSGs that have been dealt with already
                     if equal != None: equal_list.append(equal.id)
 
@@ -5928,7 +5928,7 @@ class CollHistDetails(CollHistEdit):
                 for item in qs_s:
                     rel_item = []
                     # Determine the matching SSG from the Historical Collection
-                    equal = Austat.objects.filter(canwit_super__austat__in=qs_ssg, canwit_austat__canwit__id=item.id).first()
+                    equal = Austat.objects.filter(canwit_austat__austat__in=qs_ssg, canwit_austat__canwit__id=item.id).first()
                     # List of SSGs that have been dealt with already
                     if equal != None: equal_list.append(equal.id)
 
@@ -6347,50 +6347,50 @@ class CollectionListView(BasicList):
                     ]},
                 # Section SSG
                 {'section': 'austat', 'filterlist': [
-                    {'filter': 'ssgauthor',    'fkfield': 'super_col__austat__author',            
+                    {'filter': 'ssgauthor',    'fkfield': 'austat_col__austat__author',            
                      'keyS': 'ssgauthorname', 'keyFk': 'name', 'keyList': 'ssgauthorlist', 'infield': 'id', 'external': 'gold-authorname' },
-                    {'filter': 'ssgincipit',   'dbfield': 'super_col__austat__srchftext',   'keyS': 'ssgincipit'},
-                    {'filter': 'ssgexplicit',  'dbfield': 'super_col__austat__srchftrans',  'keyS': 'ssgexplicit'},
-                    {'filter': 'ssgcode',      'fkfield': 'super_col__austat', 'keyFk': 'code',           
+                    {'filter': 'ssgincipit',   'dbfield': 'austat_col__austat__srchftext',   'keyS': 'ssgincipit'},
+                    {'filter': 'ssgexplicit',  'dbfield': 'austat_col__austat__srchftrans',  'keyS': 'ssgexplicit'},
+                    {'filter': 'ssgcode',      'fkfield': 'austat_col__austat', 'keyFk': 'code',           
                      'keyS': 'ssgcode', 'keyList': 'ssglilalist', 'infield': 'id'},
-                    {'filter': 'ssgnumber',    'dbfield': 'super_col__austat__number',       'keyS': 'ssgnumber'},
-                    {'filter': 'ssgkeyword',   'fkfield': 'super_col__austat__keywords',          
+                    {'filter': 'ssgnumber',    'dbfield': 'austat_col__austat__number',       'keyS': 'ssgnumber'},
+                    {'filter': 'ssgkeyword',   'fkfield': 'austat_col__austat__keywords',          
                      'keyFk': 'name', 'keyList': 'ssgkwlist', 'infield': 'id'},
-                    {'filter': 'ssgstype',     'dbfield': 'super_col__austat__stype',             
+                    {'filter': 'ssgstype',     'dbfield': 'austat_col__austat__stype',             
                      'keyList': 'ssgstypelist', 'keyType': 'fieldchoice', 'infield': 'abbr' },
                     ]},
                 # Section S
                 {'section': 'sermo', 'filterlist': [
-                    {'filter': 'sermoincipit',       'dbfield': 'super_col__austat__austat_sermons__srchftext',   'keyS': 'sermoincipit'},
-                    {'filter': 'sermoexplicit',      'dbfield': 'super_col__austat__austat_sermons__srchftrans',  'keyS': 'sermoexplicit'},
-                    {'filter': 'sermotitle',         'dbfield': 'super_col__austat__austat_sermons__title',         'keyS': 'sermotitle'},
-                    {'filter': 'sermofeast',         'dbfield': 'super_col__austat__austat_sermons__feast',         'keyS': 'sermofeast'},
+                    {'filter': 'sermoincipit',       'dbfield': 'austat_col__austat__austat_sermons__srchftext',   'keyS': 'sermoincipit'},
+                    {'filter': 'sermoexplicit',      'dbfield': 'austat_col__austat__austat_sermons__srchftrans',  'keyS': 'sermoexplicit'},
+                    {'filter': 'sermotitle',         'dbfield': 'austat_col__austat__austat_sermons__title',         'keyS': 'sermotitle'},
+                    {'filter': 'sermofeast',         'dbfield': 'austat_col__austat__austat_sermons__feast',         'keyS': 'sermofeast'},
                     {'filter': 'bibref',             'dbfield': '$dummy',                                             'keyS': 'bibrefbk'},
                     {'filter': 'bibref',             'dbfield': '$dummy',                                             'keyS': 'bibrefchvs'},
-                    {'filter': 'sermonote',          'dbfield': 'super_col__austat__austat_sermons__additional',    'keyS': 'sermonote'},
-                    {'filter': 'sermoauthor',        'fkfield': 'super_col__austat__austat_sermons__author',            
+                    {'filter': 'sermonote',          'dbfield': 'austat_col__austat__austat_sermons__additional',    'keyS': 'sermonote'},
+                    {'filter': 'sermoauthor',        'fkfield': 'austat_col__austat__austat_sermons__author',            
                      'keyS': 'sermoauthorname', 'keyFk': 'name', 'keyList': 'sermoauthorlist', 'infield': 'id', 'external': 'sermo-authorname' },
-                    {'filter': 'sermokeyword',       'fkfield': 'super_col__austat__austat_sermons__keywords',          
+                    {'filter': 'sermokeyword',       'fkfield': 'austat_col__austat__austat_sermons__keywords',          
                      'keyFk': 'name', 'keyList': 'sermokwlist', 'infield': 'id' }, 
-                    {'filter': 'sermostype',         'dbfield': 'super_col__austat__austat_sermons__stype',             
+                    {'filter': 'sermostype',         'dbfield': 'austat_col__austat__austat_sermons__stype',             
                      'keyList': 'sermostypelist', 'keyType': 'fieldchoice', 'infield': 'abbr' }                    ]},
                 # Section M
                 {'section': 'manu', 'filterlist': [
-                    {'filter': 'manuid',        'fkfield': 'super_col__austat__austat_sermons__msitem__manu',                   
+                    {'filter': 'manuid',        'fkfield': 'austat_col__austat__austat_sermons__msitem__manu',                   
                      'keyS': 'manuidno',    'keyFk': "idno", 'keyList': 'manuidlist', 'infield': 'id'},
-                    {'filter': 'manulibrary',       'fkfield': 'super_col__austat__austat_sermons__msitem__manu__library',                
+                    {'filter': 'manulibrary',       'fkfield': 'austat_col__austat__austat_sermons__msitem__manu__library',                
                      'keyS': 'libname_ta',    'keyId': 'library',     'keyFk': "name"},
-                    {'filter': 'manukeyword',       'fkfield': 'super_col__austat__austat_sermons__msitem__manu__keywords',               
+                    {'filter': 'manukeyword',       'fkfield': 'austat_col__austat__austat_sermons__msitem__manu__keywords',               
                      'keyFk': 'name', 'keyList': 'manukwlist', 'infield': 'name' },
-                    {'filter': 'manustype',         'dbfield': 'super_col__austat__austat_sermons__msitem__manu__stype',                  
+                    {'filter': 'manustype',         'dbfield': 'austat_col__austat__austat_sermons__msitem__manu__stype',                  
                      'keyList': 'manustypelist', 'keyType': 'fieldchoice', 'infield': 'abbr' },
-                    {'filter': 'manuprovenance',    'fkfield': 'super_col__austat__austat_sermons__msitem__codico__provenances__location',  
+                    {'filter': 'manuprovenance',    'fkfield': 'austat_col__austat__austat_sermons__msitem__codico__provenances__location',  
                      'keyS': 'prov_ta',       'keyId': 'prov',        'keyFk': "name"},
-                    {'filter': 'manuorigin',        'fkfield': 'super_col__austat__austat_sermons__msitem__codico__origin',                 
+                    {'filter': 'manuorigin',        'fkfield': 'austat_col__austat__austat_sermons__msitem__codico__origin',                 
                      'keyS': 'origin_ta',     'keyId': 'origin',      'keyFk': "name"},
-                    {'filter': 'manudaterange',     'dbfield': 'super_col__austat__austat_sermons__msitem__codico__codico_dateranges__yearstart__gte',         
+                    {'filter': 'manudaterange',     'dbfield': 'austat_col__austat__austat_sermons__msitem__codico__codico_dateranges__yearstart__gte',         
                      'keyS': 'date_from'},
-                    {'filter': 'manudaterange',     'dbfield': 'super_col__austat__austat_sermons__msitem__codico__codico_dateranges__yearfinish__lte',        
+                    {'filter': 'manudaterange',     'dbfield': 'austat_col__austat__austat_sermons__msitem__codico__codico_dateranges__yearfinish__lte',        
                      'keyS': 'date_until'},
                     ]},
                 # Section Other
@@ -6398,7 +6398,7 @@ class CollectionListView(BasicList):
                     {'filter': 'owner',     'fkfield': 'owner',  'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id' },
                     {'filter': 'coltype',   'dbfield': 'type',   'keyS': 'type',  'keyList': 'typelist' },
                     {'filter': 'settype',   'dbfield': 'settype','keyS': 'settype'},
-                    {'filter': 'atype',    'dbfield': 'super_col__austat__atype',    'keyS': 'atype'}, 
+                    {'filter': 'atype',    'dbfield': 'austat_col__austat__atype',    'keyS': 'atype'}, 
                     {'filter': 'scope',     'dbfield': 'scope',  'keyS': 'scope'}]}
                 ]
                 # ======== One-time adaptations ==============
@@ -6458,8 +6458,8 @@ class CollectionListView(BasicList):
 
                 # Find out which sermons have references in this range
                 lstQ = []
-                lstQ.append(Q(super_col__austat__austat_sermons__sermonbibranges__bibrangeverses__bkchvs__gte=start))
-                lstQ.append(Q(super_col__austat__austat_sermons__sermonbibranges__bibrangeverses__bkchvs__lte=einde))
+                lstQ.append(Q(austat_col__austat__austat_sermons__sermonbibranges__bibrangeverses__bkchvs__gte=start))
+                lstQ.append(Q(austat_col__austat__austat_sermons__sermonbibranges__bibrangeverses__bkchvs__lte=einde))
                 collectionlist = [x.id for x in Collection.objects.filter(*lstQ).order_by('id').distinct()]
 
                 fields['bibrefbk'] = Q(id__in=collectionlist)
