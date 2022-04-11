@@ -1134,7 +1134,7 @@ class Profile(models.Model):
     # [1] Stringified JSON lists for M/S/SG/SSG search results, to facilitate basket operations
     search_manu = models.TextField("Search results Manu", default = "[]")
     search_sermo = models.TextField("Search results Sermo", default = "[]")
-    search_super = models.TextField("Search results Super", default = "[]")
+    search_austat = models.TextField("Search results Super", default = "[]")
 
     # [0-1] Affiliation of this user with as many details as needed
     affiliation = models.TextField("Affiliation", blank=True, null=True)
@@ -6526,7 +6526,7 @@ class Canwit(models.Model):
     keywords = models.ManyToManyField(Keyword, through="CanwitKeyword", related_name="keywords_sermon")
 
     # [0-n] Link to one or more SSG (austat)
-    austats = models.ManyToManyField(Austat, through="CanwitAustat", related_name="austat_sermons")
+    austats = models.ManyToManyField(Austat, through="CanwitAustat", related_name="austat_canwits")
 
     # [m] Many-to-many: one sermon can be a part of a series of collections 
     collections = models.ManyToManyField("Collection", through="CollectionSerm", related_name="collections_sermon")
@@ -8399,7 +8399,7 @@ class CanwitAustat(models.Model):
     
     def do_scount(self, super):
         # Now calculate the adapted scount for the SSG
-        scount = super.austat_sermons.count()
+        scount = super.austat_canwits.count()
         # Check if adaptation is needed
         if scount != super.scount:
             # Adapt the scount in the SSG

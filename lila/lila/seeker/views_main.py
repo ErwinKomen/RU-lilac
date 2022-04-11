@@ -58,7 +58,7 @@ from lila.seeker.forms import SearchCollectionForm, SearchManuscriptForm, Search
     CodicoForm, CodicoProvForm, ProvenanceCodForm, OriginCodForm, CodicoOriginForm
 from lila.reader.views import reader_uploads
 # from lila.seeker.views import lila_action_add, lila_get_history, may_edit_project
-from lila.seeker.views import get_usercomments
+from lila.seeker.views import get_usercomments, search_generic
 from lila.seeker.views_utils import lila_action_add, lila_get_history
 from lila.seeker.adaptations import listview_adaptations
 
@@ -4188,8 +4188,8 @@ class AustatDetails(AustatEdit):
                 AustatCorpus.objects.filter(profile=profile, ssg=instance).delete()
 
                 # Old, extinct
-                ManuscriptCorpus.objects.filter(super=instance).delete()
-                ManuscriptCorpusLock.objects.filter(profile=profile, super=instance).delete()
+                ManuscriptCorpus.objects.filter(austat=instance).delete()
+                ManuscriptCorpusLock.objects.filter(profile=profile, austat=instance).delete()
 
                 # List of manuscripts related to the SSG via canwit descriptions
                 manuscripts = dict(title="Manuscripts", prefix="manu", gridclass="resizable")
@@ -4199,7 +4199,8 @@ class AustatDetails(AustatEdit):
 
                 # New: Get all the Canwit instances linked with equality to SSG:
                 # But make sure the EXCLUDE those with `mtype` = `tem`
-                qs_s = CanwitAustat.objects.filter(super=instance).exclude(canwit__mtype="tem").order_by('canwit__msitem__manu__idno', 'canwit__locus')
+                qs_s = CanwitAustat.objects.filter(austat=instance).exclude(canwit__mtype="tem").order_by(
+                    'canwit__msitem__manu__idno', 'canwit__locus')
                 rel_list =[]
                 for canwitlink in qs_s:
                     canwit = canwitlink.canwit
@@ -4233,7 +4234,7 @@ class AustatDetails(AustatEdit):
                     link_on_manu_page = "{}#canwit_{}".format(reverse('manuscript_details', kwargs={'pk': item.id}), canwit.id)
                     link_to_canwit = reverse('canwit_details', kwargs={'pk': canwit.id})
                     rel_item.append({'value': itemloc, 'align': "right", 'title': 'Jump to the canwit in the manuscript', 'initial': 'small',
-                                        'link': link_to_sermon })
+                                        'link': link_to_canwit })
 
                     # Folio number of the item
                     rel_item.append({'value': canwit.locus, 'initial': 'small'})
@@ -4357,7 +4358,7 @@ class AustatDetails(AustatEdit):
 
 
 class AustatListView(BasicList):
-    """List super sermon gold instances"""
+    """List austat instances"""
 
     model = Austat
     listform = AustatForm
@@ -4391,22 +4392,21 @@ class AustatListView(BasicList):
         ]
     filters = [
         {"name": "Author",          "id": "filter_author",            "enabled": False},
+        {"name": "Key code",        "id": "filter_keycode",           "enabled": False},
         {"name": "Full text",       "id": "filter_ftext",             "enabled": False},
         {"name": "Translation",     "id": "filter_ftrans",            "enabled": False},
-        {"name": "Lilac code",       "id": "filter_code",              "enabled": False},
+        # {"name": "Lilac code",       "id": "filter_code",              "enabled": False},
         {"name": "Number",          "id": "filter_number",            "enabled": False},
-        # {"name": "Gryson/Clavis",   "id": "filter_signature",         "enabled": False},
-        {"name": "Key code",        "id": "filter_keycode",           "enabled": False},
+        {"name": "Genre",           "id": "filter_genre",             "enabled": False},
         {"name": "Keyword",         "id": "filter_keyword",           "enabled": False},
         {"name": "Status",          "id": "filter_stype",             "enabled": False},
-        {"name": "Sermon count",    "id": "filter_scount",            "enabled": False},
+        {"name": "CanWit count",    "id": "filter_scount",            "enabled": False},
         {"name": "Relation count",  "id": "filter_ssgcount",          "enabled": False},
         {"name": "Project",         "id": "filter_project",           "enabled": False},        
         {"name": "Collection...",   "id": "filter_collection",        "enabled": False, "head_id": "none"},
         {"name": "Manuscript",      "id": "filter_collmanu",          "enabled": False, "head_id": "filter_collection"},
-        {"name": "Sermon",          "id": "filter_collsermo",         "enabled": False, "head_id": "filter_collection"},
-        #{"name": "Sermon Gold",     "id": "filter_collgold",          "enabled": False, "head_id": "filter_collection"},
-        {"name": "Authoritative statement",  "id": "filter_collsuper",         "enabled": False, "head_id": "filter_collection"},
+        {"name": "Canon witness",   "id": "filter_collcanwit",        "enabled": False, "head_id": "filter_collection"},
+        {"name": "Authoritative statement",  "id": "filter_collaustat",         "enabled": False, "head_id": "filter_collection"},
         {"name": "Historical",      "id": "filter_collhist",          "enabled": False, "head_id": "filter_collection"},
                ]
     searches = [
@@ -4418,27 +4418,26 @@ class AustatListView(BasicList):
             {'filter': 'keycode',   'dbfield': 'keycode',           'keyS': 'keycode',  
              'keyList': 'keycodelist', 'infield': 'id'},
             {'filter': 'number',    'dbfield': 'number',            'keyS': 'number',
-             'title': 'The per-author-sermon-number (these numbers are assigned automatically and have no significance)'},
+             'title': 'The per-author-canwit-number (these numbers are assigned automatically and have no significance)'},
             {'filter': 'scount',    'dbfield': 'soperator',         'keyS': 'soperator'},
             {'filter': 'scount',    'dbfield': 'scount',            'keyS': 'scount',
-             'title': 'The number of sermons (manifestations) belonging to this Authoritative statement'},
+             'title': 'The number of canon witnesses belonging to this Authoritative statement'},
             {'filter': 'ssgcount',  'dbfield': 'ssgoperator',       'keyS': 'ssgoperator'},
             {'filter': 'ssgcount',  'dbfield': 'ssgcount',          'keyS': 'ssgcount',
              'title': 'The number of links an Authoritative statement has to other Authoritative statements'},
+            {'filter': 'genre',     'fkfield': 'genres',            'keyFk': 'name', 'keyList': 'genrelist', 'infield': 'id'},
             {'filter': 'keyword',   'fkfield': 'keywords',          'keyFk': 'name', 'keyList': 'kwlist', 'infield': 'id'},
             {'filter': 'author',    'fkfield': 'author',            
              'keyS': 'authorname', 'keyFk': 'name', 'keyList': 'authorlist', 'infield': 'id', 'external': 'gold-authorname' },
             {'filter': 'stype',     'dbfield': 'stype',             'keyList': 'stypelist', 'keyType': 'fieldchoice', 'infield': 'abbr' },
-            {'filter': 'project',  'fkfield': 'projects',   'keyFk': 'name', 'keyList': 'projlist', 'infield': 'name'}            
+            {'filter': 'project',   'fkfield': 'projects',   'keyFk': 'name', 'keyList': 'projlist', 'infield': 'name'}            
             ]},
         {'section': 'collection', 'filterlist': [
             {'filter': 'collmanu',  'fkfield': 'equal_goldsermons__canwit__manu__collections',  
              'keyS': 'collection','keyFk': 'name', 'keyList': 'collist_m', 'infield': 'name' }, 
-            {'filter': 'collsermo', 'fkfield': 'austat_sermons__canwit_col__collection',        
+            {'filter': 'collcanwit', 'fkfield': 'austat_canwits__canwit_col__collection',        
              'keyS': 'collection','keyFk': 'name', 'keyList': 'collist_s', 'infield': 'name' }, 
-            #{'filter': 'collgold',  'fkfield': 'equal_goldsermons__collections',                     
-            # 'keyS': 'collection','keyFk': 'name', 'keyList': 'collist_sg', 'infield': 'name' }, 
-            {'filter': 'collsuper', 'fkfield': 'collections',                                        
+            {'filter': 'collaustat', 'fkfield': 'collections',                                        
              'keyS': 'collection','keyFk': 'name', 'keyList': 'collist_ssg', 'infield': 'name' }, 
             {'filter': 'collhist', 'fkfield': 'collections',                                        
              'keyS': 'collection','keyFk': 'name', 'keyList': 'collist_hist', 'infield': 'name' }
@@ -4596,7 +4595,7 @@ class AustatListView(BasicList):
     def view_queryset(self, qs):
         search_id = [x['id'] for x in qs.values('id')]
         profile = Profile.get_user_profile(self.request.user.username)
-        profile.search_super = json.dumps(search_id)
+        profile.search_austat = json.dumps(search_id)
         profile.save()
         return None
 
@@ -6361,36 +6360,36 @@ class CollectionListView(BasicList):
                     ]},
                 # Section S
                 {'section': 'sermo', 'filterlist': [
-                    {'filter': 'sermoincipit',       'dbfield': 'austat_col__austat__austat_sermons__srchftext',   'keyS': 'sermoincipit'},
-                    {'filter': 'sermoexplicit',      'dbfield': 'austat_col__austat__austat_sermons__srchftrans',  'keyS': 'sermoexplicit'},
-                    {'filter': 'sermotitle',         'dbfield': 'austat_col__austat__austat_sermons__title',         'keyS': 'sermotitle'},
-                    {'filter': 'sermofeast',         'dbfield': 'austat_col__austat__austat_sermons__feast',         'keyS': 'sermofeast'},
+                    {'filter': 'sermoincipit',       'dbfield': 'austat_col__austat__austat_canwits__srchftext',   'keyS': 'sermoincipit'},
+                    {'filter': 'sermoexplicit',      'dbfield': 'austat_col__austat__austat_canwits__srchftrans',  'keyS': 'sermoexplicit'},
+                    {'filter': 'sermotitle',         'dbfield': 'austat_col__austat__austat_canwits__title',         'keyS': 'sermotitle'},
+                    {'filter': 'sermofeast',         'dbfield': 'austat_col__austat__austat_canwits__feast',         'keyS': 'sermofeast'},
                     {'filter': 'bibref',             'dbfield': '$dummy',                                             'keyS': 'bibrefbk'},
                     {'filter': 'bibref',             'dbfield': '$dummy',                                             'keyS': 'bibrefchvs'},
-                    {'filter': 'sermonote',          'dbfield': 'austat_col__austat__austat_sermons__additional',    'keyS': 'sermonote'},
-                    {'filter': 'sermoauthor',        'fkfield': 'austat_col__austat__austat_sermons__author',            
+                    {'filter': 'sermonote',          'dbfield': 'austat_col__austat__austat_canwits__additional',    'keyS': 'sermonote'},
+                    {'filter': 'sermoauthor',        'fkfield': 'austat_col__austat__austat_canwits__author',            
                      'keyS': 'sermoauthorname', 'keyFk': 'name', 'keyList': 'sermoauthorlist', 'infield': 'id', 'external': 'sermo-authorname' },
-                    {'filter': 'sermokeyword',       'fkfield': 'austat_col__austat__austat_sermons__keywords',          
+                    {'filter': 'sermokeyword',       'fkfield': 'austat_col__austat__austat_canwits__keywords',          
                      'keyFk': 'name', 'keyList': 'sermokwlist', 'infield': 'id' }, 
-                    {'filter': 'sermostype',         'dbfield': 'austat_col__austat__austat_sermons__stype',             
+                    {'filter': 'sermostype',         'dbfield': 'austat_col__austat__austat_canwits__stype',             
                      'keyList': 'sermostypelist', 'keyType': 'fieldchoice', 'infield': 'abbr' }                    ]},
                 # Section M
                 {'section': 'manu', 'filterlist': [
-                    {'filter': 'manuid',        'fkfield': 'austat_col__austat__austat_sermons__msitem__manu',                   
+                    {'filter': 'manuid',        'fkfield': 'austat_col__austat__austat_canwits__msitem__manu',                   
                      'keyS': 'manuidno',    'keyFk': "idno", 'keyList': 'manuidlist', 'infield': 'id'},
-                    {'filter': 'manulibrary',       'fkfield': 'austat_col__austat__austat_sermons__msitem__manu__library',                
+                    {'filter': 'manulibrary',       'fkfield': 'austat_col__austat__austat_canwits__msitem__manu__library',                
                      'keyS': 'libname_ta',    'keyId': 'library',     'keyFk': "name"},
-                    {'filter': 'manukeyword',       'fkfield': 'austat_col__austat__austat_sermons__msitem__manu__keywords',               
+                    {'filter': 'manukeyword',       'fkfield': 'austat_col__austat__austat_canwits__msitem__manu__keywords',               
                      'keyFk': 'name', 'keyList': 'manukwlist', 'infield': 'name' },
-                    {'filter': 'manustype',         'dbfield': 'austat_col__austat__austat_sermons__msitem__manu__stype',                  
+                    {'filter': 'manustype',         'dbfield': 'austat_col__austat__austat_canwits__msitem__manu__stype',                  
                      'keyList': 'manustypelist', 'keyType': 'fieldchoice', 'infield': 'abbr' },
-                    {'filter': 'manuprovenance',    'fkfield': 'austat_col__austat__austat_sermons__msitem__codico__provenances__location',  
+                    {'filter': 'manuprovenance',    'fkfield': 'austat_col__austat__austat_canwits__msitem__codico__provenances__location',  
                      'keyS': 'prov_ta',       'keyId': 'prov',        'keyFk': "name"},
-                    {'filter': 'manuorigin',        'fkfield': 'austat_col__austat__austat_sermons__msitem__codico__origin',                 
+                    {'filter': 'manuorigin',        'fkfield': 'austat_col__austat__austat_canwits__msitem__codico__origin',                 
                      'keyS': 'origin_ta',     'keyId': 'origin',      'keyFk': "name"},
-                    {'filter': 'manudaterange',     'dbfield': 'austat_col__austat__austat_sermons__msitem__codico__codico_dateranges__yearstart__gte',         
+                    {'filter': 'manudaterange',     'dbfield': 'austat_col__austat__austat_canwits__msitem__codico__codico_dateranges__yearstart__gte',         
                      'keyS': 'date_from'},
-                    {'filter': 'manudaterange',     'dbfield': 'austat_col__austat__austat_sermons__msitem__codico__codico_dateranges__yearfinish__lte',        
+                    {'filter': 'manudaterange',     'dbfield': 'austat_col__austat__austat_canwits__msitem__codico__codico_dateranges__yearfinish__lte',        
                      'keyS': 'date_until'},
                     ]},
                 # Section Other
@@ -6458,8 +6457,8 @@ class CollectionListView(BasicList):
 
                 # Find out which sermons have references in this range
                 lstQ = []
-                lstQ.append(Q(austat_col__austat__austat_sermons__sermonbibranges__bibrangeverses__bkchvs__gte=start))
-                lstQ.append(Q(austat_col__austat__austat_sermons__sermonbibranges__bibrangeverses__bkchvs__lte=einde))
+                lstQ.append(Q(austat_col__austat__austat_canwits__sermonbibranges__bibrangeverses__bkchvs__gte=start))
+                lstQ.append(Q(austat_col__austat__austat_canwits__sermonbibranges__bibrangeverses__bkchvs__lte=einde))
                 collectionlist = [x.id for x in Collection.objects.filter(*lstQ).order_by('id').distinct()]
 
                 fields['bibrefbk'] = Q(id__in=collectionlist)
