@@ -315,6 +315,12 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+/lila/static/seeker/scripts
+/lila/lila/seeker/migrations
+/lila/lila/basic/migrations
+/lila/lila/bible/migrations
+/lila/lila/reader/migrations
+/lila/lila/stylo/migrations
 
 # Cake - Uncomment if you are using it
 # tools/**
@@ -361,10 +367,3 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-/lila/lila/seeker/migrations/0004_auto_20220330_1541.py
-/lila/lila/seeker/migrations/0003_auto_20220316_1525.py
-/lila/static/seeker/scripts
-/lila/lila/seeker/migrations/0007_genre_description.py
-/lila/lila/seeker/migrations/0006_auto_20220404_1438.py
-/lila/lila/seeker/migrations/0005_auto_20220404_1415.py
-/lila/lila/seeker/migrations/0008_auto_20220411_0908.py
