@@ -5493,7 +5493,7 @@ class CollPrivDetails(CollAnyEdit):
                 related_objects.append(supers)
 
                 context['histogram_data'] = self.get_histogram_data(instance, 
-                                                                    instance.collections_super.all(), 
+                                                                    instance.collections_austat.all(), 
                                                                     'collist_{}'.format(self.prefix), 
                                                                     'd3')
 
@@ -5648,7 +5648,7 @@ class CollHistDetails(CollHistEdit):
                 sort_end = '</span>'
 
             # In all cases: Get all the SSGs that are part of this historical collection:
-            qs_ssg = instance.collections_super.all().values("id")
+            qs_ssg = instance.collections_austat.all().values("id")
 
             # Check what kind of comparison we need to make
             if self.manu == None and self.codico == None:
@@ -5871,7 +5871,7 @@ class CollHistDetails(CollHistEdit):
                     rel_list.append(dict(id=item.id, cols=rel_item))
 
                 # Check if there are any SSGs in the collection that have not been dealt with yet
-                qs_ssg = instance.collections_super.exclude(id__in=equal_list)
+                qs_ssg = instance.collections_austat.exclude(id__in=equal_list)
                 for item in qs_ssg:
                     rel_item = []
                     equal = item
@@ -5973,7 +5973,7 @@ class CollHistDetails(CollHistEdit):
                     rel_list.append(dict(id=item.id, cols=rel_item))
 
                 # Check if there are any SSGs in the collection that have not been dealt with yet
-                qs_ssg = instance.collections_super.exclude(id__in=equal_list)
+                qs_ssg = instance.collections_austat.exclude(id__in=equal_list)
                 for item in qs_ssg:
                     rel_item = []
                     equal = item
@@ -6016,7 +6016,7 @@ class CollHistDetails(CollHistEdit):
                 related_objects.append(sermons)
 
             context['related_objects'] = related_objects
-            context['histogram_data'] = self.get_histogram_data(instance, instance.collections_super.all(), 'collist_hist', 'd3')
+            context['histogram_data'] = self.get_histogram_data(instance, instance.collections_austat.all(), 'collist_hist', 'd3')
         except:
             msg = oErr.get_error_message()
             oErr.DoError("CollHistDetails/add_to_context")

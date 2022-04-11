@@ -54,7 +54,6 @@
     <Compile Include="manage.py" />
     <Compile Include="lila\basic\admin.py" />
     <Compile Include="lila\basic\apps.py" />
-    <Compile Include="lila\basic\migrations\__init__.py" />
     <Compile Include="lila\basic\models.py" />
     <Compile Include="lila\basic\tests.py" />
     <Compile Include="lila\basic\utils.py" />
@@ -65,7 +64,6 @@
     <Compile Include="lila\basic\__init__.py" />
     <Compile Include="lila\bible\admin.py" />
     <Compile Include="lila\bible\apps.py" />
-    <Compile Include="lila\bible\migrations\__init__.py" />
     <Compile Include="lila\bible\models.py" />
     <Compile Include="lila\bible\tests.py" />
     <Compile Include="lila\bible\utils.py">
@@ -81,7 +79,6 @@
     <Compile Include="lila\reader\forms.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="lila\reader\migrations\__init__.py" />
     <Compile Include="lila\reader\models.py" />
     <Compile Include="lila\reader\tests.py" />
     <Compile Include="lila\reader\views.py" />
@@ -117,7 +114,6 @@
     <Compile Include="lila\seeker\forms.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="lila\seeker\migrations\__init__.py" />
     <Compile Include="lila\seeker\models.py" />
     <Compile Include="lila\seeker\tests.py" />
     <Compile Include="lila\stylo\distance_metrics.py">
@@ -148,7 +144,6 @@
     <Compile Include="lila\seeker\__init__.py" />
     <Compile Include="lila\stylo\admin.py" />
     <Compile Include="lila\stylo\apps.py" />
-    <Compile Include="lila\stylo\migrations\__init__.py" />
     <Compile Include="lila\stylo\models.py" />
     <Compile Include="lila\stylo\tests.py" />
     <Compile Include="lila\stylo\views.py" />
@@ -167,7 +162,6 @@
   <ItemGroup>
     <Folder Include="lila\" />
     <Folder Include="lila\basic\" />
-    <Folder Include="lila\basic\migrations\" />
     <Folder Include="lila\basic\static\" />
     <Folder Include="lila\basic\static\basic\" />
     <Folder Include="lila\basic\static\basic\content\" />
@@ -176,10 +170,8 @@
     <Folder Include="lila\basic\templates\" />
     <Folder Include="lila\basic\templates\basic\" />
     <Folder Include="lila\bible\" />
-    <Folder Include="lila\bible\migrations\" />
     <Folder Include="lila\bible\templates\" />
     <Folder Include="lila\reader\" />
-    <Folder Include="lila\reader\migrations\" />
     <Folder Include="lila\reader\templates\" />
     <Folder Include="lila\reader\templates\reader\" />
     <Folder Include="lila\seeker\static\" />
@@ -189,13 +181,11 @@
     <Folder Include="lila\seeker\static\seeker\scripts\" />
     <Folder Include="lila\seeker\templates\seeker\" />
     <Folder Include="lila\stylo\" />
-    <Folder Include="lila\stylo\migrations\" />
     <Folder Include="lila\stylo\clustering\" />
     <Folder Include="lila\stylo\tokenize\" />
     <Folder Include="lila\stylo\templates\" />
     <Folder Include="lila\templates\" />
     <Folder Include="lila\seeker\" />
-    <Folder Include="lila\seeker\migrations\" />
     <Folder Include="lila\seeker\templates\" />
     <Folder Include="lila\templates\admin\" />
   </ItemGroup>

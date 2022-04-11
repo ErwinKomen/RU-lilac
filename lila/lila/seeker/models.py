@@ -5337,7 +5337,7 @@ class Austat(models.Model):
     keywords = models.ManyToManyField(Keyword, through="AustatKeyword", related_name="keywords_super")
 
     # [m] Many-to-many: one sermon can be a part of a series of collections
-    collections = models.ManyToManyField("Collection", through="CollectionSuper", related_name="collections_super")
+    collections = models.ManyToManyField("Collection", through="CollectionSuper", related_name="collections_austat")
 
     # [m] Many-to-many: one Austat can belong to one or more projects
     projects = models.ManyToManyField(Project, through="AustatProject", related_name="project_austat")
@@ -6039,7 +6039,7 @@ class Collection(models.Model):
         
     def freqsuper(self):
         """Frequency in Manuscripts"""
-        freq = self.collections_super.all().count()
+        freq = self.collections_austat.all().count()
         return freq
 
     def get_authors_markdown(self):
@@ -6262,7 +6262,7 @@ class Collection(models.Model):
         msitems = []
         with transaction.atomic():
             order = 1
-            for ssg in self.collections_super.all():
+            for ssg in self.collections_austat.all():
                 # Create a MsItem
                 msitem = MsItem.objects.create(manu=manu, codico=codico, order=order)
                 order += 1
