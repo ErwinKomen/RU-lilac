@@ -1157,61 +1157,73 @@ var ru = (function ($, ru) {
             // Get my own sermonid
             sermonid = $(el).attr("sermonid");
             if (sermonid === "") {
-              // See if there is a following sibling under which this falls
-              srm_match = $(el).nextAll(".tree[sermontype='head'],.tree[sermontype='sermon']").first();
-              if (srm_match !== undefined && srm_match !== null) {
-                // Make a link
-                srm_codi[$(srm_match).attr("sermonid")] = $(el).attr("targetid");
+              // Look for a possible ruler start
+              if ($(el).hasClass("codi-start")) {
+                oNew = { id: "codi", codi: $(el).attr("targetid") };
+              } else {
+                // See if there is a following sibling under which this falls
+                srm_match = $(el).nextAll(".tree[sermontype='head'],.tree[sermontype='sermon']").first();
+                if (srm_match !== undefined && srm_match !== null) {
+                  // Make a link
+                  srm_codi[$(srm_match).attr("sermonid")] = $(el).attr("targetid");
+                }
+                // Cannot process this one
+                return;
               }
-              // Cannot process this one
-              return;
-            }
 
-            // Get the sermonid of any preceding <div.tree>
-            elTreePrev = $(el).prev(".tree").first();
-            if (elTreePrev !== null && $(elTreePrev).length > 0) {
-              previd = $(elTreePrev).attr("sermonid");
-            }
-
-            // Get the sermonid of a following <div.tree>
-            elTreeNext = $(el).next(".tree").first();
-            if (elTreeNext !== null && $(elTreeNext).length > 0) {
-              nextid = $(elTreeNext).attr("sermonid");
-            }
-
-            // Get the parent if exists
-            elTreeParent = $(el).parent(".tree").first();
-            if (elTreeParent !== null && $(elTreeParent).length > 0) {
-              parent = $(elTreeParent).attr("sermonid");
-            }
-
-            // Get the sermonid of a first-child <div.tree>
-            elTreeChild = $(el).children(".tree").first();
-            if (elTreeChild !== null && $(elTreeChild).length > 0) {
-              firstchild = $(elTreeChild).attr("sermonid");
-            }
-
-            // Look for a possible ruler start
-            elHr = $(el).children(".codi-start").first();
-
-            oNew = { id: sermonid, previd: previd, nextid: nextid, parent: parent, firstchild: firstchild };
-
-            if (elHr !== null && $(elHr).length > 0) {
-              oNew['codi'] = $(elHr).attr("targetid");
-            }
-
-            // Check if this is a structural element
-            if (sermonid.indexOf("new") >= 0) {
-              // If it is a structural element, then also pass on the user-defined title text
-              oNew['title'] = $(el).find(".sermon-new-head > div").text();
-            } else if ($(el).find("table .shead").length > 0) {
-              // THis is a [shead] element
-              oNew['title'] = $(el).find(".shead").first().text();
-              oNew['locus'] = $(el).find("code.draggable").first().text();
-              // See if this needs deletion
-              if ($(el).hasClass("hidden")) {
-                oNew['action'] = "delete";
+            } else {
+              // Look for a possible ruler start
+              elHr = $(el).children(".codi-start").first();
+              if ($(el).hasClass("codi-start")) {
+                // This situation never occurs -- could be taken out??
+                oNew = { id : "codi", codi: $(el).attr("targetid") };
+                hList.push(oNew);
+              } else if (elHr !== null && $(elHr).length > 0) {
+                // Yes, there is a Codi-ruler: add this first!
+                oNew = { id: "codi", codi: $(elHr).attr("targetid") };
+                hList.push(oNew);
               }
+
+              // Get the sermonid of any preceding <div.tree>
+              elTreePrev = $(el).prev(".tree").first();
+              if (elTreePrev !== null && $(elTreePrev).length > 0) {
+                previd = $(elTreePrev).attr("sermonid");
+              }
+
+              // Get the sermonid of a following <div.tree>
+              elTreeNext = $(el).next(".tree").first();
+              if (elTreeNext !== null && $(elTreeNext).length > 0) {
+                nextid = $(elTreeNext).attr("sermonid");
+              }
+
+              // Get the parent if exists
+              elTreeParent = $(el).parent(".tree").first();
+              if (elTreeParent !== null && $(elTreeParent).length > 0) {
+                parent = $(elTreeParent).attr("sermonid");
+              }
+
+              // Get the sermonid of a first-child <div.tree>
+              elTreeChild = $(el).children(".tree").first();
+              if (elTreeChild !== null && $(elTreeChild).length > 0) {
+                firstchild = $(elTreeChild).attr("sermonid");
+              }
+
+              oNew = { id: sermonid, previd: previd, nextid: nextid, parent: parent, firstchild: firstchild };
+
+              // Check if this is a structural element
+              if (sermonid.indexOf("new") >= 0) {
+                // If it is a structural element, then also pass on the user-defined title text
+                oNew['title'] = $(el).find(".sermon-new-head > div").text();
+              } else if ($(el).find("table .shead").length > 0) {
+                // THis is a [shead] element
+                oNew['title'] = $(el).find(".shead").first().text();
+                oNew['locus'] = $(el).find("code.draggable").first().text();
+                // See if this needs deletion
+                if ($(el).hasClass("hidden")) {
+                  oNew['action'] = "delete";
+                }
+              }
+
             }
 
             hList.push(oNew);
