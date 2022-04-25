@@ -6418,12 +6418,12 @@ class Collection(models.Model):
                 msitems.append(msitem)
                 # Create a S based on this SSG
                 sermon = Canwit.objects.create(
-                    manu=manu, msitem=msitem, author=ssg.author, 
+                    msitem=msitem, author=ssg.author, 
                     ftext=ssg.ftext, srchftext=ssg.srchftext,
                     ftrans=ssg.ftrans, srchftrans=ssg.srchftrans,
                     stype="imp", mtype=mtype)
                 # Create a link from the S to this SSG
-                ssg_link = CanwitAustat.objects.create(sermon=sermon, super=ssg, linktype=LINK_UNSPECIFIED)
+                ssg_link = CanwitAustat.objects.create(canwit=sermon, austat=ssg, manu=manu, linktype=LINK_UNSPECIFIED)
 
         # Now walk and repair the links
         with transaction.atomic():

@@ -2432,11 +2432,11 @@ class AustatForm(lilaModelForm):
 
             # Set the widgets correctly
             self.fields['collist_m'].widget = CollectionManuWidget( attrs={'username': username, 'team_group': team_group, 'data-allow-clear': 'false',
-                        'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
+                        'data-placeholder': 'Select multiple manuscript datasets...', 'style': 'width: 100%;', 'class': 'searching'})
             self.fields['collist_s'].widget = CollectionCanwitWidget( attrs={'username': username, 'team_group': team_group, 'data-allow-clear': 'false',
-                        'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
+                        'data-placeholder': 'Select multiple Canon witness datasets...', 'style': 'width: 100%;', 'class': 'searching'})
             self.fields['collist_ssg'].widget = CollectionAustatWidget( attrs={'username': username, 'team_group': team_group, 'data-allow-clear': 'false',
-                        'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
+                        'data-placeholder': 'Select multiple Authoritative Statement datasets...', 'style': 'width: 100%;', 'class': 'searching'})
             self.fields['collist_hist'].widget = CollectionAustatWidget( attrs={'username': username, 'team_group': team_group, 'data-allow-clear': 'false',
                         'settype': 'hc', 'data-debug': 'true', 'data-ajax--cache': "false",
                         'data-placeholder': 'Select multiple historical collections...', 'style': 'width: 100%;', 'class': 'searching'})
