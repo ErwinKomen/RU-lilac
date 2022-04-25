@@ -2229,9 +2229,7 @@ class ColwitEdit(BasicDetails):
 
     stype_edi_fields = ['manu', 'locus', 'author', 'sectiontitle', 'title', 'subtitle', 'incipit', 'explicit', 'postscriptum', 'quote', 
                                 'bibnotes', 'feast', 'bibleref', 'additional', 'note',
-                        #'kwlist',
                         'ColwitSignature', 'siglist',
-                        #'CollectionCanwit', 'collist_s',
                         'ColwitAustat', 'superlist']
 
     def add_to_context(self, context, instance):
@@ -2453,6 +2451,7 @@ class CodheadEdit(BasicDetails):
                 # --------------------------------------------
                 {'type': 'plain', 'label': "Locus:",                'value': instance.locus,            'field_key': "locus"}, 
                 {'type': 'plain', 'label': "Title:",                'value': instance.title,            'field_key': 'title'},
+                {'type': 'plain', 'label': "Collection:",           'value': instance.get_collection(), 'field_key': ''                      },
                  ]
 
             # Add a button back to the Manuscript

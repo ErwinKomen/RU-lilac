@@ -6446,6 +6446,16 @@ class Collection(models.Model):
         # Return the manuscript or the template that has been created
         return obj
 
+    def get_view(self):
+        """Get the name of the collection and a URL to it"""
+
+        sBack = ""
+        lhtml = []
+        url = reverse('collhist_details', kwargs={'pk': self.id})
+        lhtml.append("<span class='collection'><a href='{}'>{}</a></span>".format(url,self.name))
+        sBack = "\n".join(lhtml)
+        return sBack
+
 
 class MsItem(models.Model):
     """One item in a manuscript - can be sermon or heading"""
@@ -6557,6 +6567,24 @@ class Codhead(models.Model):
     #           when the MsItem is removed, its Codhead is too
     msitem = models.ForeignKey(MsItem, null=True, on_delete = models.CASCADE, related_name="itemheads")
 
+    def get_collection(self):
+        """Get the collection to which this section is connected via ColWit"""
+
+        oErr = ErrHandle()
+        sBack = "-"
+        try:
+            colwit = self.codheadcolwits.first()
+            if not colwit is None:
+                # Get the (obligatory) collection
+                collection = colwit.collection
+                # Get the name + URL link to that collection
+                sBack = collection.get_view()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_collection")
+
+        return sBack
+
     def get_locus_range(self):
         """Get the locus range"""
         return get_locus_range(self.locus)
@@ -6579,9 +6607,9 @@ class Codhead(models.Model):
 
 
 class Colwit(models.Model):
-    """A collection witness belongs to exactly one [Codhead] (but not each Codhead is a Colwit)
+    """A collection witness belongs to exactly one [Codhead] and several CanWits belong to the Colwit
     
-    Some fields of a [Colwit] are already available in the Codhead:
+    Some fields of a [Colwit] are already available via the Codhead > MsItem:
     - locus: the location within the Codicological unit
     - title: the title of this collection (taken over from the collection to which I link)
     """
@@ -6600,7 +6628,7 @@ class Colwit(models.Model):
     saved = models.DateTimeField(null=True, blank=True)
 
     # [1] One Colwit belongs exactly to one Codhead
-    codhead = models.ForeignKey(Codhead, on_delete = models.CASCADE, related_name="colwitcodheads")
+    codhead = models.ForeignKey(Codhead, on_delete = models.CASCADE, related_name="codheadcolwits")
     # [1] One Colwit must link to exactly one Collection
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name="collectioncolwits")
 
@@ -6687,6 +6715,9 @@ class Canwit(models.Model):
 
     # [m] Many-to-many: one manuscript can belong to one or more projects
     projects = models.ManyToManyField(Project, through="CanwitProject", related_name="project_sermons")
+
+    # [0-1] Every Canon Witness *MAY* be part of a collection witness 
+    colwit = models.ForeignKey(Colwit, null=True, blank=True, on_delete = models.CASCADE, related_name="colwititems")
 
     # ========================================================================
     # [1] Every COLWIT belongs to exactly one MsItem
