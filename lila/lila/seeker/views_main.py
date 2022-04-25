@@ -2417,7 +2417,7 @@ class ColwitListView(BasicList):
         return get_helptext(name)
 
 
-# ============= CANONICAL WITNESS VIEWS ============================
+# ============= CODICOLOGICAL UNIT HEAD VIEWS ============================
 
 
 class CodheadEdit(BasicDetails):
@@ -3366,31 +3366,28 @@ class CanwitListView(BasicList):
     use_team_group = True
     paginate_by = 20
     bUseFilter = True
-    prefix = "sermo"
-    new_button = False      # Don't show the [Add new sermon] button here. It is shown under the Manuscript Details view.
+    prefix = "canwi"
+    new_button = False      # Don't show the [Add new canwit] button here. It is shown under the Manuscript Details view.
     basketview = False
-    plural_name = "Sermons"
-    basic_name = "sermon"
+    plural_name = "Canon witnesses"
+    basic_name = "canwit"
     template_help = "seeker/filter_help.html"
 
-    order_cols = ['author__name', 'siglist', 'srchftext;srchftrans', 'manu__idno', 'title', 'sectiontitle', '','', 'stype']
+    order_cols = ['author__name', 'srchftext', 'srchftrans', 'msitem__manu__idno', 'title', 'sectiontitle', '', 'stype']
     order_default = order_cols
     order_heads = [
         {'name': 'Author',      'order': 'o=1', 'type': 'str', 'custom': 'author', 'linkdetails': True}, 
-        {'name': 'Signature',   'order': 'o=2', 'type': 'str', 'custom': 'signature', 'allowwrap': True, 'options': '111111'}, 
-        {'name': 'Incipit ... Explicit', 
-                                'order': 'o=3', 'type': 'str', 'custom': 'incexpl', 'main': True, 'linkdetails': True},
+        {'name': 'Full text',   'order': 'o=2', 'type': 'str', 'custom': 'ftext',  'linkdetails': True, 'main': True},
+        {'name': 'Translation', 'order': 'o=3', 'type': 'str', 'custom': 'ftrans', 'linkdetails': True},
         {'name': 'Manuscript',  'order': 'o=4', 'type': 'str', 'custom': 'manuscript'},
         {'name': 'Title',       'order': 'o=5', 'type': 'str', 'custom': 'title', 
          'allowwrap': True,           'autohide': "on", 'filter': 'filter_title'},
         {'name': 'Section',     'order': 'o=6', 'type': 'str', 'custom': 'sectiontitle', 
          'allowwrap': True,    'autohide': "on", 'filter': 'filter_sectiontitle'},
         {'name': 'Locus',       'order': '',    'type': 'str', 'field':  'locus' },
-        {'name': 'Links',       'order': '',    'type': 'str', 'custom': 'links'},
         {'name': 'Status',      'order': 'o=9', 'type': 'str', 'custom': 'status'}]
 
-    filters = [ {"name": "Gryson or Clavis", "id": "filter_signature",      "enabled": False},
-                {"name": "Author",           "id": "filter_author",         "enabled": False},
+    filters = [ {"name": "Author",           "id": "filter_author",         "enabled": False},
                 {"name": "Author type",      "id": "filter_atype",          "enabled": False},
                 {"name": "Incipit",          "id": "filter_incipit",        "enabled": False},
                 {"name": "Explicit",         "id": "filter_explicit",       "enabled": False},
@@ -3404,14 +3401,15 @@ class CanwitListView(BasicList):
                 {"name": "lila code",      "id": "filter_code",           "enabled": False},
                 {"name": "Free",             "id": "filter_freetext",       "enabled": False},
                 {"name": "Project",          "id": "filter_project",        "enabled": False},
+
                 {"name": "Collection...",    "id": "filter_collection",     "enabled": False, "head_id": "none"},
                 {"name": "Manuscript...",    "id": "filter_manuscript",     "enabled": False, "head_id": "none"},
+
                 {"name": "Sermon",           "id": "filter_collsermo",      "enabled": False, "head_id": "filter_collection"},
-                # Issue #416: Delete the option to search for a GoldSermon personal dataset
-                # {"name": "Sermon Gold",      "id": "filter_collgold",       "enabled": False, "head_id": "filter_collection"},
-                {"name": "Authoritative statement",   "id": "filter_collsuper",      "enabled": False, "head_id": "filter_collection"},
+                {"name": "Authoritative statement", "id": "filter_collsuper","enabled": False, "head_id": "filter_collection"},
                 {"name": "Manuscript",       "id": "filter_collmanu",       "enabled": False, "head_id": "filter_collection"},
                 {"name": "Historical",       "id": "filter_collhc",         "enabled": False, "head_id": "filter_collection"},
+
                 {"name": "Shelfmark",        "id": "filter_manuid",         "enabled": False, "head_id": "filter_manuscript"},
                 {"name": "Country",          "id": "filter_country",        "enabled": False, "head_id": "filter_manuscript"},
                 {"name": "City",             "id": "filter_city",           "enabled": False, "head_id": "filter_manuscript"},
@@ -3425,8 +3423,8 @@ class CanwitListView(BasicList):
     
     searches = [
         {'section': '', 'filterlist': [
-            {'filter': 'incipit',       'dbfield': 'srchftext',       'keyS': 'incipit',  'regex': adapt_regex_incexp},
-            {'filter': 'explicit',      'dbfield': 'srchftrans',      'keyS': 'explicit', 'regex': adapt_regex_incexp},
+            {'filter': 'ftext',         'dbfield': 'srchftext',         'keyS': 'ftext',  'regex': adapt_regex_incexp},
+            {'filter': 'ftrans',        'dbfield': 'srchftrans',        'keyS': 'ftrans', 'regex': adapt_regex_incexp},
             {'filter': 'title',         'dbfield': 'title',             'keyS': 'srch_title'},
             {'filter': 'sectiontitle',  'dbfield': 'sectiontitle',      'keyS': 'srch_sectiontitle'},
             {'filter': 'feast',         'fkfield': 'feast',             'keyFk': 'feast', 'keyList': 'feastlist', 'infield': 'id'},
@@ -3440,10 +3438,6 @@ class CanwitListView(BasicList):
             {'filter': 'author',        'fkfield': 'author',            'keyS': 'authorname',
                                         'keyFk': 'name', 'keyList': 'authorlist', 'infield': 'id', 'external': 'sermo-authorname' },
             {'filter': 'atype',                                         'keyS': 'authortype',  'help': 'authorhelp'},
-            {'filter': 'signature',     'fkfield': 'signatures|austats__equal_goldsermons__goldsignatures',      'help': 'signature',     
-                                        'keyS': 'signature_a', 'keyFk': 'code', 'keyId': 'signatureid', 'keyList': 'siglist_a', 'infield': 'code' },
-            #{'filter': 'signature',     'fkfield': 'signatures|goldsermons__goldsignatures',      'help': 'signature',     
-            #                            'keyS': 'signature', 'keyFk': 'code', 'keyId': 'signatureid', 'keyList': 'siglist', 'infield': 'code' },
             {'filter': 'keyword',       'fkfield': 'keywords',          'keyFk': 'name', 'keyList': 'kwlist', 'infield': 'id' }, 
             {'filter': 'project',       'fkfield': 'projects',          'keyFk': 'name', 'keyList': 'projlist', 'infield': 'name'},
             {'filter': 'stype',         'dbfield': 'stype',             'keyList': 'stypelist', 'keyType': 'fieldchoice', 'infield': 'abbr' }
@@ -3451,11 +3445,8 @@ class CanwitListView(BasicList):
         {'section': 'collection', 'filterlist': [
             {'filter': 'collmanu',      'fkfield': 'manu__collections',              'keyFk': 'name', 'keyList': 'collist_m',  'infield': 'id' }, 
             {'filter': 'collsermo',     'fkfield': 'collections',                    'keyFk': 'name', 'keyList': 'collist_s',  'infield': 'id' }, 
-            # Issue #416: Delete the option to search for a GoldSermon personal dataset
-            # {'filter': 'collgold',      'fkfield': 'goldsermons__collections',       'keyFk': 'name', 'keyList': 'collist_sg', 'infield': 'id' }, 
             {'filter': 'collsuper',     'fkfield': 'austats__collections',        'keyFk': 'name', 'keyList': 'collist_ssg','infield': 'id' }, 
             {'filter': 'collhc',        'fkfield': 'austats__collections',        'keyFk': 'name', 'keyList': 'collist_hist', 'infield': 'id' }
-            # {'filter': 'collsuper',     'fkfield': 'goldsermons__equal__collections', 'keyFk': 'name', 'keyList': 'collist_ssg','infield': 'id' }
             ]},
         {'section': 'manuscript', 'filterlist': [
             {'filter': 'manuid',        'fkfield': 'msitem__manu',                    'keyS': 'manuidno',     'keyList': 'manuidlist', 'keyFk': 'idno', 'infield': 'id'},
@@ -3525,10 +3516,9 @@ class CanwitListView(BasicList):
                 html.append("<span><i>(unknown)</i></span>")
         elif custom == "signature":
             html.append(instance.signature_string(include_auto=True, do_plain=False))
-        elif custom == "incexpl":
+        elif custom == "ftext":
             html.append("<span>{}</span>".format(instance.get_ftext_markdown()))
-            dots = "..." if instance.incipit else ""
-            html.append("<span style='color: blue;'>{}</span>".format(dots))
+        elif custom == "ftrans":
             html.append("<span>{}</span>".format(instance.get_ftrans_markdown()))
         elif custom == "manuscript":
             manu = instance.get_manuscript()
@@ -3553,11 +3543,6 @@ class CanwitListView(BasicList):
             if instance.sectiontitle != None and instance.sectiontitle != "":
                 sSection = instance.sectiontitle
             html.append(sSection)
-        elif custom == "links":
-            for gold in instance.goldsermons.all():
-                for link_def in gold.link_oview():
-                    if link_def['count'] > 0:
-                        html.append("<span class='badge {}' title='{}'>{}</span>".format(link_def['class'], link_def['title'], link_def['count']))
         elif custom == "status":
             # Provide that status badge
             # html.append("<span class='badge' title='{}'>{}</span>".format(instance.get_stype_light(), instance.stype[:1]))
