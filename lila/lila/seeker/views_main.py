@@ -2304,21 +2304,14 @@ class ColwitListView(BasicList):
     basic_name = "colwit"
     template_help = "seeker/filter_help.html"
 
-    order_cols = ['author__name', 'siglist', 'srchftext;srchftrans', 'manu__idno', 'title', 'sectiontitle', '','', 'stype']
+    order_cols = ['collection__name', 'codhead__msitem__manu__idno', '','', 'stype']
     order_default = order_cols
     order_heads = [
-        {'name': 'Author',      'order': 'o=1', 'type': 'str', 'custom': 'author', 'linkdetails': True}, 
-        {'name': 'Signature',   'order': 'o=2', 'type': 'str', 'custom': 'signature', 'allowwrap': True, 'options': '111111'}, 
-        {'name': 'Incipit ... Explicit', 
-                                'order': 'o=3', 'type': 'str', 'custom': 'incexpl', 'main': True, 'linkdetails': True},
-        {'name': 'Manuscript',  'order': 'o=4', 'type': 'str', 'custom': 'manuscript'},
-        {'name': 'Title',       'order': 'o=5', 'type': 'str', 'custom': 'title', 
-         'allowwrap': True,           'autohide': "on", 'filter': 'filter_title'},
-        {'name': 'Section',     'order': 'o=6', 'type': 'str', 'custom': 'sectiontitle', 
-         'allowwrap': True,    'autohide': "on", 'filter': 'filter_sectiontitle'},
-        {'name': 'Locus',       'order': '',    'type': 'str', 'field':  'locus' },
+        {'name': 'Collection',  'order': 'o=1', 'type': 'str', 'custom': 'collection', 'linkdetails': True}, 
+        {'name': 'Manuscript',  'order': 'o=2', 'type': 'str', 'custom': 'manuscript'},
+        {'name': 'Locus',       'order': '',    'type': 'str', 'custom':  'locus' },
         {'name': 'Links',       'order': '',    'type': 'str', 'custom': 'links'},
-        {'name': 'Status',      'order': 'o=9', 'type': 'str', 'custom': 'status'}]
+        {'name': 'Status',      'order': 'o=5', 'type': 'str', 'custom': 'status'}]
 
     filters = [ ]
     
@@ -2339,14 +2332,14 @@ class ColwitListView(BasicList):
             # ======== One-time adaptations ==============
             listview_adaptations("colwit_list")
 
-            # Check if there are any sermons not connected to a manuscript: remove these
-            delete_id = Colwit.objects.filter(Q(msitem__isnull=True)|Q(msitem__manu__isnull=True)).values('id')
-            if len(delete_id) > 0:
-                oErr.Status("Deleting {} colwits that are not connected".format(len(delete_id)))
-                Colwit.objects.filter(id__in=delete_id).delete()
+            ## Check if there are any sermons not connected to a manuscript: remove these
+            #delete_id = Colwit.objects.filter(Q(msitem__isnull=True)|Q(msitem__manu__isnull=True)).values('id')
+            #if len(delete_id) > 0:
+            #    oErr.Status("Deleting {} colwits that are not connected".format(len(delete_id)))
+            #    Colwit.objects.filter(id__in=delete_id).delete()
 
             # Make sure to set a basic filter
-            self.basic_filter = Q(mtype="man")
+            # self.basic_filter = Q(mtype="man")
         except:
             msg = oErr.get_error_message()
             oErr.DoError("ColwitListiew/initializations")
@@ -2372,14 +2365,17 @@ class ColwitListView(BasicList):
         sBack = ""
         sTitle = ""
         html = []
-        if custom == "author":
-            if instance.author:
-                html.append("<span style='color: darkgreen; font-size: small;'>{}</span>".format(instance.author.name[:20]))
-                sTitle = instance.author.name
-            else:
-                html.append("<span><i>(unknown)</i></span>")
- 
 
+        if custom == "collection":
+            html.append("<span class='collection'>{}</span>".format(instance.collection.name))
+        elif custom == "manuscript":
+            manu = instance.msitem.manu
+            html.append(manu.idno)
+        elif custom == "locus":
+            locus = instance.msitem.locus
+            html.append(locus)
+        elif custom == "links":
+            html.append("-")
         elif custom == "status":
             # Provide that status badge
             html.append(instance.get_stype_light())
@@ -2397,7 +2393,6 @@ class ColwitListView(BasicList):
         oErr = ErrHandle()
 
         try:
- 
 
             # Double check the length of the exclude list
             if len(lstExclude) == 0:
@@ -2409,10 +2404,17 @@ class ColwitListView(BasicList):
         return fields, lstExclude, qAlternative
 
     def view_queryset(self, qs):
-        search_id = [x['id'] for x in qs.values('id')]
-        profile = Profile.get_user_profile(self.request.user.username)
-        profile.search_canwit = json.dumps(search_id)
-        profile.save()
+        """View the queryset"""
+
+        oErr = ErrHandle()
+        try:
+            search_id = [x['id'] for x in qs.values('id')]
+            profile = Profile.get_user_profile(self.request.user.username)
+            profile.search_canwit = json.dumps(search_id)
+            profile.save()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ColwitListView/view_queryset")
         return None
 
     def get_helptext(self, name):
