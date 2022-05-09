@@ -1892,3 +1892,7 @@ table.dct-view tr td div.toolbox.dct .tooltip-inner tr td {
     color: darkblue;
 }
 
+.warning {
+    color: red;
+}
+

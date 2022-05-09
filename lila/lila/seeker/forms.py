@@ -1638,6 +1638,32 @@ class CodheadForm(lilaModelForm):
         return None
 
 
+class ColForm(forms.Form):
+    """Allow selection of just one collection"""
+
+    collection = ModelChoiceField(queryset=None, required=False)
+
+    def __init__(self, *args, **kwargs):
+        self.username = kwargs.pop('username', "")
+        self.team_group = kwargs.pop('team_group', "")
+        self.userplus = kwargs.pop('userplus', "")
+        # Start by executing the standard handling
+        super(ColForm, self).__init__(*args, **kwargs)
+        oErr = ErrHandle()
+        try:
+            username = self.username
+            team_group = self.team_group
+            profile = Profile.get_user_profile(username)
+
+            self.fields['collection'].widget = CollOneHistWidget( attrs={'username': username, 'team_group': team_group,
+                        'data-placeholder': 'Select a collection...', 'style': 'width: 100%;', 'class': 'searching'})
+            prefix = "austat"
+            self.fields['collection'].queryset = Collection.get_scoped_queryset(prefix, username, team_group, settype="hc")
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ColForm-init")
+        return None
+
 class GenreForm(forms.ModelForm):
     """Genre editing and searching"""
 

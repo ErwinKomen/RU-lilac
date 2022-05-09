@@ -3920,6 +3920,11 @@ class Manuscript(models.Model):
                     oSermon['sermon'] = sermon.itemsermons.first()
                     # And we add a reference to the Codhead object
                     oSermon['shead'] = sermon.itemheads.first()
+                    oSermon['colwit'] = None
+                    # If this is a codhead
+                    if not oSermon['shead'] is None:
+                        # Check if there is a ColWit attached to this
+                        oSermon['colwit'] = Colwit.objects.filter(codhead = oSermon['shead']).first()
                 oSermon['nodeid'] = sermon.order + 1
                 oSermon['number'] = idx + 1
                 oSermon['childof'] = 1 if sermon.parent == None else sermon.parent.order + 1
@@ -6303,7 +6308,7 @@ class Collection(models.Model):
         
     def get_scoped_queryset(type, username, team_group, settype="pd", scope = None):
         """Get a filtered queryset, depending on type and username"""
-
+        
         # Initialisations
         if scope == None or scope == "":
             non_private = ['publ', 'team']

@@ -3086,6 +3086,37 @@ var ru = (function ($, ru) {
       },
 
       /**
+       *  colwit_process
+       *      If all is right, create a new collection witness
+       *
+       */
+      colwit_process: function (elStart) {
+        var elForm = null,
+          targeturl = "",
+          coll_id = "#id_colw-collection",
+          coll_value = "",
+          elRoot = null,
+          hList = null,
+          data = null;
+
+        try {
+          // Get to the form
+          elForm = $(elStart).closest("form").first();
+          // Get the collection specification
+          coll_value = $(elForm).find(coll_id).val();
+          if (coll_value === "") {
+            // Show warning message
+            $(elForm).find(".warning").removeClass("hidden");
+          } else {
+            // We can submit the form
+            $(elForm).submit();
+          }
+        } catch (ex) {
+          private_methods.errMsg("colwit_process", ex);
+        }
+      },
+
+      /**
        *  do_new_sermon
        *      Open up the possibility to add a new sermon
        *

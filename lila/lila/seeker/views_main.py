@@ -49,7 +49,7 @@ from lila.seeker.forms import SearchCollectionForm, SearchManuscriptForm, Search
     AuthorSearchForm, UploadFileForm, UploadFilesForm, ManuscriptForm, CanwitForm, CommentForm, \
     AuthorEditForm, BibRangeForm, FeastForm, ColwitForm, \
     CanwitSuperForm, SearchUrlForm, CodheadForm, \
-    CanwitSignatureForm, AustatLinkForm, \
+    CanwitSignatureForm, AustatLinkForm, ColForm, \
     ReportEditForm, SourceEditForm, ManuscriptProvForm, LocationForm, LocationRelForm, OriginForm, \
     LibraryForm, ManuscriptExtForm, ManuscriptLitrefForm, CanwitKeywordForm, KeywordForm, \
     ManuscriptKeywordForm, DaterangeForm, ProjectForm, CanwitCollectionForm, CollectionForm, \
@@ -65,8 +65,7 @@ from lila.seeker.adaptations import listview_adaptations
 
 # ======= from RU-Basic ========================
 from lila.basic.views import BasicPart, BasicList, BasicDetails, make_search_list, add_rel_item, adapt_search, \
-   user_is_ingroup, app_developer, app_editor, user_is_authenticated, user_is_superuser, \
-   adapt_m2m, adapt_m2o
+   adapt_m2m, adapt_m2o, app_editor, app_userplus
 
 
 def adapt_regex_incexp(value):
@@ -454,43 +453,49 @@ class ManuscriptEdit(BasicDetails):
     def get_kvlist(self, codico, manu):
         """Get a list of fields and values"""
 
-        # Get a list of sermon information for this codico
-        canwit_list = []
-        for msitem in codico.codicoitems.all().order_by('order'):
-            for sermon in msitem.itemsermons.all():
-                # Add information of this sermon to the list
-                sermon_url = reverse('canwit_details', kwargs={'pk': sermon.id})
-                sermon_html = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(sermon_url, sermon.locus)
-                canwit_list.append(sermon_html)
-        # Action depends on the size of the list
-        if len(canwit_list) == 0:
-            sermons = "(none)"
-        elif len(canwit_list) == 1:
-            sermons = canwit_list[0]
-        else:
-            sermons = "{}...{}".format(canwit_list[0], canwit_list[-1])
-        # OLD:
-        # sermons = ", ".join(canwit_list)
         lkv = []
-        if codico.manuscript.id == manu.id:
-            lkv.append(dict(label="Order", value=codico.order))
-        else:
-            # Get the 'reconstruction' element
-            reconstruction = Reconstruction.objects.filter(manuscript=manu, codico=codico).first()
-            if reconstruction != None:
-                # sOrder = "{} (in identifier: {})".format(reconstruction.order, codico.order)
-                sOrder = "{}".format(reconstruction.order)
-                lkv.append(dict(label="Order", value=sOrder))
-        lkv.append(dict(label="Sermons", value=sermons))
-        lkv.append(dict(label="Title", value=codico.name))
-        lkv.append(dict(label="Date", value=codico.get_date_markdown()))
-        lkv.append(dict(label="Support", value=codico.support))
-        lkv.append(dict(label="Extent", value=codico.extent))
-        lkv.append(dict(label="Format", value=codico.format))
-        lkv.append(dict(label="Keywords", value=codico.get_keywords_markdown()))
-        lkv.append(dict(label="Origin", value=self.get_codiorigin_markdown(codico)))
-        lkv.append(dict(label="Provenances", value=self.get_codiprovenance_markdown(codico)))
-        lkv.append(dict(label="Notes", value=codico.get_notes_markdown()))
+        oErr = ErrHandle()
+        try:
+            # Get a list of sermon information for this codico
+            canwit_list = []
+            for msitem in codico.codicoitems.all().order_by('order'):
+                for sermon in msitem.itemsermons.all():
+                    # Add information of this sermon to the list
+                    sermon_url = reverse('canwit_details', kwargs={'pk': sermon.id})
+                    sermon_html = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(sermon_url, sermon.locus)
+                    canwit_list.append(sermon_html)
+            # Action depends on the size of the list
+            if len(canwit_list) == 0:
+                sermons = "(none)"
+            elif len(canwit_list) == 1:
+                sermons = canwit_list[0]
+            else:
+                sermons = "{}...{}".format(canwit_list[0], canwit_list[-1])
+            # OLD:
+            # sermons = ", ".join(canwit_list)
+            lkv = []
+            if codico.manuscript.id == manu.id:
+                lkv.append(dict(label="Order", value=codico.order))
+            else:
+                # Get the 'reconstruction' element
+                reconstruction = Reconstruction.objects.filter(manuscript=manu, codico=codico).first()
+                if reconstruction != None:
+                    # sOrder = "{} (in identifier: {})".format(reconstruction.order, codico.order)
+                    sOrder = "{}".format(reconstruction.order)
+                    lkv.append(dict(label="Order", value=sOrder))
+            lkv.append(dict(label="Sermons", value=sermons))
+            lkv.append(dict(label="Title", value=codico.name))
+            lkv.append(dict(label="Date", value=codico.get_date_markdown()))
+            lkv.append(dict(label="Support", value=codico.support))
+            lkv.append(dict(label="Extent", value=codico.extent))
+            lkv.append(dict(label="Format", value=codico.format))
+            lkv.append(dict(label="Keywords", value=codico.get_keywords_markdown()))
+            lkv.append(dict(label="Origin", value=self.get_codiorigin_markdown(codico)))
+            lkv.append(dict(label="Provenances", value=self.get_codiprovenance_markdown(codico)))
+            lkv.append(dict(label="Notes", value=codico.get_notes_markdown()))
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ManuscriptEdit/get_kvlist")
         return lkv
 
     def get_codiorigin_markdown(self, codico):
@@ -2434,6 +2439,10 @@ class CodheadEdit(BasicDetails):
 
     stype_edi_fields = ['locus', 'title']
 
+    def action_add(self, instance, details, actiontype):
+        """User can fill this in to his/her liking"""
+        lila_action_add(self, instance, details, actiontype)
+
     def add_to_context(self, context, instance):
         """Add to the existing context"""
 
@@ -2447,11 +2456,11 @@ class CodheadEdit(BasicDetails):
             context['mainitems'] = [
                 # {'type': 'plain', 'label': "Status:",               'value': instance.get_stype_light(True),'field_key': 'stype'},
                 # -------- HIDDEN field values ---------------
-                {'type': 'plain', 'label': "Manuscript id",         'value': manu_id,                   'field_key': "manu",        'empty': 'hide'},
+                {'type': 'plain', 'label': "Manuscript id", 'value': manu_id,                   'field_key': "manu",        'empty': 'hide'},
                 # --------------------------------------------
-                {'type': 'plain', 'label': "Locus:",                'value': instance.locus,            'field_key': "locus"}, 
-                {'type': 'plain', 'label': "Title:",                'value': instance.title,            'field_key': 'title'},
-                {'type': 'plain', 'label': "Collection:",           'value': instance.get_collection(), 'field_key': ''                      },
+                {'type': 'plain', 'label': "Locus:",        'value': instance.locus,            'field_key': "locus"}, 
+                {'type': 'plain', 'label': "Title:",        'value': instance.title,            'field_key': 'title'},
+                {'type': 'plain', 'label': "",              'value': self.get_colwit(instance)                      },
                  ]
 
             # Add a button back to the Manuscript
@@ -2501,6 +2510,23 @@ class CodheadEdit(BasicDetails):
         # Return positively
         return True, "" 
 
+    def after_save(self, form, instance):
+        """This is for processing items from the list of available ones"""
+
+        msg = ""
+        bResult = True
+        oErr = ErrHandle()
+        method = "nodistance"   # Alternative: "superdist"
+        
+        try:
+            # Process many-to-many changes: Add and remove relations in accordance with the new set passed on by the user
+            if getattr(form, 'cleaned_data') != None:
+                pass
+        except:
+            msg = oErr.get_error_message()
+            bResult = False
+        return bResult, msg
+
     def before_save(self, form, instance):
         oErr = ErrHandle()
         bBack = True
@@ -2523,26 +2549,23 @@ class CodheadEdit(BasicDetails):
             bBack = False
         return bBack, msg
 
-    def after_save(self, form, instance):
-        """This is for processing items from the list of available ones"""
+    def get_colwit(self, instance):
+        """Get the code to possibly create a collection witness"""
 
-        msg = ""
-        bResult = True
         oErr = ErrHandle()
-        method = "nodistance"   # Alternative: "superdist"
-        
+        sBack = "-"
+        template = "seeker/create_colwit.html"
         try:
-            # Process many-to-many changes: Add and remove relations in accordance with the new set passed on by the user
-            if getattr(form, 'cleaned_data') != None:
-                pass
+            # Create a form that allows a user to select one collection
+            colform = ColForm(prefix="colw", username=self.request.user.username, team_group=app_editor, userplus=app_userplus)
+            # Create a context
+            context = dict( codhead=instance,colform=colform)
+            # Create a template with this information
+            sBack = render_to_string(template, context, self.request)
         except:
             msg = oErr.get_error_message()
-            bResult = False
-        return bResult, msg
-
-    def action_add(self, instance, details, actiontype):
-        """User can fill this in to his/her liking"""
-        lila_action_add(self, instance, details, actiontype)
+            oErr.DoError("get_colwit")
+        return sBack
 
     def get_history(self, instance):
         return lila_get_history(instance)

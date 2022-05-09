@@ -118,7 +118,6 @@ def import_authors(request):
     # Return the information
     return JsonResponse(data)
 
-
 def do_create_pdf_lit(request):
     """"This definition creates the input for the pdf with all used literature (full) references."""
          
@@ -317,7 +316,6 @@ def do_create_pdf_manu(request):
   
     # And return the pdf
     return response
-
 
 def sync_lila(request):
     """-"""
