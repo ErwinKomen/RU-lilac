@@ -268,6 +268,7 @@
     <Content Include="lila\seeker\templates\seeker\comment_add.html" />
     <Content Include="lila\seeker\templates\seeker\comment_list.html" />
     <Content Include="lila\seeker\templates\seeker\comment_mail.html" />
+    <Content Include="lila\seeker\templates\seeker\create_colwit.html" />
     <Content Include="lila\seeker\templates\seeker\dataset_add.html" />
     <Content Include="lila\seeker\templates\seeker\download.html" />
     <Content Include="lila\seeker\templates\seeker\filter_help.html" />

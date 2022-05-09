@@ -6590,6 +6590,22 @@ class Codhead(models.Model):
 
         return sBack
 
+    def get_colwit(self):
+        oErr = ErrHandle()
+        sBack = "-"
+        try:
+            colwit = self.codheadcolwits.first()
+            if not colwit is None:
+                url = reverse("colwit_details", kwargs={'pk': colwit.id})
+                coll_name = colwit.collection.name
+                sBack = "<a href='{}' class='nostyle'><span>{}</span></a>".format(url, coll_name)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_colwit")
+
+        return sBack
+
+
     def get_locus_range(self):
         """Get the locus range"""
         return get_locus_range(self.locus)
@@ -6647,6 +6663,67 @@ class Colwit(models.Model):
         {'name': 'Description',         'type': 'field', 'path': 'descr'},
         {'name': 'Notes',               'type': 'field', 'path': 'notes'},
         ]
+
+    def get_codhead(self):
+        """Link to the Codico Head"""
+
+        sBack = "-"
+        oErr = ErrHandle()
+        try:
+            obj = self.codhead
+            if not obj is None :
+                url = reverse("codhead_details", kwargs={'pk': obj.id})
+                sText = "{}: {}".format(obj.msitem.manu.idno, obj.locus)
+                sBack = "<span class='badge signature gr'><a href='{}'>{}</a></span>".format(url, sText)
+
+        except:
+            oErr.get_error_message()
+            oErr.DoError("Colwit/get_codhead")
+
+        return sBack
+
+    def get_collection(self):
+        """Link to the Collection"""
+
+        sBack = "-"
+        oErr = ErrHandle()
+        try:
+            obj = self.collection
+            if not obj is None :
+                url = reverse("collhist_details", kwargs={'pk': obj.id})
+                sText = obj.name
+                sBack = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(url, sText)
+
+        except:
+            oErr.get_error_message()
+            oErr.DoError("Colwit/get_collection")
+
+        return sBack
+
+    def get_manuscript(self):
+        """Visualize manuscript with link for details view"""
+
+        sBack = "-"
+        oErr = ErrHandle()
+        try:
+            manu = self.codhead.msitem.manu
+            if manu != None and manu.idno != None:
+                url = reverse("manuscript_details", kwargs={'pk': manu.id})
+                sBack = "<span class='badge signature cl'><a href='{}'>{}</a></span>".format(url, manu.idno)
+
+        except:
+            oErr.get_error_message()
+            oErr.DoError("Colwit/get_manuscript")
+
+        return sBack
+
+    def get_stype_light(self, usercomment=False):
+        count = 0
+        if usercomment:
+            pass
+            # count = self.comments.count()
+        sBack = get_stype_light(self.stype, usercomment, count)
+        return sBack
 
 
 class Canwit(models.Model):

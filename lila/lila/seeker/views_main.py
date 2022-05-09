@@ -65,7 +65,9 @@ from lila.seeker.adaptations import listview_adaptations
 
 # ======= from RU-Basic ========================
 from lila.basic.views import BasicPart, BasicList, BasicDetails, make_search_list, add_rel_item, adapt_search, \
-   adapt_m2m, adapt_m2o, app_editor, app_userplus
+   adapt_m2m, adapt_m2o, app_editor, app_userplus, \
+   user_is_ingroup, user_is_authenticated, user_is_superuser, \
+   app_developer, app_moderator
 
 
 def adapt_regex_incexp(value):
@@ -2223,7 +2225,7 @@ class ColwitEdit(BasicDetails):
     
     model = Colwit
     mForm = ColwitForm
-    prefix = "colwit"
+    prefix = "colw"
     title = "Collection Witness" 
     rtype = "json"
     mainitems = []
@@ -2232,20 +2234,35 @@ class ColwitEdit(BasicDetails):
     history_button = True
     prefix_type = "simple"
 
-    stype_edi_fields = ['manu', 'locus', 'author', 'sectiontitle', 'title', 'subtitle', 'incipit', 'explicit', 'postscriptum', 'quote', 
-                                'bibnotes', 'feast', 'bibleref', 'additional', 'note',
-                        'ColwitSignature', 'siglist',
-                        'ColwitAustat', 'superlist']
+    stype_edi_fields = ['codhead', 'collection', 'descr', 'notes',
+                        ]
 
     def add_to_context(self, context, instance):
         """Add to the existing context"""
 
-        # Need to know who this user (profile) is
-        profile = Profile.get_user_profile(self.request.user.username)
+        oErr = ErrHandle()
+        try:
+            # Need to know who this user (profile) is
+            profile = Profile.get_user_profile(self.request.user.username)
 
-        # Define the main items to show and edit
-        context['mainitems'] = []
+            # Define the main items to show and edit
+            coll_id = None if instance == None else instance.collection.id
+            codh_id = None if instance == None else instance.codhead.id
+            context['mainitems'] = [
+                # -------- HIDDEN field values ---------------
+                {'type': 'plain', 'label': "Codhead id",            'value': codh_id,           'field_key': "codhead",  'empty': 'hide'},
+                {'type': 'plain', 'label': "Collection id",         'value': coll_id,           'field_key': "collection",  'empty': 'hide'},
+                # --------------------------------------------
+                {'type': 'safe',  'label': "Manuscript:",           'value': instance.get_manuscript()},
+                {'type': 'safe',  'label': "Manuscript section:",   'value': instance.get_codhead()},
+                {'type': 'safe',  'label': "Collection:",           'value': instance.get_collection(), 'field_key': "collone"},
+                {'type': 'plain', 'label': "Description:",          'value': instance.descr,    'field_key': "descr"}, 
+                {'type': 'plain', 'label': "Notes:",                'value': instance.notes,    'field_key': 'notes'},
+                ]
 
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ColwitEdit/add_to_context")
 
         # Return the context we have made
         return context
@@ -2369,18 +2386,16 @@ class ColwitListView(BasicList):
         if custom == "collection":
             html.append("<span class='collection'>{}</span>".format(instance.collection.name))
         elif custom == "manuscript":
-            manu = instance.msitem.manu
+            manu = instance.codhead.msitem.manu
             html.append(manu.idno)
         elif custom == "locus":
-            locus = instance.msitem.locus
+            locus = instance.codhead.locus
             html.append(locus)
         elif custom == "links":
             html.append("-")
         elif custom == "status":
             # Provide that status badge
             html.append(instance.get_stype_light())
-
-
             
         # Combine the HTML code
         sBack = "\n".join(html)
@@ -2462,7 +2477,7 @@ class CodheadEdit(BasicDetails):
                 # --------------------------------------------
                 {'type': 'plain', 'label': "Locus:",        'value': instance.locus,            'field_key': "locus"}, 
                 {'type': 'plain', 'label': "Title:",        'value': instance.title,            'field_key': 'title'},
-                {'type': 'plain', 'label': "",              'value': self.get_colwit(instance)                      },
+                {'type': 'plain', 'label': "Witness",       'value': instance.get_colwit()                      },
                  ]
 
             # Add a button back to the Manuscript
@@ -2587,6 +2602,10 @@ class CodheadDetails(CodheadEdit):
         oErr = ErrHandle()
 
         try:
+            # Load the after_details information
+
+            context['after_details'] = self.get_colwit(instance)
+
             context['sections'] = []
 
             # List of post-load objects

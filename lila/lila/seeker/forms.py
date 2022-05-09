@@ -1290,14 +1290,17 @@ class SearchManuForm(lilaModelForm):
 
 
 class ColwitForm(lilaModelForm):
+
+    collone = ModelChoiceField(queryset=None, required=False)
     
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = Colwit
-        fields = ['descr', 'notes']
+        fields = ['codhead', 'collection', 'descr', 'notes']
         widgets={'descr':       forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 'class': 'searching'}),
                  'notes':       forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 'class': 'searching'}),
+                 # 'collection':  CollOneHistWidget(attrs={'data-placeholder': 'Select a collection...', 'style': 'width: 100%;', 'class': 'searching'}),
                  }
 
     def __init__(self, *args, **kwargs):
@@ -1310,15 +1313,25 @@ class ColwitForm(lilaModelForm):
             profile = Profile.get_user_profile(username)
 
             # Some fields are not required
+            self.fields['codhead'].required = False
+            self.fields['collection'].required = False
             self.fields['descr'].required = False
             self.fields['notes'].required = False
 
+            self.fields['collone'].widget = CollOneHistWidget( attrs={'username': username, 'team_group': team_group,
+                        'data-placeholder': 'Select a collection...', 'style': 'width: 100%;', 'class': 'searching'})
+            #self.fields['collection'].widget.attrs['username'] = username
+            #self.fields['collection'].widget.attrs['team_group'] = team_group
+            prefix = "austat"
+            qs = Collection.get_scoped_queryset(prefix, username, team_group, settype="hc")
+            self.fields['collone'].queryset = qs
 
             # Get the instance
             if 'instance' in kwargs:
                 instance = kwargs['instance']
+
                 # If there is an instance, then check the author specification
-                sAuthor = "" if not instance.author else instance.author.name
+                # sAuthor = "" if not instance.author else instance.author.name
 
             iStop = 1
         except:
@@ -1663,6 +1676,7 @@ class ColForm(forms.Form):
             msg = oErr.get_error_message()
             oErr.DoError("ColForm-init")
         return None
+
 
 class GenreForm(forms.ModelForm):
     """Genre editing and searching"""
