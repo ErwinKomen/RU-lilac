@@ -98,12 +98,8 @@
                     </span>
                   </a>
                   {% if msitem.colwit %}
-                    <a class="btn btn-xs jumbo-1" href="{% url 'colwit_details' msitem.colwit.id %}">
+                    <a class="btn btn-xs jumbo-3" href="{% url 'colwit_details' msitem.colwit.id %}">
                       <span class="glyphicon glyphicon-arrow-right" title="Open the collection witness"></span>
-                    </a>
-                  {% else %}
-                    <a class="edit-mode btn btn-xs jumbo-1" onclick="document.getElementById('create_new_colwit_{{msitem.shead.id}}').submit();">
-                      <span class="glyphicon glyphicon-plus-sign" aap="{{msitem.shead.id}}" title="Create a Collection Witness based on this"></span>
                     </a>
                   {% endif %}
 

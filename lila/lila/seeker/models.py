@@ -3925,6 +3925,7 @@ class Manuscript(models.Model):
                     if not oSermon['shead'] is None:
                         # Check if there is a ColWit attached to this
                         oSermon['colwit'] = Colwit.objects.filter(codhead = oSermon['shead']).first()
+                        
                 oSermon['nodeid'] = sermon.order + 1
                 oSermon['number'] = idx + 1
                 oSermon['childof'] = 1 if sermon.parent == None else sermon.parent.order + 1
@@ -4677,6 +4678,11 @@ class Codico(models.Model):
                     oSermon['sermon'] = sermon.itemsermons.first()
                     # And we add a reference to the Codhead object
                     oSermon['shead'] = sermon.itemheads.first()
+                    oSermon['colwit'] = None
+                    # If this is a codhead
+                    if not oSermon['shead'] is None:
+                        # Check if there is a ColWit attached to this
+                        oSermon['colwit'] = Colwit.objects.filter(codhead = oSermon['shead']).first()
                 oSermon['nodeid'] = sermon.order + 1
                 oSermon['number'] = idx + 1
                 oSermon['childof'] = 1 if sermon.parent == None else sermon.parent.order + 1
@@ -6567,6 +6573,9 @@ class Codhead(models.Model):
     # [1] And a date: the date of saving this sermon
     created = models.DateTimeField(default=get_current_datetime)
 
+    # [1] Every Canwit may be a manifestation (default) or a template (optional)
+    mtype = models.CharField("Manifestation type", choices=build_abbr_list(MANIFESTATION_TYPE), max_length=5, default="man")
+
     # [1] Every Codhead belongs to exactly one MsItem
     #     Note: one [MsItem] will have only one [Codhead], but using an FK is easier for processing (than a OneToOneField)
     #           when the MsItem is removed, its Codhead is too
@@ -6598,14 +6607,15 @@ class Codhead(models.Model):
             if not colwit is None:
                 url = reverse("colwit_details", kwargs={'pk': colwit.id})
                 coll_name = colwit.collection.name
-                sBack = "<a href='{}' class='nostyle'><span>{}</span></a>".format(url, coll_name)
+                # sBack = "<a href='{}' class='nostyle'><span>{}</span></a>".format(url, coll_name)
+                sBack = "<span class='badge signature ot'><a href='{}'>Collectio 400 capitulorum</a></span>".format(
+                    url, coll_name)
         except:
             msg = oErr.get_error_message()
             oErr.DoError("get_colwit")
 
         return sBack
-
-
+    
     def get_locus_range(self):
         """Get the locus range"""
         return get_locus_range(self.locus)
@@ -6652,6 +6662,9 @@ class Colwit(models.Model):
     codhead = models.ForeignKey(Codhead, on_delete = models.CASCADE, related_name="codheadcolwits")
     # [1] One Colwit must link to exactly one Collection
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name="collectioncolwits")
+
+    # [1] Every Canwit may be a manifestation (default) or a template (optional)
+    mtype = models.CharField("Manifestation type", choices=build_abbr_list(MANIFESTATION_TYPE), max_length=5, default="man")
 
     # ============== MANYTOMANY connections
      # [m] Many-to-many: keywords per Codico
@@ -6716,6 +6729,20 @@ class Colwit(models.Model):
             oErr.DoError("Colwit/get_manuscript")
 
         return sBack
+
+    def get_manuscript_obj(self):
+        """Visualize manuscript with link for details view"""
+
+        manu = None
+        oErr = ErrHandle()
+        try:
+            manu = self.codhead.msitem.manu
+
+        except:
+            oErr.get_error_message()
+            oErr.DoError("Colwit/get_manuscript_obj")
+
+        return manu
 
     def get_stype_light(self, usercomment=False):
         count = 0

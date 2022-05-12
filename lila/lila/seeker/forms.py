@@ -8,7 +8,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.forms import ModelMultipleChoiceField, ModelChoiceField
 from django.forms.widgets import *
 from django.db.models import F, Case, Value, When, IntegerField
-from django_select2.forms import Select2MultipleWidget, ModelSelect2MultipleWidget, ModelSelect2TagWidget, ModelSelect2Widget, HeavySelect2Widget
+from django_select2.forms import ModelSelect2Mixin, Select2MultipleWidget, ModelSelect2MultipleWidget, ModelSelect2TagWidget, ModelSelect2Widget, HeavySelect2Widget
 from lila.seeker.models import *
 from lila.basic.widgets import RangeSlider
 
@@ -225,6 +225,44 @@ class CollectionAustatWidget(CollectionWidget):
     type = "austat"
 
 
+class CollectionOneWidget(ModelSelect2Widget):
+    model = Collection
+    search_fields = [ 'name__icontains' ]
+
+
+    def label_from_instance(self, obj):
+        return obj.name
+
+    def get_queryset(self):
+        oErr = ErrHandle()
+        qs = None
+        try:
+            qs = Collection.objects.all().order_by('name')
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CollectionOneWidget")
+        return qs
+
+
+class CollectionWidget(ModelSelect2MultipleWidget):
+    model = Collection
+    search_fields = [ 'name__icontains' ]
+
+
+    def label_from_instance(self, obj):
+        return obj.name
+
+    def get_queryset(self):
+        oErr = ErrHandle()
+        qs = None
+        try:
+            qs = Collection.objects.all().order_by('name')
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CollectionWidget")
+        return qs
+
+
 class CollOneWidget(ModelSelect2Widget):
     model = Collection
     search_fields = [ 'name__icontains' ]
@@ -235,16 +273,22 @@ class CollOneWidget(ModelSelect2Widget):
         return obj.name
 
     def get_queryset(self):
-        username = self.attrs.pop('username', '')
-        team_group = self.attrs.pop('team_group', '')
-        if self.type:
-            qs = Collection.get_scoped_queryset(self.type, username, team_group, settype=self.settype)
-        else:
-            qs = Collection.get_scoped_queryset(None, username, team_group, settype=self.settype)
-        #lstQ = []
-        #if self.type != None: lstQ.append(Q(type=self.type))
-        #if self.settype != None: lstQ.append(Q(settype=self.settype))
-        #return Collection.objects.filter(*lstQ).order_by('name').distinct()
+        oErr = ErrHandle()
+        qs = None
+        try:
+            username = self.attrs.pop('username', '')
+            team_group = self.attrs.pop('team_group', '')
+            if self.type:
+                qs = Collection.get_scoped_queryset(self.type, username, team_group, settype=self.settype)
+            else:
+                qs = Collection.get_scoped_queryset(None, username, team_group, settype=self.settype)
+            #lstQ = []
+            #if self.type != None: lstQ.append(Q(type=self.type))
+            #if self.settype != None: lstQ.append(Q(settype=self.settype))
+            #return Collection.objects.filter(*lstQ).order_by('name').distinct()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CollOneWidget")
         return qs
 
 
@@ -1317,11 +1361,11 @@ class ColwitForm(lilaModelForm):
             self.fields['collection'].required = False
             self.fields['descr'].required = False
             self.fields['notes'].required = False
+            self.fields['collone'].required = False
 
             self.fields['collone'].widget = CollOneHistWidget( attrs={'username': username, 'team_group': team_group,
                         'data-placeholder': 'Select a collection...', 'style': 'width: 100%;', 'class': 'searching'})
-            #self.fields['collection'].widget.attrs['username'] = username
-            #self.fields['collection'].widget.attrs['team_group'] = team_group
+
             prefix = "austat"
             qs = Collection.get_scoped_queryset(prefix, username, team_group, settype="hc")
             self.fields['collone'].queryset = qs
@@ -1332,6 +1376,9 @@ class ColwitForm(lilaModelForm):
 
                 # If there is an instance, then check the author specification
                 # sAuthor = "" if not instance.author else instance.author.name
+                if not instance.collection is None:
+                    self.fields['collone'].initial = instance.collection.id
+                    self.fields['collone'].widget.initial = instance.collection.id
 
             iStop = 1
         except:
