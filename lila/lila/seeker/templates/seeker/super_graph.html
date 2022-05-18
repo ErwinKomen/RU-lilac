@@ -7,9 +7,6 @@
       <a class="btn btn-xs jumbo-1 sticky-visualization" title="Manuscript Transmission" 
          data-target="#ssg_network_trans"
          onclick="ru.lila.seeker.network_transmission(this);">Transmission</a>
-      <a class="btn btn-xs jumbo-1 sticky-visualization" title="Network graph" 
-         data-target="#ssg_network_graph"
-         onclick="ru.lila.seeker.network_graph(this);">Graph</a>
     </span>
   </div>
 
@@ -82,63 +79,7 @@
 
 </div>
 
-<div id="ssg_network_graph" class="hidden container-small">
-  <form action="{{austat_graph}}" method="post" >
-    {% csrf_token %}
-    <div id="downloadcenter" class="hidden">
-      <input name='downloadtype' id='downloadtype' class='form-control' value='' >
-      <input name="downloaddata" id="downloaddata" class="hidden form-control" value="" />
-    </div>
-    <div class="row">
-      <div class="col-md-5 col-md-offset-3 align-right">
-        <span>Minimum number of manuscripts in which SSGs co-occur: </span>
-        <span id="network_graph_slider_value">2</span>
-      </div>
-      <div class="col-md-3 slidecontainer">
-        <input name="networkslider" id="id_networkslider" valueid="network_graph_slider_value"
-                type="range" min="1" max="{{manuscripts}}" value="2" class="slider" />
-      </div>
 
-      <!-- Button to stop -->
-      <div class="col-md-1 align-right">
-        <a role="button" class="btn btn-xs jumbo-2"
-            targeturl={{austat_graph}}
-            onclick="ru.lila.seeker.network_graph(this);">Update</a>
-      </div>
-
-    </div>
-    <div class="row">
-      <div class="col-md-5 col-md-offset-3 align-right">
-        <span>Gravity: </span>
-        <span id="gravity_graph_value">10</span>
-      </div>
-      <div class="col-md-3 slidecontainer">
-        <input name="gravityslider" id="id_gravityslider" valueid="gravity_graph_value"
-                type="range" min="1" max="100" value="10" class="slider" />
-      </div>
-
-      <!-- Download button -->
-      <div class="col-md-1 align-right">
-        {% include 'seeker/download.html' with downloadid="graph" urlname="austat_graph_download" object_id=object.id %}
-      </div>
-    </div>
-  </form>
-
-  <div id="super_network_graph_wait" class="hidden">
-    <span>Calculating SSG co-occurrance network...</span>
-    <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
-  </div>
-
-  <div class="row" style="height: 500px;">
-    <!-- The overlap network -->
-    <div class="col-md-10">
-      <div id="super_network_graph" style="width: 100%;" class="visborder" >
-        <svg viewBox="0,0,800,500"></svg>
-      </div>
-    </div>
-  </div>
-
-</div>
 
 <div id="ssg_network_overlap" class="hidden container-small">
 

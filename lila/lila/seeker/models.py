@@ -9120,10 +9120,9 @@ class CollectionMan(models.Model):
 
 
 class CollectionAustat(models.Model):
-    """The link between a collection item and a SSG (super sermon gold)"""
+    """The link between a collection item and a Austat (authoritative statement)"""
 
-    # [1] The gold sermon to which the coll
-    # ection item refers
+    # [1] The Austat to which the collection item refers
     austat = models.ForeignKey(Austat, related_name = "austat_col", on_delete=models.CASCADE)
     # [1] The collection to which the context item refers to
     collection = models.ForeignKey(Collection, related_name= "austat_col", on_delete=models.CASCADE)
