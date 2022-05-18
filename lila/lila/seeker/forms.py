@@ -430,6 +430,30 @@ class AustatWidget(ModelSelect2Widget):
         return qs
 
 
+class AuworkWidget(ModelSelect2MultipleWidget):
+    model = Auwork
+    search_fields = [ 'key__icontains', 'work__icontains' ]
+
+    def label_from_instance(self, obj):
+        return obj.key
+
+    def get_queryset(self):
+        qs = Auwork.objects.all().order_by('key').distinct()
+        return qs
+
+
+class AuworkOneWidget(ModelSelect2Widget):
+    model = Auwork
+    search_fields = [ 'key__icontains', 'work__icontains' ]
+
+    def label_from_instance(self, obj):
+        return obj.key
+
+    def get_queryset(self):
+        qs = Auwork.objects.all().order_by('key').distinct()
+        return qs
+
+
 class FeastOneWidget(ModelSelect2Widget):
     model = Feast
     search_fields = [ 'name__icontains', 'latname__icontains']
@@ -1764,6 +1788,47 @@ class GenreForm(forms.ModelForm):
             oErr.DoError("GenreForm/init")
 
 
+class AuworkForm(forms.ModelForm):
+    """Auwork editing and searching"""
+
+    work_ta = forms.CharField(label=_("Work"), required=False,
+                widget=forms.TextInput(attrs={'class': 'typeahead searching works input-sm', 'placeholder': 'Work(s)...', 'style': 'width: 100%;'}))
+    worklist     = ModelMultipleChoiceField(queryset=None, required=False, 
+                widget=AuworkWidget(attrs={'data-placeholder': 'Select multiple works...', 'style': 'width: 100%;', 'class': 'searching'}))
+
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = Auwork
+        fields = ['key', 'work', 'full']
+        widgets={'key':     forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
+                 'work':    forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 
+                                                      'class': 'searching', 'placeholder': 'Work...'}),
+                 'full':    forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 
+                                                      'class': 'searching', 'placeholder': 'Full description...'})
+                 }
+
+    def __init__(self, *args, **kwargs):
+        # Start by executing the standard handling
+        super(AuworkForm, self).__init__(*args, **kwargs)
+
+        oErr = ErrHandle()
+        try:
+            # Some fields are not required
+            self.fields['key'].required = False
+            self.fields['work'].required = False
+            self.fields['full'].required = False
+
+            self.fields['worklist'].queryset = Auwork.objects.all().order_by('key')
+
+            # Get the instance
+            if 'instance' in kwargs:
+                instance = kwargs['instance']
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("AuworkForm/init")
+
+
 class KeywordForm(forms.ModelForm):
     """Keyword list"""
 
@@ -2430,6 +2495,8 @@ class AustatForm(lilaModelForm):
     keycodelist  = ModelMultipleChoiceField(queryset=None, required=False, 
                     widget=KeycodeMultiWidget(attrs={'data-placeholder': 'Select multiple Key codes...', 'style': 'width: 100%;', 
                                                        'class': 'searching'}))
+    worklist     = ModelMultipleChoiceField(queryset=None, required=False, 
+                widget=AuworkWidget(attrs={'data-placeholder': 'Select multiple works...', 'style': 'width: 100%;', 'class': 'searching'}))
     genrelist     = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=GenreWidget(attrs={'data-placeholder': 'Select multiple genres...', 'style': 'width: 100%;', 'class': 'searching'}))
     kwlist     = ModelMultipleChoiceField(queryset=None, required=False, 
@@ -2469,11 +2536,12 @@ class AustatForm(lilaModelForm):
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = Austat
-        fields = ['author', 'ftext', 'ftrans', 'code', 'keycode', 'number', 'stype']
+        fields = ['author', 'ftext', 'ftrans', 'code', 'keycode', 'auwork', 'number', 'stype']
         widgets={'code':      forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 
                                                        'placeholder': 'Lilac code. Use wildcards, e.g: *002.*, *003'}),
                  'keycode':   forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 
                                                        'placeholder': 'key code. Use wildcards, e.g: *men*, *aug*'}),
+                 'auwork':    AuworkOneWidget(attrs={'class': 'searching', 'style': 'width: 100%;', 'data-placeholder': 'Work'}),
                  'number':    forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'data-placeholder': 'Author number'}),
                  'ftext':     forms.TextInput(attrs={'class': 'typeahead searching asftexts input-sm', 'placeholder': 'Full text...', 'style': 'width: 100%;'}),
                  'ftrans':    forms.TextInput(attrs={'class': 'typeahead searching asftrans input-sm', 'placeholder': 'Translation...', 'style': 'width: 100%;'}),
@@ -2503,6 +2571,7 @@ class AustatForm(lilaModelForm):
             self.fields['superlist'].queryset = AustatLink.objects.none()
             self.fields['lilalist'].queryset = Austat.objects.filter(code__isnull=False, moved__isnull=True).order_by('code')
             self.fields['keycodelist'].queryset = Austat.objects.filter(keycode__isnull=False, moved__isnull=True).order_by('code')
+            self.fields['worklist'].queryset = Auwork.objects.all().order_by('key')
             self.fields['genrelist'].queryset = Genre.objects.all().order_by('name')
             self.fields['kwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
             self.fields['ukwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
@@ -2571,6 +2640,8 @@ class AustatForm(lilaModelForm):
                 self.fields['kwlist'].initial = [x.pk for x in instance.keywords.all().order_by('name')]
                 self.fields['ukwlist'].initial = [x.keyword.pk for x in instance.austat_userkeywords.filter(profile=profile).order_by('keyword__name')]
                 self.fields['projlist'].initial = [x.pk for x in instance.projects.all().order_by('name')] #
+                if not instance.auwork is None:
+                    self.fields['worklist'].initial = [x.pk for x in Auwork.objects.filter(id=instance.auwork.id).order_by('key')]
 
                 qs = instance.austat_dst.all()
         except:

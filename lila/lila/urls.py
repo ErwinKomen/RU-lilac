@@ -175,6 +175,10 @@ urlpatterns = [
     url(r'^genre/details(?:/(?P<pk>\d+))?/$', GenreDetails.as_view(), name='genre_details'),
     url(r'^genre/edit(?:/(?P<pk>\d+))?/$', GenreEdit.as_view(), name='genre_edit'),
 
+    url(r'^auwork/list', AuworkListView.as_view(), name='auwork_list'),
+    url(r'^auwork/details(?:/(?P<pk>\d+))?/$', AuworkDetails.as_view(), name='auwork_details'),
+    url(r'^auwork/edit(?:/(?P<pk>\d+))?/$', AuworkEdit.as_view(), name='auwork_edit'),
+
     url(r'^userkeyword/list', UserKeywordListView.as_view(), name='userkeyword_list'),
     url(r'^userkeyword/details(?:/(?P<pk>\d+))?/$', UserKeywordDetails.as_view(), name='userkeyword_details'),
     url(r'^userkeyword/edit(?:/(?P<pk>\d+))?/$', UserKeywordEdit.as_view(), name='userkeyword_edit'),

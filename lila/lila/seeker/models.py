@@ -5433,6 +5433,48 @@ class Provenance(models.Model):
         return sBack
 
 
+class Auwork(models.Model):
+    """Each canonical statement (=Austat) may be linked to a particular Auwork
+    
+    An Auwork may be a Council, like the Council of Auxerre (561x605)
+    This Auwork has a short key like CAUX.561
+    """
+
+    # [1] Obligatory key of the work
+    key = models.CharField("Key", max_length=LONG_STRING, default="SHORT.KEY")
+    # [1] A Auwork may have a full description
+    work = models.TextField("Work", null=False, blank=False, default="-")
+    # [0-1] A Auwork may have a full description
+    full = models.TextField("Full description", null=True, blank=True)
+
+    def __str__(self):
+        return self.key
+
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+        """Scan [Austat] for possibilities to automatically link with this key"""
+
+        oErr = ErrHandle()
+        try:
+            # Do the saving initially
+            response = super(Auwork, self).save(force_insert, force_update, using, update_fields)
+
+            # Scan all relevant Austat items
+            qs = Austat.objects.filter(auwork__isnull=True)
+            with transaction.atomic():
+                for obj in qs:
+                    if obj.keycode == self.key:
+                        # Set the FK
+                        obj.auwork = self
+                        obj.save()
+            
+            # Return the initial save response
+            return response
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Auwork.save")
+            return None
+        
+
 class Austat(models.Model):
     """This is an Authoritative Statement (AS)"""
 
@@ -5448,6 +5490,7 @@ class Austat(models.Model):
     code = models.CharField("Lilac code", blank=True, null=True, max_length=LILAC_CODE_LENGTH, default="ZZZ_DETERMINE")
     # [0-1] The 'key' for this authoritative statement
     keycode = models.CharField("Statement code", blank=True, null=True, max_length=STANDARD_LENGTH)
+    auwork = models.ForeignKey(Auwork, on_delete=models.SET_NULL, related_name="auwork_austats", blank=True, null=True)
     # [0-1] The number of this AuStat (numbers are 1-based, per author)
     number = models.IntegerField("Number", blank=True, null=True)
     # [0-1] The sermon to which this one has moved
@@ -5626,6 +5669,13 @@ class Austat(models.Model):
         org.save()
         return org
 
+    def get_author(self):
+        # Get a good name for the author
+        sBack = "not specified"
+        if self.author:
+            sBack = self.author.name
+        return sBack
+
     def get_code(self):
       """Make sure to return an intelligable form of the code"""
 
@@ -5717,10 +5767,24 @@ class Austat(models.Model):
         sBack = ", ".join(lHtml)
         return sBack
 
-    def get_keycode(self):
+    def get_keycode(self, as_html=False):
         """Get the user-defined Authoritative Statement code"""
 
         sBack = self.keycode
+        # Possibly get the auwork instead
+        if not self.auwork is None:
+            sBack = self.auwork.key
+            if as_html:
+                url = reverse('auwork_details', kwargs={'pk': self.auwork.id})
+                sBack = "<span class='badge signature gr'><a href='{}'>{}</a></span>".format(url, sBack)
+        elif as_html:
+            # Need to pass on not only the string, but also a button to create an Auwork
+            html = []
+            html.append("<span>{}</span>".format(self.keycode))
+            url = "{}?wrk-key={}".format(reverse('auwork_details'), self.keycode)
+            html.append("<a class='btn btn-xs jumbo-1' href='{}' title='Create a work based on this key code'>Work".format(url))
+            html.append("<span class='glyphicon glyphicon-pencil'></span></a>")
+            sBack = "\n".join(html)
         # Any processing...
         return sBack
 
@@ -5967,6 +6031,12 @@ class Austat(models.Model):
         if self.ftrans: lHtml.append("{})".format(self.get_ftrans_markdown()))
         # Return the results
         return "".join(lHtml)
+
+    def get_work(self):
+        sBack = "-"
+        if not self.auwork is None:
+            sBack = self.auwork.work
+        return sBack
 
     def lila_code(auth_num, iNumber):
         """determine a lila code based on author number and sermon number"""

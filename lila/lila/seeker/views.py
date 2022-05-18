@@ -62,7 +62,7 @@ from lila.utils import ErrHandle
 from lila.seeker.forms import SearchCollectionForm, SearchManuscriptForm, SearchManuForm, SearchSermonForm, LibrarySearchForm, SignUpForm, \
     AuthorSearchForm, UploadFileForm, UploadFilesForm, ManuscriptForm, CanwitForm, CommentForm, \
     AuthorEditForm, BibRangeForm, FeastForm, \
-    CanwitSuperForm, SearchUrlForm, GenreForm, \
+    CanwitSuperForm, SearchUrlForm, GenreForm, AuworkForm, \
     CanwitSignatureForm, AustatLinkForm, \
     ReportEditForm, SourceEditForm, ManuscriptProvForm, LocationForm, LocationRelForm, OriginForm, \
     LibraryForm, ManuscriptExtForm, ManuscriptLitrefForm, CanwitKeywordForm, KeywordForm, \
@@ -79,7 +79,7 @@ from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_
     ProvenanceMan, Provenance, Daterange, CollOverlap, BibRange, Feast, Comment, AustatDist, \
     Basket, BasketMan, BasketAustat, Litref, LitrefMan, LitrefCol, Report, \
     Visit, Profile, Keyword, CanwitSignature, Status, Library, Collection, CollectionCanwit, \
-    CollectionMan, CollectionAustat, UserKeyword, Template, Genre, \
+    CollectionMan, CollectionAustat, UserKeyword, Template, Genre, Auwork, \
     ManuscriptCorpus, ManuscriptCorpusLock, AustatCorpus, ProjectEditor, \
     Codico, ProvenanceCod, OriginCodico, CodicoKeyword, Reconstruction, \
     Project, ManuscriptProject, CollectionProject, AustatProject, CanwitProject, \
@@ -1417,6 +1417,165 @@ class GenreListView(BasicList):
                 url = reverse('austat_list')
                 html.append("<a href='{}?as-genrelist={}'>".format(url, instance.id))
                 html.append("<span class='badge jumbo-4 clickable' title='Frequency in manuscripts'>{}</span></a>".format(number))
+            # Combine the HTML code
+            sBack = "\n".join(html)
+
+        return sBack, sTitle
+
+
+# ============= AUWORK VIEWS ============================================
+
+
+class AuworkEdit(BasicDetails):
+    """The details of one genre"""
+
+    model = Auwork
+    mForm = AuworkForm
+    prefix = 'wrk'
+    title = "WorkEdit"
+    rtype = "json"
+    prefix_type = "simple"
+    history_button = True
+    mainitems = []
+
+    def custom_init(self, instance):
+        # Check if there is a 'key' parameter
+        if instance is None:
+            key = self.qd.get("wrk-key")
+            if not key is None:
+                self.object = Auwork.objects.create(key=key)
+        return None
+    
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+
+        # Define the main items to show and edit
+        context['mainitems'] = [
+            {'type': 'plain', 'label': "Key code:",         'value': instance.key,  'field_key': 'key'},
+            {'type': 'plain', 'label': "Work:",             'value': instance.work, 'field_key': 'work'},
+            {'type': 'plain', 'label': "Full description:", 'value': instance.full, 'field_key': 'full'},
+            ]
+        # Return the context we have made
+        return context
+
+    def action_add(self, instance, details, actiontype):
+        """User can fill this in to his/her liking"""
+        lila_action_add(self, instance, details, actiontype)
+
+    def get_history(self, instance):
+        return lila_get_history(instance)
+
+
+class AuworkDetails(AuworkEdit):
+    """Like Auwork Edit, but then html output"""
+    rtype = "html"
+
+    def add_to_context(self, context, instance):
+        # First get the 'standard' context from AuworkEdit
+        context = super(AuworkDetails, self).add_to_context(context, instance)
+
+        context['sections'] = []
+
+        oErr = ErrHandle()
+        try:
+
+            # Lists of related objects
+            related_objects = []
+            resizable = True
+            index = 1
+            sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+            sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
+            sort_end = '</span>'
+
+            # List of Sermons that link to this feast (with an FK)
+            austats = dict(title="Authorative statements with this work", prefix="austat")
+            if resizable: austats['gridclass'] = "resizable"
+
+            rel_list =[]
+            qs = Austat.objects.filter(auwork=instance).order_by('keycode')
+            for item in qs:
+                # Fields: author, keycode, full text
+
+                url = reverse('austat_details', kwargs={'pk': item.id})
+                rel_item = []
+
+                # S: Order number for this austat
+                add_rel_item(rel_item, index, False, align="right")
+                index += 1
+
+                # Author
+                author_txt = item.get_author()
+                add_rel_item(rel_item, author_txt, False, main=False, link=url)
+
+                # Key code
+                keycode_txt = item.get_keycode()
+                add_rel_item(rel_item, keycode_txt, False, main=False, link=url)
+
+                # Work
+                work_txt = item.get_work()
+                add_rel_item(rel_item, work_txt, False, main=True, link=url)
+
+
+                # Add this line to the list
+                rel_list.append(dict(id=item.id, cols=rel_item))
+
+            austats['rel_list'] = rel_list
+
+            austats['columns'] = [
+                '{}<span>#</span>{}'.format(sort_start_int, sort_end), 
+                '{}<span>Author</span>{}'.format(sort_start, sort_end), 
+                '{}<span>Key code</span>{}'.format(sort_start, sort_end), 
+                '{}<span>Work</span>{}'.format(sort_start_int, sort_end)
+                ]
+            related_objects.append(austats)
+
+            # Add all related objects to the context
+            context['related_objects'] = related_objects
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("AuworkDetails/get_field_value")
+
+        # Return the context we have made
+        return context
+    
+
+class AuworkListView(BasicList):
+    """Search and list genres"""
+
+    model = Auwork
+    listform = AuworkForm
+    prefix = "wrk"
+    has_select2 = True
+    in_team = False
+    order_cols = ['key', 'work', '']
+    order_default = order_cols
+    order_heads = [
+        {'name': 'Key code',  'order': 'o=1', 'type': 'str', 'field': 'key',  'linkdetails': True},
+        {'name': 'Work',      'order': 'o=2', 'type': 'str', 'field': 'work', 'linkdetails': True, 'main': True},
+        {'name': 'Frequency', 'order': '',    'type': 'str', 'custom': 'links'},
+        ]
+    filters = [ {"name": "Key code",         "id": "filter_keycode",     "enabled": False},
+               ]
+    searches = [
+        {'section': '', 'filterlist': [
+            {'filter': 'keycode',   'dbfield': 'key',   'keyS': 'keycode_ta', 'keyList': 'keylist', 'infield': 'name' },
+            ]}
+        ]
+
+    def initializations(self):
+        return None
+
+    def get_field_value(self, instance, custom):
+        sBack = ""
+        sTitle = ""
+        if custom == "links":
+            # Get the number of Austat linked to this Work
+            html = []
+            number = Austat.objects.filter(auwork=instance).count()
+            if number > 0:
+                url = reverse('austat_list')
+                html.append("<a href='{}?as-worklist={}'>".format(url, instance.id))
+                html.append("<span class='badge jumbo-4 clickable' title='Frequency in Authoritative Statements'>{}</span></a>".format(number))
             # Combine the HTML code
             sBack = "\n".join(html)
 
