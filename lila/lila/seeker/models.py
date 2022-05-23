@@ -9126,8 +9126,16 @@ class CollectionAustat(models.Model):
     austat = models.ForeignKey(Austat, related_name = "austat_col", on_delete=models.CASCADE)
     # [1] The collection to which the context item refers to
     collection = models.ForeignKey(Collection, related_name= "austat_col", on_delete=models.CASCADE)
-    # [0-1] The order number for this S within the collection
+    # [0-1] Each combination of Collection-Austat has an identification number
+    idno = models.CharField("Identifier", max_length=LONG_STRING, null=True, blank=True)
+
+    # [0-1] The order number for this Austat within the collection
     order = models.IntegerField("Order", default = -1)
+
+    def __str__(self):
+        # Just provide the idno
+        sItem = self.idno
+        return sItem
 
 
 class CollectionProject(models.Model):
