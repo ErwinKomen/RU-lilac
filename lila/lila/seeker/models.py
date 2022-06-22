@@ -5487,6 +5487,7 @@ class Austat(models.Model):
     ftrans = models.TextField("Translation", null=True, blank=True)
     srchftrans = models.TextField("Translation (searchable)", null=True, blank=True)
     # [0-1] The 'lila-code' for a sermon - see PASSIM instructions (16-01-2020 4): [lila aaa.nnnn]
+    #       NO! The user has a completely different expectation here...
     code = models.CharField("Lilac code", blank=True, null=True, max_length=LILAC_CODE_LENGTH, default="ZZZ_DETERMINE")
     # [0-1] The 'key' for this authoritative statement
     keycode = models.CharField("Statement code", blank=True, null=True, max_length=STANDARD_LENGTH)

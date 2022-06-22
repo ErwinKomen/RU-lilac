@@ -157,6 +157,7 @@ class ReaderImport(View):
     import_type = "undefined"
     sourceinfo_url = "undefined"
     username = ""
+    model = None
     mForm = UploadFilesForm
     
     def post(self, request, pk=None):
@@ -254,6 +255,9 @@ class ReaderImport(View):
             self.qd = request.POST
         else:
             self.qd = request.GET
+
+        if not object_id is None and not self.model is None:
+            self.obj = self.model.objects.filter(id=object_id).first()
         # ALWAYS: perform some custom initialisations
         self.custom_init()
 

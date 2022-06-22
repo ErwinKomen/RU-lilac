@@ -227,10 +227,155 @@ class ManuscriptUploadExcel(ReaderImport):
         return bOkay, code
 
 
+class ManuscriptUploadCanwits(ReaderImport):
+    """Specific parameters for importing canwits into a manuscript from Excel"""
+
+    import_type = "canwits"
+    sourceinfo_url = "https://www.ru.nl/lilac/upload_canwits"
+    model = Manuscript
+
+    def process_files(self, request, source, lResults, lHeader):
+        file_list = []
+        oErr = ErrHandle()
+        bOkay = True
+        code = ""
+        col_number = {}
+        col_defs = [
+            {"name": "locus", "def": ['locus']},
+            {"name": "collection", "def": ['collection']},
+            {"name": "author", "def": ['author']},
+            {"name": "ftext", "def": ['ftext', 'full text']},
+            {"name": "ftrans", "def": ['ftrans', 'translation']},
+            {"name": "brefs", "def": ['bibref', 'bible']},
+            {"name": "austat_link", "def": ['authoritative statement']},
+            {"name": "austat_note", "def": ['fons materialis (note)']}
+            ]
+        oStatus = self.oStatus
+        try:
+            # Make sure we have the username
+            username = self.username
+            profile = Profile.get_user_profile(username)
+            team_group = app_editor
+            kwargs = {'profile': profile, 'username': username, 'team_group': team_group}
+
+            # Initialize column numbers
+            for oDef in col_defs:
+                col_number[oDef['name']] = -1
+
+            # Make sure it is clear which manuscript this is
+            manu = self.obj
+            if manu is None:
+                manu_id = self.qd.get("pk")
+                if not manu_id is None:
+                    manu = Manuscript.objects.filter(id=manu_id).first()
+
+            # Get the contents of the imported file
+            file_list = request.FILES.getlist('files_field')
+            if not file_list is None and len(file_list) > 0:
+                data_file = file_list[0]
+                if not data_file is None:
+                    filename = data_file.name
+
+                    # Set the status
+                    oStatus.set("reading", msg="file={}".format(filename))
+
+                    # Get the source file
+                    if data_file == None or data_file == "":
+                        self.arErr.append("No source file specified for the selected project")
+                    else:
+                        # Check the extension
+                        arFile = filename.split(".")
+                        extension = arFile[len(arFile)-1]
+
+                        if extension == "xlsx":
+                            # This is an Excel file: read the file using openpyxl
+                            # Write data temporarily to the WRITABLE dir, but with a temporary filename
+                            tmp_path = os.path.abspath(os.path.join( MEDIA_DIR, filename))
+                            with io.open(tmp_path, "wb") as f:
+                                sData = data_file.read()
+                                f.write(sData)
+
+                            # Read string file
+                            wb = openpyxl.load_workbook(tmp_path, read_only=True)
+                            sheetnames = wb.sheetnames
+
+                            bFound = False
+                            for sheetname in sheetnames:
+                                if not bFound:
+                                    low_sheetname = sheetname.lower()
+                                    if "canon" in low_sheetname and "witness" in low_sheetname:
+                                        bFound = True
+                                        break
+                                    elif "canwit" in low_sheetname:
+                                        bFound = True
+                                        break
+                            # Check if we actually found a worksheet to load CanWit specifications from
+                            if bFound:
+                                # Yes, we have the correct worksheet
+                                ws = wb[sheetname]
+
+                                # Get a list of all columns (in lower case)
+                                # The columns that we are expecting for each CanWit are:
+                                #    locus, ftext, ftrans, bibref
+                                # Optional columns, once the CanWit has been established:
+                                #    collection, austat link, 
+                                row_num = 1
+                                col_num = 1
+                                bStop = False
+                                while not bStop:
+                                    k = ws.cell(row=row_num, column=col_num).value
+                                    if k is None or k == "":
+                                        bStop = True
+                                    else:
+                                        col_name = k.lower()
+                                        for oDef in col_defs:
+                                            name = oDef['name']
+                                            if col_number[name] < 0:
+                                                for str_def in oDef['def']:
+                                                    if str_def in col_name:
+                                                        # Found it!
+                                                        col_number[name] = col_num
+                                                        break
+                                    col_num += 1
+
+                                # Make sure we at least have [ftext]
+                                if col_number['ftext'] >= 1:
+                                    # Walk through all rows
+                                    bStop = False
+                                    row_num = 2
+                                    while not bStop:
+                                        value = ws.cell(row=row_num, column=1).value
+                                        bStop = (value is None or value == "")
+                                        if not bStop:
+                                            # Read the values for this row
+                                            oValue = {}
+                                            for field_name, col_num in col_number.items():
+                                                if col_num > 0:
+                                                    oValue[field_name] = ws.cell(row=row_num, column=col_num).value
+                                            # We have all the values, process the essentials to create a CanWit (if it doesn't exist already)
+                                            val_ftext = oValue['ftext']
+                                            canwit = Canwit.objects.filter(msitem__codico__manuscript=manu, ftext__iexact=val_ftext).first()
+                                            if canwit is None:
+                                                canwit = Canwit.custom_add(oValue, manuscript=manu)
+                                        # Go to the next row
+                                        row_num += 1
+                                    
+
+                            else:
+                                # Actually not sure what to do
+                                oErr.Status("WARNING: Cannot find a CanWit or Canon Witness worksheet in this Excel")
+                        else:
+                            oErr.Status("WARNING: cannot decode extension [{}]".format(extension))
+
+        except:
+            bOkay = False
+            code = oErr.get_error_message()
+        return bOkay, code
+
+
 class ManuscriptUploadJson(ReaderImport):
     import_type = "json"
-    sourceinfo_url = "https://www.ru.nl/lila/upload_json"
-
+    sourceinfo_url = "https://www.ru.nl/lilac/upload_json"
 
     def process_files(self, request, source, lResults, lHeader):
         file_list = []

@@ -25,7 +25,7 @@ from lila.seeker.views_ta import *
 from lila.seeker.views_api import *
 from lila.seeker.visualizations import *
 from lila.reader.views import *
-from lila.reader.excel import ManuscriptUploadExcel, ManuscriptUploadJson, ManuscriptUploadGalway
+from lila.reader.excel import ManuscriptUploadExcel, ManuscriptUploadJson, ManuscriptUploadGalway, ManuscriptUploadCanwits
 
 # Import from lila as a whole
 from lila.settings import APP_PREFIX
@@ -71,6 +71,7 @@ urlpatterns = [
     url(r'^manuscript/edit(?:/(?P<pk>\d+))?/$', ManuscriptEdit.as_view(), name='manuscript_edit'),
     url(r'^manuscript/hierarchy(?:/(?P<pk>\d+))?/$', ManuscriptHierarchy.as_view(), name='manuscript_hierarchy'),
     url(r'^manuscript/download(?:/(?P<pk>\d+))?/$', ManuscriptDownload.as_view(), name='manuscript_download'),
+    url(r'^manuscript/import/canwits(?:/(?P<pk>\d+))?/$', ManuscriptUploadCanwits.as_view(), name='manuscript_upload_canwits'),
     url(r'^manuscript/import/excel/$', ManuscriptUploadExcel.as_view(), name='manuscript_upload_excel'),
     url(r'^manuscript/import/json/$', ManuscriptUploadJson.as_view(), name='manuscript_upload_json'),
     url(r'^manuscript/import/galway/$', ManuscriptUploadGalway.as_view(), name='manuscript_upload_galway'),

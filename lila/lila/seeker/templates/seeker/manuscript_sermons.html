@@ -20,6 +20,13 @@
               >
             <span class="glyphicon glyphicon-plus"></span>Add a Canon Witness to this manuscript
           </a>
+          <!-- Import canwit from Excel -->
+          <a class="btn btn-xs jumbo-3" role="button" data-toggle="collapse"
+             data-target="#import_canwit"
+             title="Import one or more canon witnesses from an Excel file"
+              >
+            <span class="glyphicon glyphicon-plus"></span>Import Canon Witnesses
+          </a>
         </span>
       {% endif %}
     </h3>
@@ -48,6 +55,38 @@
             </div>
           </form>
         </div>
+      </div>
+
+      <!-- Room to have the form-link to import canwits from Excel for this manuscript -->
+      <div class="row">
+        <div class="collapse col-md-offset-6 col-md-6" id="import_canwit" >
+          <form action="{% url 'manuscript_upload_canwits' manuForm.instance.id %}" method="post"  enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="hidden" >
+              <input type="text" name="canwi-manu" value="{{manuForm.instance.id}}" />
+              <input type="text" name="canwi-mtype" value="{{manuForm.instance.mtype}}" />
+            </div>
+            <div id="excel-import_info"
+                 targetid="excel_data_import"
+                 targeturl="{% url 'manuscript_upload_canwits' manuForm.instance.id %}">
+              <span class="btn btn-default btn-xs btn-file">
+                Browse...
+                <input id="id_excel-files_field" name="files_field" required="" type="file" oninput="ru.basic.import_data('excel');">
+              </span>
+            </div>
+            <!-- progress of upload indicator -->
+            <div class="col-md-6">
+              <progress class="hidden" style="width:100%;" id="excel-import_progress" value="0" min="0" max="100"></progress>
+            </div>
+            <div class="save-warning"></div>
+            <!-- Any error reporting -->
+            <div id="excel-import_error"></div>
+
+          </form>
+        </div>
+        <!-- Import information -->
+        <div id="excel_data_import" class="project-part hidden"></div>
+
       </div>
     {% endif %}
 
