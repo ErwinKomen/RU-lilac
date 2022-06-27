@@ -6948,7 +6948,8 @@ class Canwit(models.Model):
         {'name': 'Gryson/Clavis (auto)','type': 'func',  'path': 'signaturesA'},
         {'name': 'Personal Datasets',   'type': 'func',  'path': 'datasets'},
         {'name': 'Literature',          'type': 'func',  'path': 'literature'},
-        {'name': 'SSG links',           'type': 'func',  'path': 'ssglinks'},
+        {'name': 'Austat links',        'type': 'func',  'path': 'austatlinks'},
+        {'name': 'Austat one link',     'type': 'func',  'path': 'austat_one'},
         ]
 
     def __str__(self):
@@ -7032,19 +7033,29 @@ class Canwit(models.Model):
 
         try:
             # Understand where we are coming from
-            keyfield = kwargs.get("keyfield", "name")
+            keyfield = kwargs.get("keyfield", "path")
             profile = kwargs.get("profile")
 
             # Figure out whether this sermon item already exists or not
-            locus = oSermo['locus']
-            type = oSermo['type']
-            if locus != None and locus != "":
+            type = oSermo.get('type', "")
+            locus = oSermo.get('locus', "")
+            ftext = oSermo.get("ftext", "")
+            if locus != "" and ftext != "":
                 # Try retrieve an existing or 
                 if type.lower() == "structural":
                     obj = Codhead.objects.filter(msitem__manu=manuscript, locus=locus).first()
                 else:
-                    obj = Canwit.objects.filter(msitem__manu=manuscript, locus=locus, mtype="man").first()
+                    obj = Canwit.objects.filter(msitem__manu=manuscript, locus=locus, ftext__iexact=ftext, mtype="man").first()
             if obj == None:
+                # Remove any MsItems that are connected with this manuscript but not with Canwit or Canhead
+                delete_id = []
+                for msitem in MsItem.objects.filter(codico__manuscript=manuscript):
+                    if msitem.itemsermons.count() == 0 and msitem.itemheads.count() ==0:
+                        delete_id.append(msitem.id)
+                if len(delete_id) > 0:
+                    MsItem.objects.filter(id__in=delete_id).delete()
+
+
                 # Create a MsItem
                 msitem = MsItem(manu=manuscript)
                 # Possibly add order, parent, firstchild, next
@@ -7058,6 +7069,10 @@ class Canwit(models.Model):
                 else:
                     # Create a new Canwit with default values, tied to the msitem
                     obj = Canwit.objects.create(msitem=msitem, stype="imp", mtype="man")
+
+            # Convert 'austat_link' + 'austat_note' into one object
+            oAustat = dict(austat_link=oSermo.get("austat_link"), austat_note=oSermo.get("austat_note"))
+            oSermo['austat_one'] = oAustat
                         
             if type.lower() == "structural":
                 # Possibly add the title
@@ -7236,23 +7251,43 @@ class Canwit(models.Model):
                         collection = Collection.objects.create(name=ds_name, owner=profile, type="sermo", settype="pd")
                     # Add manuscript to collection
                     highest = collection.collections_sermon.all().order_by('-order').first()
-                    order = 1 if higest == None else highest + 1
+                    order = 1 if highest == None else highest + 1
                     CollectionCanwit.objects.create(collection=collection, sermon=self, order=order)
-            elif path == "ssglinks":
-                ssglink_names = value_lst #  get_json_list(value)
-                for ssg_code in ssglink_names:
-                    # Get this SSG
-                    ssg = Austat.objects.filter(code__iexact=ssg_code).first()
+            elif path == "austatlinks":
+                austatlink_names = value_lst #  get_json_list(value)
+                for austat_code in austatlink_names:
+                    # Get this Austat
+                    austat = Austat.objects.filter(code__iexact=austat_code).first()
 
-                    if ssg == None:
+                    if austat == None:
                         # Indicate that we didn't find it in the notes
                         intro = ""
                         if self.note != "": intro = "{}. ".format(self.note)
-                        self.note = "{}Please set manually the SSG link [{}]".format(intro, ssg_code)
+                        self.note = "{}Please set manually the Austat link [{}]".format(intro, austat_code)
                         self.save()
                     else:
                         # Make link between SSG and Canwit
-                        CanwitAustat.objects.create(sermon=self, super=ssg, linktype="eqs")
+                        CanwitAustat.objects.create(canwit=self, austat=austat, linktype="eqs")
+                # Ready
+            elif path == "austat_one":
+                oValue = value
+                austat_code = oValue['austat_link']
+                austat_note = oValue.get('austat_note', "")
+                # Get this Austat
+                austat = Austat.objects.filter(code__iexact=austat_code).first()
+
+                if austat == None:
+                    # Indicate that we didn't find it in the notes
+                    intro = ""
+                    if self.note != "": intro = "{}. ".format(self.note)
+                    self.note = "{}Please set manually the Austat link [{}]".format(intro, austat_code)
+                    self.save()
+                else:
+                    # Make link between SSG and Canwit
+                    obj = CanwitAustat.objects.create(canwit=self, austat=austat, linktype="eqs")
+                    if not obj is None and austat_note != "":
+                        obj.note = austat_note
+                        obj.save()
                 # Ready
             elif path == "signaturesM":
                 signatureM_names = value_lst
