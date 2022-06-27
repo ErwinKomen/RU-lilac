@@ -8748,6 +8748,8 @@ class CanwitAustat(models.Model):
     austat = models.ForeignKey(Austat, related_name="canwit_austat", on_delete=models.CASCADE)
     # [1] Each sermon-to-gold link must have a linktype, with default "equal"
     linktype = models.CharField("Link type", choices=build_abbr_list(LINK_TYPE), max_length=5, default="uns")
+    # [0-1] Each link can have a note attached to it
+    note = models.TextField("Note", blank=True, null=True)
 
     def __str__(self):
         # Temporary fix: sermon.id
