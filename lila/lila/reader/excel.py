@@ -356,6 +356,7 @@ class ManuscriptUploadCanwits(ReaderImport):
                                             val_ftext = oValue['ftext']
                                             canwit = Canwit.objects.filter(msitem__codico__manuscript=manu, ftext__iexact=val_ftext).first()
                                             if canwit is None:
+                                                oValue['type'] = 'canwit'
                                                 canwit = Canwit.custom_add(oValue, manuscript=manu)
                                         # Go to the next row
                                         row_num += 1
