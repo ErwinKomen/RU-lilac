@@ -6844,6 +6844,8 @@ class Canwit(models.Model):
     autype = models.CharField("Author certainty", choices=build_abbr_list(CERTAINTY_TYPE), max_length=5, default="ave")
     # [0-1] Optional location of this canWit on the manuscript
     locus = models.CharField("Locus", null=True, blank=True, max_length=LONG_STRING)
+    # [0-1] Optional location extension of this canWit on the manuscript
+    caput = models.CharField("Caput", null=True, blank=True, max_length=LONG_STRING)
     # [0-1] We would like to know the FULL TEXT
     ftext = models.TextField("Full text", null=True, blank=True)
     srchftext = models.TextField("Full text (searchable)", null=True, blank=True)

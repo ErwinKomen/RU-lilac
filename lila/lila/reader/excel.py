@@ -38,7 +38,7 @@ import requests
 from lila.settings import APP_PREFIX, MEDIA_DIR
 from lila.utils import ErrHandle
 
-from lila.seeker.models import Manuscript, Canwit, Profile, Report, Codico, Location, LocationType, Library
+from lila.seeker.models import Manuscript, MsItem, Canwit, Profile, Report, Codico, Location, LocationType, Library
 from lila.seeker.views import app_editor
 from lila.reader.views import ReaderImport
 from lila.reader.forms import UploadFileForm
@@ -242,6 +242,7 @@ class ManuscriptUploadCanwits(ReaderImport):
         col_number = {}
         col_defs = [
             {"name": "locus", "def": ['locus']},
+            {"name": "caput", "def": ['caput']},
             {"name": "collection", "def": ['collection']},
             {"name": "author", "def": ['author']},
             {"name": "ftext", "def": ['ftext', 'full text']},
@@ -340,6 +341,12 @@ class ManuscriptUploadCanwits(ReaderImport):
 
                                 # Make sure we at least have [ftext]
                                 if col_number['ftext'] >= 1:
+                                    # Get the order number by looking for the highest order number so far
+                                    order = 1
+                                    msitem_last = MsItem.objects.filter(codico__manuscript=manu).order_by('order').last()
+                                    if not msitem_last is None:
+                                        order = msitem_last.order + 1
+
                                     # Walk through all rows
                                     bStop = False
                                     row_num = 2
@@ -357,7 +364,8 @@ class ManuscriptUploadCanwits(ReaderImport):
                                             canwit = Canwit.objects.filter(msitem__codico__manuscript=manu, ftext__iexact=val_ftext).first()
                                             if canwit is None:
                                                 oValue['type'] = 'canwit'
-                                                canwit = Canwit.custom_add(oValue, manuscript=manu)
+                                                canwit = Canwit.custom_add(oValue, manuscript=manu, order=order)
+                                                order += 1
                                         # Go to the next row
                                         row_num += 1
                                     
