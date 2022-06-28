@@ -1,4 +1,5 @@
 import sys
+from tkinter.font import ROMAN
 from django.conf import settings
 from django import http
 
@@ -56,6 +57,49 @@ class ErrHandle:
 
     def get_error_stack(self):
         return " ".join(self.loc_errStack)
+
+class RomanNumbers:
+
+    def romanToInt(self, sRomNum):
+        """Convert roman (string) into number (int)"""
+
+        # Initializations
+        dic_roman = {'I':1,'V':5,'X':10,'L':50,'C':100,'D':500,'M':1000,
+                     'IV':4,'IX':9,'XL':40,'XC':90,'CD':400,'CM':900}
+        i = 0
+        num = 0
+        rom_size = 0
+
+        # Change 'U' into 'V'
+        sRomNum = sRomNum.replace("U", "V")
+
+        while i < len(sRomNum):
+            if i+1<len(sRomNum) and sRomNum[i:i+2] in dic_roman:
+                num += dic_roman[sRomNum[i:i+2]]
+                rom_size = 2
+            else:
+                num += dic_roman[sRomNum[i]]
+                rom_size = 1
+            i += rom_size
+
+        # REturn the value that we found
+        return num
+
+    def intToRoman(self, num):
+        """Convert number (int) into roman (string)"""
+
+        val = [ 1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1 ]
+        syb = [ "M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I" ]
+        sRomNum = ''
+        i = 0
+        while  num > 0:
+            for _ in range(num // val[i]):
+                sRomNum += syb[i]
+                num -= val[i]
+            i += 1
+
+        # Return the Roman Number string that has been built
+        return sRomNum
 
 class BlockedIpMiddleware(object):
 
