@@ -54,6 +54,7 @@ SET_TYPE = "seeker.settype"
 EDI_TYPE = "seeker.editype"
 LIBRARY_TYPE = "seeker.libtype"
 LINK_TYPE = "seeker.linktype"
+FONS_TYPE = "seeker.fonstype"
 SPEC_TYPE = "seeker.spectype"
 REPORT_TYPE = "seeker.reptype"
 STATUS_TYPE = "seeker.stype"
@@ -6867,6 +6868,8 @@ class Canwit(models.Model):
     # [0-1] Any number of bible references (as stringified JSON list)
     bibleref = models.TextField("Bible reference(s)", null=True, blank=True)
     verses = models.TextField("List of verses", null=True, blank=True)
+    # [0-1] The LiLaC code for this particular Canwit
+    lilacode = models.CharField("LiLaC code", null=True, blank=True, max_length=LONG_STRING)
 
     # [1] Every Canwit has a status - this is *NOT* related to model 'Status'
     stype = models.CharField("Status", choices=build_abbr_list(STATUS_TYPE), max_length=5, default="man")
@@ -6883,7 +6886,8 @@ class Canwit(models.Model):
     # [0-n] Many-to-many: keywords per Canwit
     keywords = models.ManyToManyField(Keyword, through="CanwitKeyword", related_name="keywords_sermon")
 
-    # [0-n] Link to one or more SSG (austat)
+    # [0-n] Link to one or more Austat: 
+    # #     (depending on fonstype, this can be 'materialis' or 'formalis'
     austats = models.ManyToManyField(Austat, through="CanwitAustat", related_name="austat_canwits")
 
     # [m] Many-to-many: one sermon can be a part of a series of collections 
@@ -8783,7 +8787,9 @@ class CanwitAustat(models.Model):
     manu = models.ForeignKey(Manuscript, related_name="canwit_austat", blank=True, null=True, on_delete=models.SET_NULL)
     # [1] The Authoritative Statement
     austat = models.ForeignKey(Austat, related_name="canwit_austat", on_delete=models.CASCADE)
-    # [1] Each sermon-to-gold link must have a linktype, with default "equal"
+    # [1] Each canwit-to-austat link must have a fonstype, with default "mat" (for Fons Materialis)
+    fonstype = models.CharField("Fons type", choices=build_abbr_list(FONS_TYPE), max_length=5, default="mat")
+    # [1] Each canwit-to-austat link must have a linktype, with default "equal"
     linktype = models.CharField("Link type", choices=build_abbr_list(LINK_TYPE), max_length=5, default="uns")
     # [0-1] Each link can have a note attached to it
     note = models.TextField("Note", blank=True, null=True)

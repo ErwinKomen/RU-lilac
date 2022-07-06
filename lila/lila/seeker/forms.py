@@ -1448,7 +1448,10 @@ class CanwitForm(lilaModelForm):
                 widget=FeastWidget(attrs={'data-placeholder': 'Select multiple feasts...', 'style': 'width: 100%;', 'class': 'searching'}))
     superlist = ModelMultipleChoiceField(queryset=None, required=False,
                 widget=CanwitSuperAddOnlyWidget(attrs={'data-placeholder': 'Add links with the green "+" sign...', 
-                                                  'placeholder': 'Linked Authoritative Statements...', 'style': 'width: 100%;', 'class': 'searching'}))
+                                                  'placeholder': 'Linked Fons materialis...', 'style': 'width: 100%;', 'class': 'searching'}))
+    formalislist = ModelMultipleChoiceField(queryset=None, required=False,
+                widget=CanwitSuperAddOnlyWidget(attrs={'data-placeholder': 'Add links with the green "+" sign...', 
+                                                  'placeholder': 'Linked Fons formalis...', 'style': 'width: 100%;', 'class': 'searching'}))
     lilalist  = ModelMultipleChoiceField(queryset=None, required=False, 
                     widget=AustatMultiWidget(attrs={'data-placeholder': 'Select multiple lila codes...', 'style': 'width: 100%;', 
                                                        'class': 'searching'}))
@@ -1585,6 +1588,7 @@ class CanwitForm(lilaModelForm):
 
             # The available Sermondescr-Equal list
             self.fields['superlist'].queryset = CanwitAustat.objects.none()
+            self.fields['formalislist'].queryset = CanwitAustat.objects.none()
             self.fields['lilalist'].queryset = Austat.objects.filter(code__isnull=False, moved__isnull=True, atype='acc').order_by('code')
             self.fields['bibrefbk'].queryset = Book.objects.all().order_by('idno')
 
@@ -1651,11 +1655,15 @@ class CanwitForm(lilaModelForm):
                 # self.fields['siglist'].initial = [x.pk for x in instance.signatures.all().order_by('-editype', 'code')]
                 self.fields['siglist_m'].initial = [x.pk for x in instance.canwitsignatures.all().order_by('-editype', 'code')]
 
-                # Note: this is the list of links between SermonDesrc-Gold
-                self.fields['superlist'].initial = [x.pk for x in instance.canwit_austat.all().order_by('linktype', 'canwit__author__name', 'canwit__siglist')]
-
+                # Note: this is the list of links between Canwit-Austat: fons materialis
+                self.fields['superlist'].initial = [x.pk for x in instance.canwit_austat.filter(fonstype='mat').order_by('linktype', 'canwit__author__name', 'canwit__siglist')]
                 # Make sure the initial superlist captures exactly what we have
                 self.fields['superlist'].queryset = CanwitAustat.objects.filter(Q(id__in = self.fields['superlist'].initial))
+
+                # Note: this is the list of links between Canwit-Austat: fons formalis
+                self.fields['formalislist'].initial = [x.pk for x in instance.canwit_austat.filter(fonstype='for').order_by('linktype', 'canwit__author__name', 'canwit__siglist')]
+                # Make sure the initial formalislist captures exactly what we have
+                self.fields['formalislist'].queryset = CanwitAustat.objects.filter(Q(id__in = self.fields['formalislist'].initial))
 
                 self.fields['bibreflist'].initial = [x.pk for x in instance.canwitbibranges.all()]
                 self.fields['bibreflist'].queryset = BibRange.objects.filter(id__in=self.fields['bibreflist'].initial)
