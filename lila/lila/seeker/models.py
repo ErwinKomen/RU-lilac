@@ -5501,8 +5501,8 @@ class Austat(models.Model):
     # [0-1] The 'lila-code' for a sermon - see PASSIM instructions (16-01-2020 4): [lila aaa.nnnn]
     #       NO! The user has a completely different expectation here...
     code = models.CharField("Lilac code", blank=True, null=True, max_length=LILAC_CODE_LENGTH, default="ZZZ_DETERMINE")
-    # [0-1] A short liLaC code supplied by the user
-    lilacode = models.CharField("LiLaC code", null=True, blank=True, max_length=LONG_STRING)
+    # [0-1] Short string date (can be approximate using 'x')
+    date = models.CharField("Date", null=True, blank=True, max_length=LONG_STRING)
     # [0-1] The 'key' for this authoritative statement
     keycode = models.CharField("Statement code", blank=True, null=True, max_length=STANDARD_LENGTH)
     auwork = models.ForeignKey(Auwork, on_delete=models.SET_NULL, related_name="auwork_austats", blank=True, null=True)

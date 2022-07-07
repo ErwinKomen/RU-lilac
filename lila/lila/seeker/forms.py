@@ -2566,12 +2566,13 @@ class AustatForm(lilaModelForm):
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = Austat
-        fields = ['author', 'ftext', 'ftrans', 'code', 'keycode', 'auwork', 'number', 'stype']
+        fields = ['author', 'ftext', 'ftrans', 'code', 'keycode', 'auwork', 'number', 'stype', 'date']
         widgets={'code':      forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 
                                                        'placeholder': 'Lilac code. Use wildcards, e.g: *002.*, *003'}),
                  'keycode':   forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 
                                                        'placeholder': 'key code. Use wildcards, e.g: *men*, *aug*'}),
                  'auwork':    AuworkOneWidget(attrs={'class': 'searching', 'style': 'width: 100%;', 'data-placeholder': 'Work'}),
+                 'date':      forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'data-placeholder': 'Date...'}),
                  'number':    forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'data-placeholder': 'Author number'}),
                  'ftext':     forms.TextInput(attrs={'class': 'typeahead searching asftexts input-sm', 'placeholder': 'Full text...', 'style': 'width: 100%;'}),
                  'ftrans':    forms.TextInput(attrs={'class': 'typeahead searching asftrans input-sm', 'placeholder': 'Translation...', 'style': 'width: 100%;'}),
@@ -3345,8 +3346,8 @@ class CodicoForm(lilaModelForm):
 
         model = Codico
         fields = ['name', 'notes', 'support', 'extent', 'format', 'stype', 'manuscript']
-        widgets={'name':        forms.TextInput(attrs={'style': 'width: 100%;'}),
-                 'format':      forms.TextInput(attrs={'style': 'width: 100%;'}),
+        widgets={'name':        forms.TextInput(attrs={'data-placeholder': 'Provide the name...', 'style': 'width: 100%;'}),
+                 'format':      forms.TextInput(attrs={'data-placeholder': 'Provide the size...', 'style': 'width: 100%;'}),
                  'extent':      forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;'}),
                  'support':     forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;'}),
                  'notes':       forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;'}),
