@@ -6823,6 +6823,27 @@ class Colwit(models.Model):
 
         return sBack
 
+    def get_lilacode(self):
+        """Calculate and return LiLaC code, which is manuscript code + collection code"""
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            html = []
+            # Find out what collection we link to
+            if not self.collection is None and not self.collection.lilacode is None:
+                html.append(self.collection.lilacode)
+            # Find out what manuscript we belong to
+            manuscript = self.codhead.msitem.manu
+            if not manuscript is None and not manuscript.lilacode is None:
+                html.append(manuscript.lilacode)
+            # Combine it all
+            sBack = ".".join(html)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Codico/get_lilacode")
+        return sBack
+
     def get_manuscript(self):
         """Visualize manuscript with link for details view"""
 
