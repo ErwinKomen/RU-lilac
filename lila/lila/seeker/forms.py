@@ -1455,8 +1455,8 @@ class CanwitForm(lilaModelForm):
     lilalist  = ModelMultipleChoiceField(queryset=None, required=False, 
                     widget=AustatMultiWidget(attrs={'data-placeholder': 'Select multiple lila codes...', 'style': 'width: 100%;', 
                                                        'class': 'searching'}))
-    lilacode  = forms.CharField(label=_("lila code"), required=False, 
-                widget=forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'placeholder': 'lila code. Use wildcards, e.g: *002.*, *003'}))
+    #lilacode  = forms.CharField(label=_("lila code"), required=False, 
+    #            widget=forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'placeholder': 'lila code. Use wildcards, e.g: *002.*, *003'}))
     bibreflist    = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=BibrefAddonlyWidget(attrs={'data-placeholder': 'Use the "+" sign to add references...', 'style': 'width: 100%;', 'class': 'searching'}))
     bibrefbk    = forms.ModelChoiceField(queryset=None, required=False, 
@@ -1523,22 +1523,24 @@ class CanwitForm(lilaModelForm):
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = Canwit
-        fields = ['title', 'subtitle', 'author', 'locus', 'ftext', 'ftrans', 'quote', 'mtype', 
+        fields = ['title', 'subtitle', 'author', 'locus', 'ftext', 'ftrans', 'quote', 'mtype', 'lilacode', 'caput',
                  'feast', 'bibnotes', 'additional', 'note', 'stype', 'sectiontitle', 'postscriptum']
         widgets={'title':       forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 'class': 'searching'}),
-                 'sectiontitle':    forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
+                 'sectiontitle': forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
                  'subtitle':    forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
                  'author':      AuthorOneWidget(attrs={'data-placeholder': 'Select one author...', 'style': 'width: 100%;', 'class': 'searching'}),
                  'locus':       forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
+                 'lilacode':    forms.TextInput(attrs={'placeholder': 'The number/code of this particular Canonical Witness...', 'style': 'width: 100%;', 'class': 'searching'}),
+                 'caput':       forms.TextInput(attrs={'placeholder': 'Enter the Caput / Capita as a decimal number...', 'style': 'width: 100%;', 'class': 'searching'}),
                  'bibnotes':    forms.TextInput(attrs={'placeholder': 'Bibliography notes...', 'style': 'width: 100%;', 'class': 'searching'}),
-                 'feast':    FeastOneWidget(attrs={'data-placeholder': 'Select one feast...', 'style': 'width: 100%;', 'class': 'searching'}),
+                 'feast':       FeastOneWidget(attrs={'data-placeholder': 'Select one feast...', 'style': 'width: 100%;', 'class': 'searching'}),
 
-                 'ftext':     forms.TextInput(attrs={'class': 'typeahead searching cwftexts input-sm', 'placeholder': 'Full text...', 'style': 'width: 100%;'}),
-                 'ftrans':    forms.TextInput(attrs={'class': 'typeahead searching cwftrans input-sm', 'placeholder': 'Translation...', 'style': 'width: 100%;'}),
+                 'ftext':       forms.TextInput(attrs={'class': 'typeahead searching cwftexts input-sm', 'placeholder': 'Full text...', 'style': 'width: 100%;'}),
+                 'ftrans':      forms.TextInput(attrs={'class': 'typeahead searching cwftrans input-sm', 'placeholder': 'Translation...', 'style': 'width: 100%;'}),
                  'stype':       forms.Select(attrs={'style': 'width: 100%;'}),
 
                  # larger areas
-                 'postscriptum':       forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 'class': 'searching'}),
+                 'postscriptum': forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 'class': 'searching'}),
                  'quote':       forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 'class': 'searching'}),
                  'additional':  forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 'class': 'searching'}),
                  'note':        forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 'class': 'searching'}),
@@ -2110,6 +2112,9 @@ class CollectionForm(lilaModelForm):
                 widget=LitrefColWidget(attrs={'data-placeholder': 'Select multiple literature references...', 'style': 'width: 100%;', 'class': 'searching'}))
     projlist    = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=ProjectWidget(attrs={'data-placeholder': 'Select multiple projects...', 'style': 'width: 100%;', 'class': 'searching'}))
+    # Author for collection
+    newauthor = ModelChoiceField(queryset=None, required=False,
+                widget=AuthorOneWidget(attrs={'data-placeholder': 'Select one author...', 'style': 'width: 100%;', 'class': 'searching'}))
     # SSG-specific
     ssgstypelist   = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=StypeWidget(attrs={'data-placeholder': 'Select multiple status types...', 'style': 'width: 100%;'}))
@@ -2186,129 +2191,146 @@ class CollectionForm(lilaModelForm):
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = Collection
-        fields = ['name', 'owner', 'descrip', 'readonly', 'url', 'type', 'scope', 'settype']
+        fields = ['name', 'owner', 'descrip', 'readonly', 'url', 'lilacode', 'origin', 'date', 'type', 'scope', 'settype']
         widgets={'name':        forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}), 
                  'owner':       forms.TextInput(attrs={'style': 'width: 100%;'}),
                  'descrip':     forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 'class': 'searching'}),
                  'readonly':    forms.CheckboxInput(),
                  'url':         forms.TextInput(attrs={'style': 'width: 100%;'}),
+                 'lilacode':    forms.TextInput(attrs={'style': 'width: 100%;'}),
+                 'date':        forms.TextInput(attrs={'style': 'width: 100%;'}),
+                 'origin':      forms.TextInput(attrs={'style': 'width: 100%;'}),
                  'scope':       forms.Select(attrs={'style': 'width: 100%;'})
                  }
 
     def __init__(self, *args, **kwargs):
-        ## Obligatory for this type of form!!!
-        #self.username = kwargs.pop('username', "")
-        #self.team_group = kwargs.pop('team_group', "")
-        #self.userplus = kwargs.pop('userplus', "")
         # Start by executing the standard handling
         super(CollectionForm, self).__init__(*args, **kwargs)
-        username = self.username
-        team_group = self.team_group
-        profile = Profile.get_user_profile(username)
 
-        # Get the prefix
-        prefix = "any" if 'prefix' not in kwargs else kwargs['prefix']
-        # Some fields are not required
-        self.fields['name'].required = False
-        self.fields['owner'].required = False
-        self.fields['descrip'].required = False
-        self.fields['readonly'].required = False
-        self.fields['type'].required = False
-        self.fields['settype'].required = False
-        self.fields['scope'].required = False
-        self.fields['url'].required = False
-        self.fields['collone'].required = False
+        oErr = ErrHandle()
+        try:
+            username = self.username
+            team_group = self.team_group
+            profile = Profile.get_user_profile(username)
 
-        self.fields['bibrefbk'].queryset = Book.objects.all().order_by('idno')
+            # Get the prefix
+            prefix = "any" if 'prefix' not in kwargs else kwargs['prefix']
+            # Some fields are not required
+            self.fields['name'].required = False
+            self.fields['owner'].required = False
+            self.fields['descrip'].required = False
+            self.fields['readonly'].required = False
+            self.fields['type'].required = False
+            self.fields['settype'].required = False
+            self.fields['scope'].required = False
+            self.fields['url'].required = False
+            self.fields['collone'].required = False
 
-        # Set the widgets correctly
-        self.fields['collist_m'].widget = CollectionManuWidget( attrs={'username': username, 'team_group': team_group,
-                    'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
-        self.fields['collist_s'].widget = CollectionCanwitWidget( attrs={'username': username, 'team_group': team_group,
-                    'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
-        self.fields['collist_ssg'].widget = CollectionAustatWidget( attrs={'username': username, 'team_group': team_group,
-                    'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
+            self.fields['bibrefbk'].queryset = Book.objects.all().order_by('idno')
 
-        # Project:
-        # self.fields['projlist'].queryset = Project.objects.all().order_by('name').distinct()
-        if profile is None:
-            self.fields['projlist'].queryset = Project.objects.all().order_by('name').distinct()
-        else:
-            self.fields['projlist'].queryset = profile.projects.all().order_by('name').distinct()
-        self.fields['projlist'].widget.queryset = self.fields['projlist'].queryset
+            # Set the widgets correctly
+            self.fields['collist_m'].widget = CollectionManuWidget( attrs={'username': username, 'team_group': team_group,
+                        'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
+            self.fields['collist_s'].widget = CollectionCanwitWidget( attrs={'username': username, 'team_group': team_group,
+                        'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
+            self.fields['collist_ssg'].widget = CollectionAustatWidget( attrs={'username': username, 'team_group': team_group,
+                        'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
 
-        # SSG section
-        self.fields['ssgstypelist'].queryset = FieldChoice.objects.filter(field=STATUS_TYPE).order_by("english_name")
-        self.fields['ssgauthorlist'].queryset = Author.objects.all().order_by('name') 
-        self.fields['ssglilalist'].queryset = Austat.objects.filter(code__isnull=False, moved__isnull=True, atype='acc').order_by('code') 
-        self.fields['ssgkwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
+            # Author
+            self.fields['newauthor'].queryset = Author.objects.all().order_by('name')
 
-        # S section
-        self.fields['sermokwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
-        self.fields['sermostypelist'].queryset = FieldChoice.objects.filter(field=STATUS_TYPE).order_by("english_name")
-        self.fields['sermoauthorlist'].queryset = Author.objects.all().order_by('name')
+            # Project:
+            # self.fields['projlist'].queryset = Project.objects.all().order_by('name').distinct()
+            if profile is None:
+                self.fields['projlist'].queryset = Project.objects.all().order_by('name').distinct()
+            else:
+                self.fields['projlist'].queryset = profile.projects.all().order_by('name').distinct()
+            self.fields['projlist'].widget.queryset = self.fields['projlist'].queryset
 
-        # M section
-        self.fields['manuidlist'].queryset = Manuscript.objects.filter(mtype='man').order_by('idno')
-        self.fields['manukwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
-        self.fields['manustypelist'].queryset = FieldChoice.objects.filter(field=STATUS_TYPE).order_by("english_name")
+            # SSG section
+            self.fields['ssgstypelist'].queryset = FieldChoice.objects.filter(field=STATUS_TYPE).order_by("english_name")
+            self.fields['ssgauthorlist'].queryset = Author.objects.all().order_by('name') 
+            self.fields['ssglilalist'].queryset = Austat.objects.filter(code__isnull=False, moved__isnull=True, atype='acc').order_by('code') 
+            self.fields['ssgkwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
 
-        if prefix == "priv" or prefix == "publ":
-            self.fields['collist'].widget = CollectionWidget( attrs={'username': username, 'team_group': team_group, 'settype': "pd", "scope": prefix,
-                        'data-placeholder': 'Select multiple datasets...', 'style': 'width: 100%;', 'class': 'searching'})
-        elif prefix == "hist":
-            self.fields['collist'].widget = CollectionWidget( attrs={'username': username, 'team_group': team_group,'settype': "hc",
-                        'data-placeholder': 'Select multiple historical collections...', 'style': 'width: 100%;', 'class': 'searching'})
-        else:
-            self.fields['collist'].widget = CollectionWidget( attrs={'username': username, 'team_group': team_group,
-                        'data-placeholder': 'Select multiple collections...', 'style': 'width: 100%;', 'class': 'searching'})
+            # S section
+            self.fields['sermokwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
+            self.fields['sermostypelist'].queryset = FieldChoice.objects.filter(field=STATUS_TYPE).order_by("english_name")
+            self.fields['sermoauthorlist'].queryset = Author.objects.all().order_by('name')
 
-        self.fields['litlist'].queryset = LitrefCol.objects.all().order_by('reference__full', 'pages').distinct()
+            # M section
+            self.fields['manuidlist'].queryset = Manuscript.objects.filter(mtype='man').order_by('idno')
+            self.fields['manukwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
+            self.fields['manustypelist'].queryset = FieldChoice.objects.filter(field=STATUS_TYPE).order_by("english_name")
 
-        if prefix == "any":
-            all_collections = Collection.objects.all().order_by('name')
-            self.fields['collist'].queryset = all_collections
-            self.fields['collone'].queryset = all_collections
+            if prefix == "priv" or prefix == "publ":
+                self.fields['collist'].widget = CollectionWidget( attrs={'username': username, 'team_group': team_group, 'settype': "pd", "scope": prefix,
+                            'data-placeholder': 'Select multiple datasets...', 'style': 'width: 100%;', 'class': 'searching'})
+            elif prefix == "hist":
+                self.fields['collist'].widget = CollectionWidget( attrs={'username': username, 'team_group': team_group,'settype': "hc",
+                            'data-placeholder': 'Select multiple historical collections...', 'style': 'width: 100%;', 'class': 'searching'})
+            else:
+                self.fields['collist'].widget = CollectionWidget( attrs={'username': username, 'team_group': team_group,
+                            'data-placeholder': 'Select multiple collections...', 'style': 'width: 100%;', 'class': 'searching'})
 
-        elif prefix == "hist":
-            # Historical collections
-            type = "austat"
-            settype = "hc"
-            self.fields['collist'].queryset = Collection.objects.filter(type=type, settype=settype).order_by('name')
-            self.fields['collone'].queryset = Collection.objects.filter(type=type, settype=settype).order_by('name')
-            # Set the initial type
-            self.fields['type'].initial = type
-            self.initial['type'] = type
-            # Obligatory values for the querysets of m/s/sg/ssg
-            self.fields['collist_m'].queryset = Collection.objects.none()
-            self.fields['collist_s'].queryset = Collection.objects.none()
-            self.fields['collist_ssg'].queryset = Collection.objects.none()
-        else:
-            type = prefix.split("-")[0]
-            # self.fields['collist'].queryset = Collection.objects.filter(type=type).order_by('name')
-            self.fields['collist'].queryset = Collection.get_scoped_queryset('', username, team_group)
-            self.fields['collone'].queryset = Collection.objects.filter(type=type).order_by('name')
+            self.fields['litlist'].queryset = LitrefCol.objects.all().order_by('reference__full', 'pages').distinct()
 
-            # Note: the collection filters must use the SCOPE of the collection
-            self.fields['collist_m'].queryset = Collection.get_scoped_queryset('manu', username, team_group)
-            self.fields['collist_s'].queryset = Collection.get_scoped_queryset('sermo', username, team_group)
-            self.fields['collist_ssg'].queryset = Collection.get_scoped_queryset('austat', username, team_group)
-            
+            if prefix == "any":
+                all_collections = Collection.objects.all().order_by('name')
+                self.fields['collist'].queryset = all_collections
+                self.fields['collone'].queryset = all_collections
 
-            # Set the initial type - provided it fits
-            if self.initial.get("type", "") == "":
+            elif prefix == "hist":
+                # Historical collections
+                type = "austat"
+                settype = "hc"
+                self.fields['collist'].queryset = Collection.objects.filter(type=type, settype=settype).order_by('name')
+                self.fields['collone'].queryset = Collection.objects.filter(type=type, settype=settype).order_by('name')
+                # Set the initial type
                 self.fields['type'].initial = type
                 self.initial['type'] = type
+                # Obligatory values for the querysets of m/s/sg/ssg
+                self.fields['collist_m'].queryset = Collection.objects.none()
+                self.fields['collist_s'].queryset = Collection.objects.none()
+                self.fields['collist_ssg'].queryset = Collection.objects.none()
             else:
-                # Make sure to retain its value
-                self.fields['type'].initial = self.initial.get("type", "")
+                type = prefix.split("-")[0]
+                # self.fields['collist'].queryset = Collection.objects.filter(type=type).order_by('name')
+                self.fields['collist'].queryset = Collection.get_scoped_queryset('', username, team_group)
+                self.fields['collone'].queryset = Collection.objects.filter(type=type).order_by('name')
 
-        self.fields['ownlist'].queryset = Profile.objects.all()
-        # Get the instance
-        if 'instance' in kwargs:
-            instance = kwargs['instance']
-            self.fields['litlist'].initial = [x.pk for x in instance.collection_litrefcols.all().order_by('reference__full', 'pages')]
-            self.fields['projlist'].initial = [x.pk for x in instance.projects.all().order_by('name')] # zie verderop
+                # Note: the collection filters must use the SCOPE of the collection
+                self.fields['collist_m'].queryset = Collection.get_scoped_queryset('manu', username, team_group)
+                self.fields['collist_s'].queryset = Collection.get_scoped_queryset('sermo', username, team_group)
+                self.fields['collist_ssg'].queryset = Collection.get_scoped_queryset('austat', username, team_group)
+            
+
+                # Set the initial type - provided it fits
+                if self.initial.get("type", "") == "":
+                    self.fields['type'].initial = type
+                    self.initial['type'] = type
+                else:
+                    # Make sure to retain its value
+                    self.fields['type'].initial = self.initial.get("type", "")
+
+            self.fields['ownlist'].queryset = Profile.objects.all()
+            # Get the instance
+            if 'instance' in kwargs:
+                instance = kwargs['instance']
+                self.fields['litlist'].initial = [x.pk for x in instance.collection_litrefcols.all().order_by('reference__full', 'pages')]
+                self.fields['projlist'].initial = [x.pk for x in instance.projects.all().order_by('name')] # zie verderop
+
+                # If there is an instance, then check the author specification
+                if not instance.author is None:
+                    self.fields['newauthor'].initial = instance.author.id
+                    self.fields['newauthor'].widget.initial = instance.author.id
+
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CollectionForm/Init")
+
+        return None
 
 
 class CanwitSignatureForm(forms.ModelForm):
@@ -3436,7 +3458,8 @@ class ManuscriptForm(lilaModelForm):
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = Manuscript
-        fields = ['name', 'library', 'lcity', 'lcountry', 'idno', 'notes', # 'yearstart', 'yearfinish', 'project' 
+        fields = ['name', 'library', 'lcity', 'lcountry', 'idno', 'lilacode', 'notes', # 'yearstart', 'yearfinish', 'project' 
+                  'origins', 'dates', 'script', 'size',
                   'origin', 'url', 'support', 'extent', 'format', 'stype']
         widgets={'library':     LibraryOneWidget(attrs={'data-placeholder': 'Select a library...', 'style': 'width: 100%;', 'class': 'searching'}),
                  'lcity':       CityMonasteryOneWidget(attrs={'data-placeholder': 'Select a city, village or abbey...', 'style': 'width: 100%;', 'class': 'searching'}),
@@ -3446,8 +3469,13 @@ class ManuscriptForm(lilaModelForm):
                  #'yearfinish':  forms.TextInput(attrs={'style': 'width: 40%;'}),
                  'idno':        forms.TextInput(attrs={'class': 'typeahead searching manuidnos input-sm', 'placeholder': 'Identifier...',  'style': 'width: 100%;'}),
                  'origin':      OriginOneWidget(attrs={'data-placeholder': 'Select an origin...', 'style': 'width: 100%;', 'class': 'searching'}),
-                 'url':         forms.TextInput(attrs={'style': 'width: 100%;'}),
-                 'format':      forms.TextInput(attrs={'style': 'width: 100%;'}),
+                 'url':         forms.TextInput(attrs={'data-placeholder': 'Provide a URL...', 'style': 'width: 100%;'}),
+                 'format':      forms.TextInput(attrs={'data-placeholder': 'Provide a format...', 'style': 'width: 100%;'}),
+                 'lilacode':    forms.TextInput(attrs={'data-placeholder': 'Provide the (short) LiLaC code for the manuscript only...', 'style': 'width: 100%;'}),
+                 'origins':     forms.TextInput(attrs={'data-placeholder': 'Provide the origins (string)...', 'style': 'width: 100%;'}),
+                 'dates':       forms.TextInput(attrs={'data-placeholder': 'Provide the date(s)...', 'style': 'width: 100%;'}),
+                 'script':      forms.TextInput(attrs={'data-placeholder': 'Provide the script...', 'style': 'width: 100%;'}),
+                 'size':        forms.TextInput(attrs={'data-placeholder': 'Provide the size...', 'style': 'width: 100%;'}),
                  'extent':      forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;'}),
                  # 'literature':  forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;'}),
                  'support':     forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;'}),

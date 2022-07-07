@@ -1,6 +1,7 @@
 """Models for the SEEKER app.
 
 """
+from django import utils
 from django.apps.config import AppConfig
 from django.apps import apps
 from django.db import models, transaction
@@ -2950,6 +2951,8 @@ class Manuscript(models.Model):
     library = models.ForeignKey(Library, null=True, blank=True, on_delete = models.SET_NULL, related_name="library_manuscripts")
     # [1] Each manuscript has an identification number
     idno = models.CharField("Identifier", max_length=LONG_STRING, null=True, blank=True)
+    # [0-1] The LiLaC code for this particular Canwit
+    lilacode = models.CharField("LiLaC code", null=True, blank=True, max_length=LONG_STRING)
     # [0-1] If possible we need to know the original location of the manuscript
     origin = models.ForeignKey(Origin, null=True, blank=True, on_delete = models.SET_NULL, related_name="origin_manuscripts")
     # [0-1] Optional filename to indicate where we got this from
@@ -2981,6 +2984,14 @@ class Manuscript(models.Model):
     extent = models.TextField("Extent", max_length=LONG_STRING, null=True, blank=True)
     # [0-1] Format: the size
     format = models.CharField("Format", max_length=LONG_STRING, null=True, blank=True)
+    # [0-1] Origins (as a plain string)
+    origins = models.CharField("Origins", null=True, blank=True, max_length=LONG_STRING)
+    # [0-1] Dates (as a plain string)
+    dates = models.CharField("Dates", null=True, blank=True, max_length=LONG_STRING)
+    # [0-1] Script (as a plain string)
+    script = models.CharField("Script", null=True, blank=True, max_length=LONG_STRING)
+    # [0-1] Size (as a plain string)
+    size = models.CharField("Size", null=True, blank=True, max_length=LONG_STRING)
 
     # RAW (json) data of a manuscript, when imported from an external source
     # [0-1] Raw: imported data in JSON
@@ -5490,6 +5501,8 @@ class Austat(models.Model):
     # [0-1] The 'lila-code' for a sermon - see PASSIM instructions (16-01-2020 4): [lila aaa.nnnn]
     #       NO! The user has a completely different expectation here...
     code = models.CharField("Lilac code", blank=True, null=True, max_length=LILAC_CODE_LENGTH, default="ZZZ_DETERMINE")
+    # [0-1] A short liLaC code supplied by the user
+    lilacode = models.CharField("LiLaC code", null=True, blank=True, max_length=LONG_STRING)
     # [0-1] The 'key' for this authoritative statement
     keycode = models.CharField("Statement code", blank=True, null=True, max_length=STANDARD_LENGTH)
     auwork = models.ForeignKey(Auwork, on_delete=models.SET_NULL, related_name="auwork_austats", blank=True, null=True)
@@ -6201,6 +6214,16 @@ class Collection(models.Model):
     #     E.g: private, team, global - default is 'private'
     scope = models.CharField("Scope", choices=build_abbr_list(COLLECTION_SCOPE), default="priv",
                             max_length=5)
+    # [0-1] A short liLaC code supplied by the user
+    lilacode = models.CharField("LiLaC code", null=True, blank=True, max_length=LONG_STRING)
+    # [0-1] Short date, possibly approximately (hence the string nature)
+    date = models.CharField("Date", null=True, blank=True, max_length=LONG_STRING)
+    # [0-1] Short string denoting the origin
+    origin = models.CharField("Origin", null=True, blank=True, max_length=LONG_STRING)
+    # [0-1] We would very much like to know the *REAL* author
+    author = models.ForeignKey(Author, null=True, blank=True, on_delete = models.SET_NULL, related_name="author_collections")
+
+
     # [0-1] Status note
     snote = models.TextField("Status note(s)", default="[]")
     # [1] Each collection has only 1 date/timestamp that shows when the collection was created
@@ -6237,6 +6260,21 @@ class Collection(models.Model):
 
         response = super(Collection, self).save(force_insert, force_update, using, update_fields)
         return response
+
+    def author_help(self, info):
+        """Provide help for this particular author"""
+
+        html = []
+
+        # Provide the name of the author + button for modal dialogue
+        author = "(not set)" if self.author == None else self.author.name
+        html.append("<div><span>{}</span>&nbsp;<a class='btn jumbo-1 btn-xs' data-toggle='modal' data-target='#author_info'>".format(author))
+        html.append("<span class='glyphicon glyphicon-info-sign' style='color: darkblue;'></span></a></div>")
+
+        # Provide the Modal contents
+        html.append(info)
+
+        return "\n".join(html)
 
     def freqsermo(self):
         """Frequency in manifestation sermons"""
@@ -7529,10 +7567,49 @@ class Canwit(models.Model):
         # Return what we have
         return sBack
 
+    def get_caput(self):
+        """Get the Caput (if defined) and display it as a Roman number"""
+
+        sBack = ""
+        oErr = ErrHandle()
+        oRom = RomanNumbers()
+        try:
+            caput = self.caput
+            if not caput is None and caput != "":
+                # Check if it in fact is a numeral
+                if re.match(r'\d+', caput):
+                    # Yes, it is a number: convert it
+                    sBack = oRom.intToRoman(int(caput))
+                else:
+                    sBack = "(not a number)"
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_caput")
+        return sBack
+
+    def get_collection_list(self, settype):
+        lBack = []
+        lstQ = []
+        # Get all the Austats to which I link
+        lstQ.append(Q(austat_col__austat__in=self.austats.all()))
+        lstQ.append(Q(settype=settype))
+        # Make sure we restrict ourselves to the *public* datasets
+        lstQ.append(Q(scope="publ"))
+        # Get the collections in which these SSGs are
+        collections = Collection.objects.filter(*lstQ).order_by('name')
+        # Visit all datasets/collections linked to me via the SSGs
+        for col in collections:
+            # The collection must match the settype
+            if col.settype == settype:
+                # Then it is added to the list
+                lBack.append(col)
+
+        return lBack
+    
     def get_collection_link(self, settype):
         lHtml = []
         lstQ = []
-        # Get all the SSG to which I link
+        # Get all the Austats to which I link
         lstQ.append(Q(austat_col__austat__in=self.austats.all()))
         lstQ.append(Q(settype=settype))
         # Make sure we restrict ourselves to the *public* datasets
@@ -7843,6 +7920,44 @@ class Canwit(models.Model):
             lHtml.append("<span class='keyword'>{}</span>".format(keyword.name))
 
         sBack = ", ".join(lHtml)
+        return sBack
+
+    def get_lilacode(self):
+        """Calculate and return the LiLaC code for this Canwit
+        
+        This code consists of:
+        1 - short code for Manuscript
+        2 - short code for Collection in which there is an Austat to which I am linked
+        3 - my own short code, which is in field [lilacode]
+        """
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            html = []
+            if not self.msitem.codico.manuscript.lilacode is None:
+                html.append(self.msitem.codico.manuscript.lilacode)
+            # Get the first historical collection that I am part of
+            austat_ids = self.austats.all().values("id")
+
+            # Get a list of HCs connected to me
+            hcs = self.get_collection_list("hc")
+            if len(hcs) > 0:
+                collection = hcs[0]
+                if not collection.lilacode is None:
+                    html.append(collection.lilacode)
+            # Add my own short code
+            if not self.lilacode is None:
+                html.append(self.lilacode)
+            # Check if anything is in here
+            if len(html) == 0:
+                html.append("(not defined)")
+            # Combine
+            sBack = ".".join(html)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_lilacode")
+
         return sBack
 
     def get_litrefs_markdown(self, plain=False):
