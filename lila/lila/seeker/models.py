@@ -6996,6 +6996,7 @@ class Canwit(models.Model):
         {'name': 'Type',                'type': '',      'path': 'type'},
         {'name': 'Status',              'type': 'field', 'path': 'stype'},
         {'name': 'Locus',               'type': 'field', 'path': 'locus'},
+        {'name': 'LiLaC code',          'type': 'field', 'path': 'lilacode'},
         {'name': 'Attributed author',   'type': 'fk',    'path': 'author', 'fkfield': 'name'},
         {'name': 'Section title',       'type': 'field', 'path': 'sectiontitle'},
         {'name': 'Lectio',              'type': 'field', 'path': 'quote'},
@@ -7101,16 +7102,30 @@ class Canwit(models.Model):
             keyfield = kwargs.get("keyfield", "path")
             profile = kwargs.get("profile")
 
+            # While we are adding this Canwit to a Manuscript, it should actually be
+            #   added to the first Codicological unit in this manuscript
+            codico = manuscript.manuscriptcodicounits.all().order_by('order', 'id').first()
+            if codico is None:
+                oErr.Status("Canwit/custom_add error: manuscript id={} doesn't have a Codico".format(manuscript.id))
+                return obj
+
             # Figure out whether this sermon item already exists or not
             type = oSermo.get('type', "")
             locus = oSermo.get('locus', "")
             ftext = oSermo.get("ftext", "")
+            lilacode = oSermo.get('lilacode', "")
+            # The Lilacode that we use here must be the part after the last period
+            if "." in lilacode:
+                lilacode = lilacode.split(".")[-1]
+                oSermo['lilacode'] = lilacode
+
             if locus != "" and ftext != "":
-                # Try retrieve an existing or 
+                # Try retrieve an existing one
+                #    Uniquely identifiable from: lilacode
                 if type.lower() == "structural":
-                    obj = Codhead.objects.filter(msitem__manu=manuscript, locus=locus).first()
+                    obj = Codhead.objects.filter(msitem__codico=codico, locus=locus).first()
                 else:
-                    obj = Canwit.objects.filter(msitem__manu=manuscript, locus=locus, ftext__iexact=ftext, mtype="man").first()
+                    obj = Canwit.objects.filter(msitem__codico=codico, lilacode=lilacode, mtype="man").first()
             if obj == None:
                 # Remove any MsItems that are connected with this manuscript but not with Canwit or Canhead
                 delete_id = []
@@ -7121,8 +7136,8 @@ class Canwit(models.Model):
                     MsItem.objects.filter(id__in=delete_id).delete()
 
 
-                # Create a MsItem
-                msitem = MsItem(manu=manuscript)
+                # Create a MsItem, tying it with the manuscript as well as with the codico
+                msitem = MsItem(manu=manuscript, codico=codico)
                 # Possibly add order, parent, firstchild, next
                 if order != None: msitem.order = order
                 # Save the msitem
@@ -7275,6 +7290,8 @@ class Canwit(models.Model):
 
         bResult = True
         oErr = ErrHandle()
+        austat_method = "create_if_not_existing"
+
         try:
             profile = kwargs.get("profile")
             username = kwargs.get("username")
@@ -7336,23 +7353,58 @@ class Canwit(models.Model):
                 # Ready
             elif path == "austat_one":
                 oValue = value
-                austat_code = oValue['austat_link']
                 austat_note = oValue.get('austat_note', "")
-                # Get this Austat
-                austat = Austat.objects.filter(code__iexact=austat_code).first()
+                austat_code = oValue['austat_link']
 
-                if austat == None:
-                    # Indicate that we didn't find it in the notes
-                    intro = ""
-                    if self.note != "": intro = "{}. ".format(self.note)
-                    self.note = "{}Please set manually the Austat link [{}]".format(intro, austat_code)
-                    self.save()
-                else:
-                    # Make link between SSG and Canwit
-                    obj = CanwitAustat.objects.create(canwit=self, austat=austat, linktype="eqs")
-                    if not obj is None and austat_note != "":
-                        obj.note = austat_note
-                        obj.save()
+                # Double check that the code is actually something
+                if not austat_code is None:
+                    if ";" in austat_code:
+                        austat_codes = [x.strip() for x in austat_code.split(";")]
+                    else:
+                        austat_codes = [ austat_code ]
+
+                    # Walk all of them
+                    for austat_code in austat_codes:
+                        # Get this Austat
+                        austat = Austat.objects.filter(keycode__iexact=austat_code).first()
+
+                        if austat == None:
+                            if austat_method == "create_if_not_existing":
+                                # Make sure Author is set correctly
+                                author = self.author
+                                if author is None:
+                                    author = Author.objects.filter(name__iexact="undecided").first()
+                                # Create it
+                                austat = Austat.objects.create(
+                                    keycode=austat_code,atype="acc", stype="imp",
+                                    ftext=self.ftext, ftrans=self.ftrans,
+                                    author=author)
+                                # See if a Auwork can be determined
+                                if "." in austat_code:
+                                    auwork_key = ".".join( austat_code.split(".")[0:-1])
+                                    if auwork_key != "":
+                                        # Check if it exists already
+                                        auwork = Auwork.objects.filter(key__iexact=auwork_key).first()
+                                        if auwork is None:
+                                            auwork = Auwork.objects.create(key=auwork_key)
+                                        # Set a link to this
+                                        austat.auwork = auwork
+                                        austat.save()
+
+                            else:
+                                # Indicate that we didn't find it in the notes
+                                intro = ""
+                                if self.note != "": intro = "{}. ".format(self.note)
+                                self.note = "{}Please set manually the Austat link [{}]".format(intro, austat_code)
+                                self.save()
+
+                        # Try again: should we make a link?
+                        if not austat is None:
+                            # Make link between Austat and Canwit
+                            obj = CanwitAustat.objects.create(canwit=self, austat=austat, linktype="eqs")
+                            if not obj is None and not austat_note is None and austat_note != "":
+                                obj.note = austat_note
+                                obj.save()
                 # Ready
             elif path == "signaturesM":
                 signatureM_names = value_lst

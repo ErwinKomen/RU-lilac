@@ -241,15 +241,16 @@ class ManuscriptUploadCanwits(ReaderImport):
         code = ""
         col_number = {}
         col_defs = [
-            {"name": "locus", "def": ['locus']},
-            {"name": "caput", "def": ['caput']},
-            {"name": "collection", "def": ['collection']},
-            {"name": "author", "def": ['author']},
-            {"name": "ftext", "def": ['ftext', 'full text']},
-            {"name": "ftrans", "def": ['ftrans', 'translation']},
-            {"name": "brefs", "def": ['bibref', 'bible']},
-            {"name": "austat_link", "def": ['authoritative statement']},
-            {"name": "austat_note", "def": ['fons materialis (note)']}
+            {"name": "lilacode",    "def": ['lilac']                    },
+            {"name": "locus",       "def": ['locus']                    },
+            {"name": "caput",       "def": ['caput']                    },
+            {"name": "collection",  "def": ['collection']               },
+            {"name": "author",      "def": ['author']                   },
+            {"name": "ftext",       "def": ['ftext', 'full text']       },
+            {"name": "ftrans",      "def": ['ftrans', 'translation']    },
+            {"name": "brefs",       "def": ['bibref', 'bible']          },
+            {"name": "austat_link", "def": ['authoritative statement']  },
+            {"name": "austat_note", "def": ['fons materialis (note)']   }
             ]
         oStatus = self.oStatus
         try:
@@ -304,9 +305,11 @@ class ManuscriptUploadCanwits(ReaderImport):
                             for sheetname in sheetnames:
                                 if not bFound:
                                     low_sheetname = sheetname.lower()
+                                    # Either something with " canon ... witness ..."
                                     if "canon" in low_sheetname and "witness" in low_sheetname:
                                         bFound = True
                                         break
+                                    # Or something containing "... canwit ..."
                                     elif "canwit" in low_sheetname:
                                         bFound = True
                                         break
@@ -363,6 +366,8 @@ class ManuscriptUploadCanwits(ReaderImport):
                                             val_ftext = oValue['ftext']
                                             canwit = Canwit.objects.filter(msitem__codico__manuscript=manu, ftext__iexact=val_ftext).first()
                                             if canwit is None:
+                                                # Make sure to indicate that each row in the Excel is not a structural (hierarchy creating)
+                                                #    type, but an actual Canwit
                                                 oValue['type'] = 'canwit'
                                                 canwit = Canwit.custom_add(oValue, manuscript=manu, order=order)
                                                 order += 1
