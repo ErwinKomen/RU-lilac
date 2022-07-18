@@ -38,7 +38,7 @@ import requests
 from lila.settings import APP_PREFIX, MEDIA_DIR
 from lila.utils import ErrHandle
 
-from lila.seeker.models import Manuscript, MsItem, Canwit, Profile, Report, Codico, Location, LocationType, Library
+from lila.seeker.models import Manuscript, MsItem, Canwit, Profile, Report, Codico, Codhead, Location, LocationType, Library
 from lila.seeker.views import app_editor
 from lila.reader.views import ReaderImport
 from lila.reader.forms import UploadFileForm
@@ -271,6 +271,14 @@ class ManuscriptUploadCanwits(ReaderImport):
                 if not manu_id is None:
                     manu = Manuscript.objects.filter(id=manu_id).first()
 
+            # Get a possible parent
+            parent = None
+            codhead_id = self.qd.get("manu-{}-headlist".format(manu.id))
+            if not codhead_id is None:
+                codhead = Codhead.objects.filter(id=codhead_id).first()
+                if not codhead is None:
+                    parent = codhead.msitem
+
             # Get the contents of the imported file
             file_list = request.FILES.getlist('files_field')
             if not file_list is None and len(file_list) > 0:
@@ -369,7 +377,7 @@ class ManuscriptUploadCanwits(ReaderImport):
                                                 # Make sure to indicate that each row in the Excel is not a structural (hierarchy creating)
                                                 #    type, but an actual Canwit
                                                 oValue['type'] = 'canwit'
-                                                canwit = Canwit.custom_add(oValue, manuscript=manu, order=order)
+                                                canwit = Canwit.custom_add(oValue, manuscript=manu, order=order, parent=parent)
                                                 order += 1
                                         # Go to the next row
                                         row_num += 1

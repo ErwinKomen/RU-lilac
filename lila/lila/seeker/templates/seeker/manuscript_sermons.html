@@ -66,6 +66,9 @@
               <input type="text" name="canwi-manu" value="{{manuForm.instance.id}}" />
               <input type="text" name="canwi-mtype" value="{{manuForm.instance.mtype}}" />
             </div>
+            <div>
+              {{manuForm.headlist}}
+            </div>
             <div id="excel-import_info"
                  targetid="excel_data_import"
                  targeturl="{% url 'manuscript_upload_canwits' manuForm.instance.id %}">

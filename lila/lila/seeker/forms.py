@@ -454,6 +454,18 @@ class AuworkOneWidget(ModelSelect2Widget):
         return qs
 
 
+class CodheadOneWidget(ModelSelect2Widget):
+    model = Codhead
+    search_fields = [ 'locus__icontains', 'title__icontains' ]
+
+    def label_from_instance(self, obj):
+        return obj.locus
+
+    def get_queryset(self):
+        qs = Codhead.objects.all().order_by('locus').distinct()
+        return qs
+
+
 class FeastOneWidget(ModelSelect2Widget):
     model = Feast
     search_fields = [ 'name__icontains', 'latname__icontains']
@@ -3449,6 +3461,9 @@ class ManuscriptForm(lilaModelForm):
                 widget=ManuscriptExtWidget(attrs={'data-placeholder': 'Select multiple external links...', 'style': 'width: 100%;', 'class': 'searching'}))
     datelist    = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=DaterangeWidget(attrs={'data-placeholder': 'Use the "+" sign to add dates...', 'style': 'width: 100%;', 'class': 'searching'}))
+    headlist    = ModelChoiceField(queryset=None, required=False,
+                widget=CodheadOneWidget(attrs={'data-placeholder': 'Optional: select a section in which to put the canon witnesses...', 
+                                               'style': 'width: 100%;', 'class': 'searching'}))
     typeaheads = ["countries", "cities", "libraries", "origins", "manuidnos"]
     action_log = ['name', 'library', 'lcity', 'lcountry', 'idno', 
                   'origin', 'url', 'support', 'extent', 'format', 'stype', 'project',
@@ -3527,6 +3542,8 @@ class ManuscriptForm(lilaModelForm):
 
             self.fields['origone'].queryset = Origin.objects.all().order_by('name')
 
+            self.fields['headlist'].queryset = Codhead.objects.all().order_by('locus')
+
             # Some lists need to be initialized to NONE:
             #self.fields['provlist'].queryset = Provenance.objects.none()
             self.fields['mprovlist'].queryset = ProvenanceMan.objects.none()
@@ -3576,13 +3593,14 @@ class ManuscriptForm(lilaModelForm):
                 self.fields['mprovlist'].initial = [x.pk for x in instance.manuscripts_provenances.all()]
                 self.fields['extlist'].initial = [x.pk for x in instance.manuscriptexternals.all()]
                 self.fields['datelist'].initial = [x.pk for x in Daterange.objects.filter(codico__manuscript=instance)]
-                
+                #self.fields['headlist'].initial = [x.pk for x in Codhead.objects.filter(msitem__codico__manuscript=instance)]
+                qs_headlist = [x.pk for x in Codhead.objects.filter(msitem__codico__manuscript=instance)]
 
                 # The manuscriptext and the provenance should *just* contain what they have (no extension here)
                 self.fields['mprovlist'].queryset = ProvenanceMan.objects.filter(id__in=self.fields['mprovlist'].initial)
                 self.fields['extlist'].queryset = ManuscriptExt.objects.filter(id__in=self.fields['extlist'].initial)
                 self.fields['datelist'].queryset = Daterange.objects.filter(id__in=self.fields['datelist'].initial)
-
+                self.fields['headlist'].queryset = Codhead.objects.filter(id__in=qs_headlist).order_by('locus')
 
                 self.fields['mprovlist'].widget.manu = instance
 

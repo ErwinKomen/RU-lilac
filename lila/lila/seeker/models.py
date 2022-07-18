@@ -7090,7 +7090,7 @@ class Canwit(models.Model):
             bStatus = False
         return bStatus, msg
 
-    def custom_add(oSermo, manuscript, order=None, **kwargs):
+    def custom_add(oSermo, manuscript, order=None, parent=None, **kwargs):
         """Add a sermon to a manuscript according to the specifications provided"""
 
         oErr = ErrHandle()
@@ -7140,6 +7140,7 @@ class Canwit(models.Model):
                 msitem = MsItem(manu=manuscript, codico=codico)
                 # Possibly add order, parent, firstchild, next
                 if order != None: msitem.order = order
+                if not parent is None: msitem.parent = parent
                 # Save the msitem
                 msitem.save()
 
@@ -7151,7 +7152,10 @@ class Canwit(models.Model):
                     obj = Canwit.objects.create(msitem=msitem, stype="imp", mtype="man")
 
             # Convert 'austat_link' + 'austat_note' into one object
-            oAustat = dict(austat_link=oSermo.get("austat_link"), austat_note=oSermo.get("austat_note"))
+            oAustat = dict(
+                austat_link=oSermo.get("austat_link"), 
+                austat_note=oSermo.get("austat_note"),
+                austat_coll=oSermo.get("collection"))
             oSermo['austat_one'] = oAustat
                         
             if type.lower() == "structural":
@@ -7354,6 +7358,7 @@ class Canwit(models.Model):
             elif path == "austat_one":
                 oValue = value
                 austat_note = oValue.get('austat_note', "")
+                austat_coll = oValue.get('austat_coll')
                 austat_code = oValue['austat_link']
 
                 # Double check that the code is actually something
@@ -7362,6 +7367,15 @@ class Canwit(models.Model):
                         austat_codes = [x.strip() for x in austat_code.split(";")]
                     else:
                         austat_codes = [ austat_code ]
+
+                    # Figure out what the collection is (if any)
+                    collection = None
+                    if not austat_coll is None:
+                        # Find a collection with this name
+                        collection = Collection.objects.filter(name__iexact=austat_coll, type="austat", settype="hc").first()
+                        if collection is None:
+                            # Create a collection with this name
+                            collection = Collection.objects.create(type="austat", name=austat_coll, settype="hc", scope="publ")
 
                     # Walk all of them
                     for austat_code in austat_codes:
@@ -7405,7 +7419,13 @@ class Canwit(models.Model):
                             if not obj is None and not austat_note is None and austat_note != "":
                                 obj.note = austat_note
                                 obj.save()
-                # Ready
+
+                            # If there is a collection, then link Austat to that collection
+                            if not collection is None:
+                                coll_link = CollectionAustat.objects.filter(austat=austat, collection=collection).first()
+                                if coll_link is None:
+                                    coll_link = CollectionAustat.objects.create(austat=austat, collection=collection)
+                    # Ready
             elif path == "signaturesM":
                 signatureM_names = value_lst
                 for code in signatureM_names:
