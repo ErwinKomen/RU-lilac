@@ -116,6 +116,7 @@ INSTALLED_APPS = [
     'django_select2',
     'lila.basic',
     'lila.bible',
+    'lila.lict',
     'lila.reader',
     'lila.seeker'
 ]

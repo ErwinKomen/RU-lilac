@@ -37,7 +37,6 @@ from lila.utils import *
 from lila.settings import APP_PREFIX, WRITABLE_DIR, TIME_ZONE
 from lila.seeker.excel import excel_to_list
 from lila.bible.models import Reference, Book, BKCHVS_LENGTH, BkChVs, BOOK_NAMES
-from lila.seeker.adaptations import add_codico_to_manuscript
 
 
 re_number = r'\d+'
@@ -3186,7 +3185,11 @@ class Manuscript(models.Model):
         return bResult, msg
 
     def add_codico_to_manuscript(self):
-        bResult, msg = add_codico_to_manuscript(self)
+        bResult = True
+        msg = "done nothing"
+
+        # bResult, msg = add_codico_to_manuscript(self)
+
         return bResult, msg
 
     def action_add_change(self, username, actiontype, path, old_value, new_value):
@@ -3744,6 +3747,12 @@ class Manuscript(models.Model):
             lib = self.library.name
             url = reverse('library_details', kwargs={'pk': self.library.id})
             sBack = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(url, lib)
+        return sBack
+
+    def get_lilacode(self):
+        sBack = "-"
+        if not self.lilacode is None:
+            sBack = self.lilacode
         return sBack
 
     def get_litrefs_markdown(self, plain=False):
@@ -6379,6 +6388,23 @@ class Collection(models.Model):
         """Return an appropriate name or label"""
 
         return self.name
+
+    def get_lilacode(self):
+        """Return LiLaC code, which is manuscript code + collection code"""
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            html = []
+            # Find out what collection we link to
+            if not self.lilacode is None:
+                html.append(self.lilacode)
+            # Combine it all
+            sBack = ".".join(html)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Codico/get_lilacode")
+        return sBack
 
     def get_litrefs_markdown(self):
         lHtml = []
