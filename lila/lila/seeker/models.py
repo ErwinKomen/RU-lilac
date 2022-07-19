@@ -36,7 +36,8 @@ from xml.dom import minidom
 from lila.utils import *
 from lila.settings import APP_PREFIX, WRITABLE_DIR, TIME_ZONE
 from lila.seeker.excel import excel_to_list
-from lila.bible.models import Reference, Book, BKCHVS_LENGTH
+from lila.bible.models import Reference, Book, BKCHVS_LENGTH, BkChVs, BOOK_NAMES
+from lila.seeker.adaptations import add_codico_to_manuscript
 
 
 re_number = r'\d+'
@@ -879,12 +880,12 @@ def moveup(instance, tblGeneral, tblUser, ItemType):
     oErr = ErrHandle()
     try:
         # Check if the kw is not in the general table yet
-        general = tblGeneral.objects.filter(keyword=self.keyword).first()
+        general = tblGeneral.objects.filter(keyword=instance.keyword).first()
         if general == None:
             # Add the keyword
-            tblGeneral.objects.create(keyword=self.keyword, equal=self.equal)
+            tblGeneral.objects.create(keyword=instance.keyword, equal=instance.equal)
         # Remove the *user* specific references to this keyword (for *all*) users
-        tblUser.objects.filter(keyword=self.keyword, type=ItemType).delete()
+        tblUser.objects.filter(keyword=instance.keyword, type=ItemType).delete()
         # Return positively
         bOkay = True
     except:
@@ -1775,8 +1776,7 @@ class City(models.Model):
                 hit = qs[0]
         except:
             sError = errHandle.get_error_message()
-            oBack['status'] = 'error'
-            oBack['msg'] = sError
+            errHandle.DoError("City/find_or_create")
             hit = None
 
         # Return what we found or created
@@ -1982,8 +1982,7 @@ class Library(models.Model):
                     hit = qs[0]
         except:
             sError = errHandle.get_error_message()
-            oBack['status'] = 'error'
-            oBack['msg'] = sError
+            errHandle.DoError("Library/find_or_create")
             hit = None
 
         # Return what we found or created
@@ -5160,6 +5159,7 @@ class Author(models.Model):
         """Import a CSV list of authors and add these authors to the database"""
 
         oBack = {'status': 'ok', 'count': 0, 'msg': "", 'user': username}
+        oErr = ErrHandle()
         try:
             # Make sure we have the data
             if sData == None:
@@ -5197,7 +5197,7 @@ class Author(models.Model):
             oBack['added'] = added
 
         except:
-            sError = errHandle.get_error_message()
+            sError = oErr.get_error_message()
             oBack['status'] = 'error'
             oBack['msg'] = sError
 
@@ -5208,6 +5208,7 @@ class Author(models.Model):
         """Import a JSON list of authors and add them to the database"""
 
         oBack = {'status': 'ok', 'count': 0, 'msg': "", 'user': username}
+        oErr = ErrHandle()
         try:
             # Make sure we have the data
             if oData == None:
@@ -5255,7 +5256,7 @@ class Author(models.Model):
             oBack['added'] = added
 
         except:
-            sError = errHandle.get_error_message()
+            sError = oErr.get_error_message()
             oBack['status'] = 'error'
             oBack['msg'] = sError
 
@@ -7238,10 +7239,6 @@ class Canwit(models.Model):
                 sBack = self.get_external_markdown(plain=True)
             elif path == "brefs":
                 sBack = self.get_bibleref(plain=True)
-            elif path == "signaturesM":
-                sBack = self.get_sermonsignatures_markdown(plain=True)
-            elif path == "signaturesA":
-                sBack = self.get_eqsetsignatures_markdown(plain=True)
             elif path == "ssglinks":
                 sBack = self.get_eqset(plain=True)
         except:
@@ -7426,16 +7423,6 @@ class Canwit(models.Model):
                                 if coll_link is None:
                                     coll_link = CollectionAustat.objects.create(austat=austat, collection=collection)
                     # Ready
-            elif path == "signaturesM":
-                signatureM_names = value_lst
-                for code in signatureM_names:
-                    # Find the SIgnature
-                    sig_m = CanwitSignature.objects.filter(code__iexact=code).first()
-                    # Find the editype
-                    if sig_m == None:
-                        # Create a manual signature
-                        sig_m = CanwitSignature.objects.create(code=code, sermon=self, editype=editype)
-                # Ready
             else:
                 # Figure out what to do in this case
                 pass
@@ -8613,6 +8600,7 @@ class Range(models.Model):
                 if bStatus and not is_end(pos):
                     # Is there more stuff?
                     additional = sRange[pos:].strip()
+                    sRemark = additional
                     if obj != None:
                         obj.added = sRemark
                         bNeedSaving = True
@@ -9226,7 +9214,7 @@ class OriginCodico(models.Model):
         ori = self.origin
         sName = ""
         sLoc = ""
-        url = reverse("origin_details", kwargs={'pk': origin.id})
+        url = reverse("origin_details", kwargs={'pk': ori.id})
         if ori.name != None and ori.name != "": sName = "{}: ".format(ori.name)
         if ori.location != None: sLoc = ori.location.name
         sBack = "<span class='badge signature gr'><a href='{}'>{}{}</a></span>".format(url, sName, sLoc)

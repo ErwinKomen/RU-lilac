@@ -1,0 +1,60 @@
+{% extends "layout.html" %}
+{% load i18n %}
+
+{% block content %}
+
+
+<div class="container body-content">
+  <div class="row">
+
+    <div class="col-md-12">
+      {% if setlist|length == 0 %}
+      -
+      {% else %}
+        <h3>Dynamic Comparison Table Tool</h3>
+
+        <table class="dct-view">
+          {% for row in setlist %}
+            {% if forloop.first %}
+              <tr>
+                {% for col in row %}
+                  <th valign="bottom" align="center">
+                    {% if forloop.first %}
+                      {{col}}
+                    {% else %}
+                      {% if col.city %}
+                        <div class='shelf-city'>{{col.city}}</div>
+                      {% endif %}
+                      {% if col.library %}
+                        <div class='shelf-library'>{{col.library}}</div>
+                      {% endif %}
+                      {% if col.idno %}
+                        <div class='shelf-idno'>{{col.idno}}</div>
+                      {% endif %}
+                    {% endif %}
+                  </th>
+                {% endfor %}
+              </tr>
+            {% else %}
+              <tr>
+                {% for col in row %}
+                  {% if forloop.first %}
+                    <td align="left">
+                      <span >{{col}}</span>
+                    </td>
+                  {% else %}
+                    <td align="center" >
+                      <span class="func-name">{{col}}</span>
+                    </td>
+                  {% endif %}
+                {% endfor %}
+              </tr>
+            {% endif %}
+          {% endfor %}
+        </table>
+
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

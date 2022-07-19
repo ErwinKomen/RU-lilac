@@ -1093,6 +1093,53 @@ def mylila(request):
     return render(request,template_name, context)
 
 
+# ============= Other SUPPORT functions ===================
+
+def get_cnrs_manuscripts(city, library):
+    """Get the manuscripts held in the library"""
+
+    oErr = ErrHandle()
+    sBack = ""
+    try:
+        # Get the code of the city
+        obj = City.objects.filter(name__iexact=city.name).first()
+        if obj != None:
+            # Get the code of the city
+            idVille = obj.idVilleEtab
+            # Build the query
+            url = "{}/Manuscrits/manuscritforetablissement".format(cnrs_url)
+            data = {"idEtab": library, "idVille": idVille}
+            try:
+                r = requests.post(url, data=data)
+            except:
+                sMsg = oErr.get_error_message()
+                oErr.DoError("Request problem")
+                return "Request problem: {}".format(sMsg)
+            # Decypher the response
+            if r.status_code == 200:
+                # Return positively
+                sText = r.text.replace("\t", " ")
+                reply = json.loads(sText)
+                if reply != None and "items" in reply:
+                    results = []
+                    for item in reply['items']:
+                        if item['name'] != "":
+                            results.append(item['name'])
+
+                    # Interpret the results
+                    lst_manu = []
+                    for item in results:
+                        lst_manu.append("<span class='manuscript'>{}</span>".format(item))
+                    sBack = "\n".join(lst_manu)
+    except:
+        msg = oErr.get_error_message()
+        sBack = "Error: {}".format(msg)
+        oErr.DoError("get_cnrs_manuscripts")
+    return sBack
+
+
+
+
 # ============= LOCATION VIEWS ============================
 
 

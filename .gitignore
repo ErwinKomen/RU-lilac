@@ -367,3 +367,4 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/lila/lila/lict/migrations/__init__.py
