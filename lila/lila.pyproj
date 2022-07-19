@@ -42,6 +42,13 @@
     <DefaultItemExcludes>migrations/**;$(DefaultItemExcludes)</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="lila\lict\admin.py" />
+    <Compile Include="lila\lict\apps.py" />
+    <Compile Include="lila\lict\migrations\__init__.py" />
+    <Compile Include="lila\lict\models.py" />
+    <Compile Include="lila\lict\tests.py" />
+    <Compile Include="lila\lict\views.py" />
+    <Compile Include="lila\lict\__init__.py" />
     <Compile Include="lila\seeker\views_api.py">
       <SubType>Code</SubType>
     </Compile>
@@ -174,6 +181,10 @@
     <Folder Include="lila\basic\templates\basic\" />
     <Folder Include="lila\bible\" />
     <Folder Include="lila\bible\templates\" />
+    <Folder Include="lila\lict\" />
+    <Folder Include="lila\lict\migrations\" />
+    <Folder Include="lila\lict\templates\" />
+    <Folder Include="lila\lict\templates\lict\" />
     <Folder Include="lila\reader\" />
     <Folder Include="lila\reader\templates\" />
     <Folder Include="lila\reader\templates\reader\" />
@@ -219,6 +230,7 @@
     <Content Include="lila\basic\templates\basic\basic_edit.html" />
     <Content Include="lila\basic\templates\basic\basic_list.html" />
     <Content Include="lila\basic\templates\basic\filter_help.html" />
+    <Content Include="lila\lict\templates\lict\lict.html" />
     <Content Include="lila\reader\templates\reader\import_manuscripts.html" />
     <Content Include="lila\seeker\static\seeker\content\bootstrap.css" />
     <Content Include="lila\seeker\static\seeker\content\bootstrap.min.css" />
