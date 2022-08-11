@@ -1,0 +1,50 @@
+﻿{% if statuscode == "completed" %}
+  <div class='col-md-12'>
+    <p>
+    The list of Canon Witnesses (CanWit) has been processed, and {{results|length}} new CanWits have been added.
+    </p>
+    <p>
+      Possible actions:
+      <ul>
+        <li><b>Show</b> show an overview of the Canon Witnesses that have been added
+          <button class="btn btn-default btn-sm dropdown-toggle"
+                  type="button" data-toggle="collapse" data-target="#man-list">List</button>
+        </li>
+        <li><b>List</b> all canon witnesses
+            <!-- When ready press this button -->
+            <span><a class="btn btn-xs jumbo-1" role="button" href="{% url 'canwit_list' %}">List</a></span>
+        </li>
+      </ul>
+    </p>
+  </div>
+
+  <div class="col-md-12 collapse" id="man-list">
+    <table>
+      <thead><tr><th>Order</th><th>Manu</th><th>Canwit</th><th>Lilac Code</th><th>Locus</th><th>Caput</th></tr></thead>
+      <tbody>
+        {% for item in results %}
+          <tr>
+            <td>{{item.order}}</td>
+            <td>{{item.manu}}</td>
+            <td>{{item.canwit}}</td>
+            <td>{{item.lilacode}}</td>
+            <td>{{item.locus|safe}}</td>
+            <td>{{item.caput}}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+{% endif %}
+
+<!-- Any errors are shown here too-->
+<div class="errors">
+  {% if error_list and statuscode != "error" %} 
+    <h4>Errors:</h4>
+    <div>statuscode = {{statuscode}}</div>
+    {% for item in error_list %}
+      <div class="error-item">{{item}}</div>
+    {% endfor %}
+  {% endif %}
+</div>

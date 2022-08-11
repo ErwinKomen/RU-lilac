@@ -7023,6 +7023,7 @@ class Canwit(models.Model):
         {'name': 'Type',                'type': '',      'path': 'type'},
         {'name': 'Status',              'type': 'field', 'path': 'stype'},
         {'name': 'Locus',               'type': 'field', 'path': 'locus'},
+        {'name': 'Caput',               'type': 'field', 'path': 'caput'},
         {'name': 'LiLaC code',          'type': 'field', 'path': 'lilacode'},
         {'name': 'Attributed author',   'type': 'fk',    'path': 'author', 'fkfield': 'name'},
         {'name': 'Section title',       'type': 'field', 'path': 'sectiontitle'},
@@ -7686,8 +7687,11 @@ class Canwit(models.Model):
                 if re.match(r'\d+', caput):
                     # Yes, it is a number: convert it
                     sBack = oRom.intToRoman(int(caput))
+                elif re.match(r'[IVUXMDLivuxmdl]+', caput):
+                    # This is probably a roman number
+                    sBack = caput
                 else:
-                    sBack = "(not a number)"
+                    sBack = "(not a number: {})".format(caput)
         except:
             msg = oErr.get_error_message()
             oErr.DoError("get_caput")

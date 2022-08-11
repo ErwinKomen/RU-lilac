@@ -233,6 +233,7 @@ class ManuscriptUploadCanwits(ReaderImport):
     import_type = "canwits"
     sourceinfo_url = "https://www.ru.nl/lilac/upload_canwits"
     model = Manuscript
+    template_name = "reader/import_canwits.html"
 
     def process_files(self, request, source, lResults, lHeader):
         file_list = []
@@ -374,11 +375,24 @@ class ManuscriptUploadCanwits(ReaderImport):
                                             val_ftext = oValue['ftext']
                                             canwit = Canwit.objects.filter(msitem__codico__manuscript=manu, ftext__iexact=val_ftext).first()
                                             if canwit is None:
+                                                # Start creating a result
+                                                oResult = {}
+                                                oResult['order'] = order
+                                                oResult['manu'] = manu.id
+
                                                 # Make sure to indicate that each row in the Excel is not a structural (hierarchy creating)
                                                 #    type, but an actual Canwit
                                                 oValue['type'] = 'canwit'
                                                 canwit = Canwit.custom_add(oValue, manuscript=manu, order=order, parent=parent)
                                                 order += 1
+
+                                                oResult['canwit'] = canwit.id
+                                                oResult['lilacode'] = canwit.get_lilacode()
+                                                oResult['locus'] = canwit.get_locus()
+                                                oResult['caput'] = canwit.get_caput()
+
+                                                # Add the result to the list of results
+                                                lResults.append(oResult)
                                         # Go to the next row
                                         row_num += 1
                                     
