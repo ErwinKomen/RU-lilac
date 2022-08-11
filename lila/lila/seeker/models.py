@@ -8734,8 +8734,8 @@ class BibRange(models.Model):
             sBack = " ".join(html)
         return sBack
 
-    def get_range(sermon, book, chvslist, intro=None, added=None):
-        """Get the bk/ch range for this particular sermon"""
+    def get_range(canwit, book, chvslist, intro=None, added=None):
+        """Get the bk/ch range for this particular canwit"""
 
         bNeedSaving = False
         oErr = ErrHandle()
@@ -8744,9 +8744,9 @@ class BibRange(models.Model):
             if book is None or book == "":
                 return None
             # Now we can try to search for an entry...
-            obj = sermon.canwitbibranges.filter(book=book, chvslist=chvslist).first()
+            obj = canwit.canwitbibranges.filter(book=book, chvslist=chvslist).first()
             if obj == None:
-                obj = BibRange(sermon=sermon, book=book, chvslist=chvslist)
+                obj = BibRange.objects.create(canwit=canwit, book=book, chvslist=chvslist)
                 bNeedSaving = True
                 bNeedVerses = True
             # Double check for intro and added

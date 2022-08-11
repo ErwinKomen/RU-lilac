@@ -19,6 +19,7 @@ BOOK_NAMES = [
     {"name":"Matt.","abbr":"MAT"},{"name":"Matt","abbr":"MAT"},{"name":"Mat.","abbr":"MAT"},
     {"name":"Mark","abbr":"MRK"},{"name":"Luke","abbr":"LUK"},
     {"name":"Lucas","abbr":"LUK"},{"name":"Luc","abbr":"LUK"},
+    {"name": "Lev.", "abbr": "LEV"}, {"name": "Ecclus.", "abbr": "ECC"},
     {"name":"1 Lamentations","abbr":"LAM"}, {"name":"2 Cor.","abbr":"2CO"},
     {"name":"2 Cor","abbr":"2CO"},{"name":"1 Timothy","abbr":"1TI"},{"name":"1 Thess.","abbr":"1TH"},
     {"name":"1 Peter","abbr":"1PE"},{"name":"1 John","abbr":"1JN"},
@@ -30,7 +31,7 @@ BOOK_NAMES = [
     {"name":"I Mcc","abbr":"1MA"}, {"name":"Heb.","abbr":"HEB"}, {"name":"Ephesians","abbr":"EPH"},
     {"name":"Eph:","abbr":"EPH"}, {"name":"Cor.","abbr":"1CO"},{"name":"Canticum Canticorum","abbr":"SNG"},
     {"name":"Apocalypsis","abbr":"REV"},{"name":"Acts","abbr":"ACT"}
-    ]
+]
 BOOK_SPECIAL = [{"name":"Act. Apost.","abbr":"ACT"}]
 
 
