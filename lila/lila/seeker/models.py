@@ -7427,6 +7427,9 @@ class Canwit(models.Model):
                                             auwork = Auwork.objects.create(key=auwork_key)
                                         # Set a link to this
                                         austat.auwork = auwork
+                                        # Also correct the austat keycode
+                                        austat.keycode = austat_code.split(".")[-1]
+                                        # Now we ae able to save it
                                         austat.save()
 
                             else:
