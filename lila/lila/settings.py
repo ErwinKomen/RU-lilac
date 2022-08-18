@@ -19,6 +19,12 @@ from django.contrib import admin
 hst = socket.gethostbyname(socket.gethostname())
 bUseTunnel = False
 
+# Set default timeout
+#to1 = socket.getdefaulttimeout()
+#socket.setdefaulttimeout(200)
+#to2 = socket.getdefaulttimeout()
+#print("changed default socket.timeout from {} to {}".format(to1, to2))
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT_NAME = os.path.basename(BASE_DIR)

@@ -5795,15 +5795,20 @@ class Austat(models.Model):
     def get_keycode(self, as_html=False):
         """Get the user-defined Authoritative Statement code"""
 
-        sBack = self.keycode
+        sBack = "-" if self.keycode is None else self.keycode
         # Possibly get the auwork instead
         if not self.auwork is None:
+            # Prepend the AuWork, if needed
+            sAuWorkCode = self.auwork.key
+            if not sAuWorkCode in sBack:
+                sBack = "{}.{}".format(sAuWorkCode, sBack)
             sBack = self.auwork.key
             if as_html:
                 url = reverse('auwork_details', kwargs={'pk': self.auwork.id})
                 sBack = "<span class='badge signature gr'><a href='{}'>{}</a></span>".format(url, sBack)
         elif as_html:
-            # Need to pass on not only the string, but also a button to create an Auwork
+            # Note that in this situation [self.auwork] *IS* None, so there is no Auwork connected to me yet
+            # Action: need to pass on not only the string, but also a button to create an Auwork
             html = []
             html.append("<span>{}</span>".format(self.keycode))
             url = "{}?wrk-key={}".format(reverse('auwork_details'), self.keycode)
