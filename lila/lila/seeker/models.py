@@ -6074,7 +6074,7 @@ class Austat(models.Model):
 
         sCode = None
         if auth_num and iNumber and iNumber > 0:
-            sCode = "lila {:03d}.{:04d}".format(auth_num, iNumber)
+            sCode = "LILAC {:03d}.{:04d}".format(auth_num, iNumber)
         return sCode
 
     def sermon_number(author):
@@ -6257,7 +6257,22 @@ class Collection(models.Model):
 
     
     def __str__(self):
-        return self.name
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            # First try the lilacode
+            sBack = self.lilacode
+            if sBack is None:
+                # Now try the name
+                sBack = self.name
+                if sBack is None:
+                    # Okay: make string with id
+                    sBack = "coll_{}".format(self.id)
+            
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Collection/__str__")
+        return sBack
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
         oErr = ErrHandle()

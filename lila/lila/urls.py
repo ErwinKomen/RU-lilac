@@ -40,8 +40,8 @@ admin.autodiscover()
 
 
 # Set admin stie information
-admin.site.site_header = "Patristic Sermons in the Middle Ages"
-admin.site.site_title = "lila Admin"
+admin.site.site_header = "Living Law of Canons"
+admin.site.site_title = "lilac Admin"
 
 pfx = APP_PREFIX
 use_testapp = False

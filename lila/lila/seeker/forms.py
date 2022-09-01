@@ -504,7 +504,7 @@ class FreeWidget(ModelSelect2MultipleWidget):
 
 class KeycodeMultiWidget(ModelSelect2MultipleWidget):
     model = Austat
-    search_fields = ['keycode__icontains']
+    search_fields = ['auwork__key__icontains', 'keycode__icontains']
     addonly = False
 
     def label_from_instance(self, obj):
@@ -515,7 +515,7 @@ class KeycodeMultiWidget(ModelSelect2MultipleWidget):
         if self.addonly:
             qs = Austat.objects.none()
         else:
-            qs = Austat.objects.filter(keycode__isnull=False, moved__isnull=True, atype='acc').order_by('keycode').distinct()
+            qs = Austat.objects.filter(keycode__isnull=False, moved__isnull=True, atype='acc').order_by('auwork__key', 'keycode').distinct()
         return qs
 
 

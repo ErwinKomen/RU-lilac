@@ -836,7 +836,7 @@ var ru = (function ($, ru) {
 
       /**
        * ssglink_template
-       *    Construct the template for a *link* from Canwit to a Super Sermon Gold
+       *    Construct the template for a *link* from Canwit to a Austat
        *
        */
       ssglink_template: function (sel_item) {
