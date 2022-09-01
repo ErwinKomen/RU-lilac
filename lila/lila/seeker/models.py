@@ -5802,7 +5802,8 @@ class Austat(models.Model):
             sAuWorkCode = self.auwork.key
             if not sAuWorkCode in sBack:
                 sBack = "{}.{}".format(sAuWorkCode, sBack)
-            sBack = self.auwork.key
+            else:
+                sBack = self.auwork.key
             if as_html:
                 url = reverse('auwork_details', kwargs={'pk': self.auwork.id})
                 sBack = "<span class='badge signature gr'><a href='{}'>{}</a></span>".format(url, sBack)
@@ -6379,6 +6380,19 @@ class Collection(models.Model):
             msg = oErr.get_error_message()
             oErr.DoError("Collection/get_count_codico")
         return iBack
+
+    def get_descr(self):
+        """Get the description markdown translated"""
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            sBack = adapt_markdown(self.descrip, lowercase=False)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Collection/get_descr")
+
+        return sBack
 
     def get_elevate(self):
         html = []
