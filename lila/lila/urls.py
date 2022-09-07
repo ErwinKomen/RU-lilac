@@ -25,7 +25,8 @@ from lila.seeker.views_ta import *
 from lila.seeker.views_api import *
 from lila.seeker.visualizations import *
 from lila.reader.views import *
-from lila.reader.excel import ManuscriptUploadExcel, ManuscriptUploadJson, ManuscriptUploadGalway, ManuscriptUploadCanwits
+from lila.reader.excel import ManuscriptUploadExcel, ManuscriptUploadJson, ManuscriptUploadGalway, ManuscriptUploadCanwits, \
+    AustatUploadExcel
 
 # Import from lila as a whole
 from lila.settings import APP_PREFIX
@@ -96,6 +97,7 @@ urlpatterns = [
     url(r'^austat/list', AustatListView.as_view(), name='austat_list'),
     url(r'^austat/details(?:/(?P<pk>\d+))?/$', AustatDetails.as_view(), name='austat_details'),
     url(r'^austat/edit(?:/(?P<pk>\d+))?/$', AustatEdit.as_view(), name='austat_edit'),
+    url(r'^austat/import/excel/$', AustatUploadExcel.as_view(), name='austat_upload_excel'),
     url(r'^austat/pca(?:/(?P<pk>\d+))?/$', AustatPca.as_view(), name='austat_pca'),
     url(r'^austat/graph(?:/(?P<pk>\d+))?/$', AustatGraph.as_view(), name='austat_graph'),
     url(r'^austat/trans(?:/(?P<pk>\d+))?/$', AustatTrans.as_view(), name='austat_trans'),

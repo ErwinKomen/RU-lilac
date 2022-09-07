@@ -74,7 +74,7 @@ from lila.seeker.forms import SearchCollectionForm, SearchManuscriptForm, Search
 from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_entries, get_searchable, get_now_time, \
     add_gold2equal, add_equal2equal, add_ssg_equal2equal, get_helptext, Information, Country, City, Author, Manuscript, \
     User, Group, Origin, Canwit, MsItem, Codhead, CanwitKeyword, CanwitAustat, NewsItem, \
-    SourceInfo, AustatKeyword, ManuscriptExt, \
+    SourceInfo, AustatKeyword, ManuscriptExt, AuworkGenre, AuworkKeyword,  \
     ManuscriptKeyword, Action, Austat, AustatLink, Location, LocationName, LocationIdentifier, LocationRelation, LocationType, \
     ProvenanceMan, Provenance, Daterange, CollOverlap, BibRange, Feast, Comment, AustatDist, \
     Basket, BasketMan, BasketAustat, Litref, LitrefMan, LitrefCol, Report, \
@@ -1496,18 +1496,51 @@ class AuworkEdit(BasicDetails):
     def add_to_context(self, context, instance):
         """Add to the existing context"""
 
-        # Define the main items to show and edit
-        context['mainitems'] = [
-            {'type': 'plain', 'label': "Key code:",         'value': instance.key,  'field_key': 'key'},
-            {'type': 'plain', 'label': "Work:",             'value': instance.work, 'field_key': 'work'},
-            {'type': 'plain', 'label': "Full description:", 'value': instance.full, 'field_key': 'full'},
-            ]
+        oErr = ErrHandle()
+        try:
+            # Define the main items to show and edit
+            context['mainitems'] = [
+                {'type': 'plain', 'label': "Key code:",         'value': instance.key,  'field_key': 'key'},
+                {'type': 'plain', 'label': "Opus:",             'value': instance.opus, 'field_key': 'opus'},
+                {'type': 'plain', 'label': "Work:",             'value': instance.work, 'field_key': 'work'},
+                {'type': 'plain', 'label': "Date:",             'value': instance.date, 'field_key': 'date'},
+                {'type': 'plain', 'label': "Full description:", 'value': instance.full, 'field_key': 'full'},
+                {'type': 'line',  'label': "Genre(s):",         'value': instance.get_genres_markdown(),   'field_list': 'genrelist'},
+                {'type': 'line',  'label': "Keywords:",         'value': instance.get_keywords_markdown(), 'field_list': 'kwlist'},
+                ]
+
+            # Signal that we have select2
+            context['has_select2'] = True
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("AuworkEdit/add_to_context")
+
         # Return the context we have made
         return context
 
     def action_add(self, instance, details, actiontype):
         """User can fill this in to his/her liking"""
         lila_action_add(self, instance, details, actiontype)
+
+    def after_save(self, form, instance):
+        msg = ""
+        bResult = True
+        oErr = ErrHandle()
+                
+        try:
+            # (3) 'genres'
+            genrelist = form.cleaned_data['genrelist']
+            adapt_m2m(AuworkGenre, instance, "auwork", genrelist, "genre")
+
+            # (3) 'keywords'
+            kwlist = form.cleaned_data['kwlist']
+            adapt_m2m(AuworkKeyword, instance, "auwork", kwlist, "keyword")
+
+        except:
+            msg = oErr.get_error_message()
+            bResult = False
+        return bResult, msg
 
     def get_history(self, instance):
         return lila_get_history(instance)
@@ -1594,11 +1627,12 @@ class AuworkListView(BasicList):
     prefix = "wrk"
     has_select2 = True
     in_team = False
-    order_cols = ['key', 'work', '']
+    order_cols = ['key', 'work', 'date', '']
     order_default = order_cols
     order_heads = [
         {'name': 'Key code',  'order': 'o=1', 'type': 'str', 'field': 'key',  'linkdetails': True},
         {'name': 'Work',      'order': 'o=2', 'type': 'str', 'field': 'work', 'linkdetails': True, 'main': True},
+        {'name': 'Date',      'order': 'o=3', 'type': 'str', 'field': 'date', 'linkdetails': True},
         {'name': 'Frequency', 'order': '',    'type': 'str', 'custom': 'links'},
         ]
     filters = [ {"name": "Key code",         "id": "filter_keycode",     "enabled": False},

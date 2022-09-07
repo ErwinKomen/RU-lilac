@@ -5445,6 +5445,9 @@ class Provenance(models.Model):
         return sBack
 
 
+# =========================== AUWORK RELATED ===================================
+
+
 class Auwork(models.Model):
     """Each canonical statement (=Austat) may be linked to a particular Auwork
     
@@ -5456,8 +5459,56 @@ class Auwork(models.Model):
     key = models.CharField("Key", max_length=LONG_STRING, default="SHORT.KEY")
     # [1] A Auwork may have a full description
     work = models.TextField("Work", null=False, blank=False, default="-")
+    # [1] The latin name/description of this event/work
+    opus = models.TextField("Opus", null=False, blank=False, default="-")
+
+    # [0-1] The (approximate) date(s) for this Work
+    date = models.CharField("Date", null=True, blank=True, max_length=LONG_STRING)
     # [0-1] A Auwork may have a full description
     full = models.TextField("Full description", null=True, blank=True)
+
+    # ============== MANYTOMANY connections
+    # [0-n] Many-to-many: keywords per Canwit
+    keywords = models.ManyToManyField(Keyword, through="AuworkKeyword", related_name="keywords_auwork")
+    # [m] Many-to-many: one sermon can be a part of a series of collections 
+    genres = models.ManyToManyField(Genre, through="AuworkGenre", related_name="genres_auwork")
+
+    # SPecification for download/upload
+    specification = [
+        {'name': 'Key',                 'type': '',      'path': 'key'},
+        {'name': 'Opus',                'type': '',      'path': 'opus'},
+        {'name': 'Work',                'type': '',      'path': 'work'},
+        {'name': 'Date',                'type': '',      'path': 'date'},
+
+        {'name': 'Genre(s)',            'type': 'func',  'path': 'genres'},
+        {'name': 'Keywords',            'type': 'func',  'path': 'keywords'},
+
+
+        #{'name': 'Next',                'type': '',      'path': 'next'},
+        #{'name': 'Type',                'type': '',      'path': 'type'},
+        #{'name': 'Status',              'type': 'field', 'path': 'stype'},
+        #{'name': 'Locus',               'type': 'field', 'path': 'locus'},
+        #{'name': 'Caput',               'type': 'field', 'path': 'caput'},
+        #{'name': 'LiLaC code',          'type': 'field', 'path': 'lilacode'},
+        #{'name': 'Attributed author',   'type': 'fk',    'path': 'author', 'fkfield': 'name'},
+        #{'name': 'Section title',       'type': 'field', 'path': 'sectiontitle'},
+        #{'name': 'Lectio',              'type': 'field', 'path': 'quote'},
+        #{'name': 'Title',               'type': 'field', 'path': 'title'},
+        #{'name': 'Full text',           'type': 'field', 'path': 'ftext'},
+        #{'name': 'Translation',         'type': 'field', 'path': 'ftrans'},
+        #{'name': 'Postscriptum',        'type': 'field', 'path': 'postscriptum'},
+        #{'name': 'Feast',               'type': 'fk',    'path': 'feast', 'fkfield': 'name'},
+        #{'name': 'Cod. notes',          'type': 'field', 'path': 'additional'},
+        #{'name': 'Note',                'type': 'field', 'path': 'note'},
+        #{'name': 'Keywords',            'type': 'func',  'path': 'keywords'},
+        #{'name': 'Keywords (user)',     'type': 'func',  'path': 'keywordsU'},
+        #{'name': 'Gryson/Clavis (manual)','type': 'func',  'path': 'signaturesM'},
+        #{'name': 'Gryson/Clavis (auto)','type': 'func',  'path': 'signaturesA'},
+        #{'name': 'Personal Datasets',   'type': 'func',  'path': 'datasets'},
+        #{'name': 'Literature',          'type': 'func',  'path': 'literature'},
+        #{'name': 'Austat links',        'type': 'func',  'path': 'austatlinks'},
+        #{'name': 'Austat one link',     'type': 'func',  'path': 'austat_one'},
+        ]
 
     def __str__(self):
         return self.key
@@ -5485,7 +5536,66 @@ class Auwork(models.Model):
             msg = oErr.get_error_message()
             oErr.DoError("Auwork.save")
             return None
+
+    def get_genres_markdown(self):
+        lHtml = []
+        oErr = ErrHandle()
+        try:
+            # Visit all genres
+            for genre in self.genres.all().order_by('name'):
+                # Determine where clicking should lead to
+                url = "{}?aw-genrelist={}".format(reverse('auwork_list'), genre.id)
+                # Create a display for this topic
+                lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,genre.name))
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_genres_markdown")
+
+        sBack = ", ".join(lHtml)
+        return sBack
+
+    def get_keywords_markdown(self):
+        lHtml = []
+        # Visit all keywords
+        for keyword in self.keywords.all().order_by('name'):
+            # Determine where clicking should lead to
+            url = "{}?aw-kwlist={}".format(reverse('auwork_list'), keyword.id)
+            # Create a display for this topic
+            lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,keyword.name))
+
+        sBack = ", ".join(lHtml)
+        return sBack
         
+
+class AuworkKeyword(models.Model):
+    """Relation between a Auwork and a Keyword"""
+
+    # [1] The link is between a Manuscript instance ...
+    auwork = models.ForeignKey(Auwork, related_name="auwork_kw", on_delete=models.CASCADE)
+    # [1] ...and a keyword instance
+    keyword = models.ForeignKey(Keyword, related_name="auwork_kw", on_delete=models.CASCADE)
+    # [1] And a date: the date of saving this relation
+    created = models.DateTimeField(default=get_current_datetime)
+
+
+class AuworkGenre(models.Model):
+    """The link between a genre and an Auwork (authoritative work)"""
+
+    # [1] The Austat to which the collection item refers
+    auwork = models.ForeignKey(Auwork, related_name = "auwork_genre", on_delete=models.CASCADE)
+    # [1] The collection to which the context item refers to
+    genre = models.ForeignKey(Genre, related_name= "auwork_genre", on_delete=models.CASCADE)
+    # [1] And a date: the date of saving this relation
+    created = models.DateTimeField(default=get_current_datetime)
+
+    def __str__(self):
+        # Just provide the idno
+        sItem = "{}:{}".format(self.auwork.key, self.auwork.genre)
+        return sItem
+
+
+# =========================== AUSTAT RELATED ===================================
+
 
 class Austat(models.Model):
     """This is an Authoritative Statement (AS)"""
@@ -5546,6 +5656,42 @@ class Austat(models.Model):
 
     # [m] Many-to-many: one manuscript can have a series of user-supplied comments
     comments = models.ManyToManyField(Comment, related_name="comments_super")
+
+    # SPecification for download/upload
+    specification = [
+        {'name': 'Key',                 'type': '',      'path': 'key'},
+        {'name': 'Author',              'type': 'fk',    'path': 'author', 'fkfield': 'name'},
+        {'name': 'Work',                'type': 'fk',    'path': 'auwork', 'fkfield': 'name'},
+        {'name': 'Full text',           'type': 'field', 'path': 'ftext'},
+        {'name': 'Translation',         'type': 'field', 'path': 'ftrans'},
+
+        {'name': 'Genre(s)',            'type': 'func',  'path': 'genres'},
+        {'name': 'Keywords',            'type': 'func',  'path': 'keywords'},
+
+
+        #{'name': 'Next',                'type': '',      'path': 'next'},
+        #{'name': 'Type',                'type': '',      'path': 'type'},
+        #{'name': 'Status',              'type': 'field', 'path': 'stype'},
+        #{'name': 'Locus',               'type': 'field', 'path': 'locus'},
+        #{'name': 'Caput',               'type': 'field', 'path': 'caput'},
+        #{'name': 'LiLaC code',          'type': 'field', 'path': 'lilacode'},
+        #{'name': 'Attributed author',   'type': 'fk',    'path': 'author', 'fkfield': 'name'},
+        #{'name': 'Section title',       'type': 'field', 'path': 'sectiontitle'},
+        #{'name': 'Lectio',              'type': 'field', 'path': 'quote'},
+        #{'name': 'Title',               'type': 'field', 'path': 'title'},
+        #{'name': 'Postscriptum',        'type': 'field', 'path': 'postscriptum'},
+        #{'name': 'Feast',               'type': 'fk',    'path': 'feast', 'fkfield': 'name'},
+        #{'name': 'Cod. notes',          'type': 'field', 'path': 'additional'},
+        #{'name': 'Note',                'type': 'field', 'path': 'note'},
+        #{'name': 'Keywords',            'type': 'func',  'path': 'keywords'},
+        #{'name': 'Keywords (user)',     'type': 'func',  'path': 'keywordsU'},
+        #{'name': 'Gryson/Clavis (manual)','type': 'func',  'path': 'signaturesM'},
+        #{'name': 'Gryson/Clavis (auto)','type': 'func',  'path': 'signaturesA'},
+        #{'name': 'Personal Datasets',   'type': 'func',  'path': 'datasets'},
+        #{'name': 'Literature',          'type': 'func',  'path': 'literature'},
+        #{'name': 'Austat links',        'type': 'func',  'path': 'austatlinks'},
+        #{'name': 'Austat one link',     'type': 'func',  'path': 'austat_one'},
+        ]
     
     def __str__(self):
         name = "" if self.id == None else "eqg_{}".format(self.id)
@@ -5683,6 +5829,313 @@ class Austat(models.Model):
         # Save the result
         org.save()
         return org
+
+    def custom_add(oAustat, **kwargs):
+        """Add an Austat according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        bOverwriting = False
+        lst_msg = []
+
+        try:
+            # Understand where we are coming from
+            keyfield = kwargs.get("keyfield", "path")
+            profile = kwargs.get("profile")
+
+            # The custom_add() command comes with some values already prepared
+            type = oAustat.get('type', "")
+            work_key = oAustat.get('work_key')
+            austat_key = oAustat.get('austat_key')
+
+            # Check if an Auwork is already existing
+            auwork = Auwork.objects.filter(key__iexact=work_key).first()
+            if auwork is None:
+                # Need more information
+                opus = oAustat.get('opus')
+                work = oAustat.get('work')
+                date = oAustat.get('date')
+                genre = oAustat.get('genre')
+
+                # There is no Auwork yet, so this will have to be made first, on the basis of fields:
+                #   work_key, opus, work, date, genre
+                auwork = Auwork.objects.create(key=work_key, opus=opus, work=work, date=date)
+
+                # The genre must be treated separately
+                if not genre is None and genre != "":
+                    obj_genre = Genre.objects.filter(name__iexact=genre).first()
+                    if obj_genre is None:
+                        obj_genre = Genre.objects.create(name=genre)
+
+                    # Knowing there is a genre, it should be linked to the Auwork
+                    obj_link = AuworkGenre.objects.create(genre=obj_genre, auwork=auwork)
+
+            # The Austat must be created on the basis of:
+            #   Auwork, austat_key, full text, translation
+            obj = Austat.objects.filter(auwork=auwork, keycode=austat_key).first()
+            if obj is None:
+                # Create one with default items
+                obj = Austat.objects.create(auwork=auwork, keycode=austat_key)
+
+                # Process all fields in the Specification
+                for oField in Austat.specification:
+                    field = oField.get(keyfield).lower()
+                    if keyfield == "path" and oField.get("type") == "fk_id":
+                        field = "{}_id".format(field)
+                    value = oAustat.get(field)
+                    readonly = oField.get('readonly', False)
+                
+                    if value != None and value != "" and not readonly:
+                        type = oField.get("type")
+                        path = oField.get("path")
+                        if type == "field":
+                            # Set the correct field's value
+                            setattr(obj, path, value)
+                        elif type == "fk":
+                            fkfield = oField.get("fkfield")
+                            model = oField.get("model")
+                            if fkfield != None and model != None:
+                                # Find an item with the name for the particular model
+                                cls = apps.app_configs['seeker'].get_model(model)
+                                instance = cls.objects.filter(**{"{}".format(fkfield): value}).first()
+                                if instance != None:
+                                    setattr(obj, path, instance)
+                        elif type == "func":
+                            # Set the KV in a special way
+                            obj.custom_set(path, value)
+
+                # Be sure to save the object
+                obj.save()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Austat/custom_add")
+        return obj
+
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            if path == "dateranges":
+                qs = Daterange.objects.filter(codico__manuscript=self).order_by('yearstart')
+                dates = []
+                for obj in qs:
+                    dates.append(obj.__str__())
+                sBack = json.dumps(dates)
+            elif path == "keywords":
+                sBack = self.get_keywords_markdown(plain=True)
+            elif path == "keywordsU":
+                sBack =  self.get_keywords_user_markdown(profile, plain=True)
+            elif path == "datasets":
+                sBack = self.get_collections_markdown(username, team_group, settype="pd", plain=True)
+            elif path == "literature":
+                sBack = self.get_litrefs_markdown(plain=True)
+            elif path == "origin":
+                sBack = self.get_origin()
+            elif path == "provenances":
+                sBack = self.get_provenance_markdown(plain=True)
+            elif path == "external":
+                sBack = self.get_external_markdown(plain=True)
+            elif path == "brefs":
+                sBack = self.get_bibleref(plain=True)
+            elif path == "ssglinks":
+                sBack = self.get_eqset(plain=True)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Austat/custom_get")
+        return sBack
+
+    def custom_getkv(self, item, **kwargs):
+        """Get key and value from the manuitem entry"""
+
+        oErr = ErrHandle()
+        key = ""
+        value = ""
+        try:
+            keyfield = kwargs.get("keyfield", "name")
+            if keyfield == "path" and item['type'] == "fk_id":
+                key = "{}_id".format(key)
+            key = item[keyfield]
+            if self != None:
+                if item['type'] == 'field':
+                    value = getattr(self, item['path'])
+                elif item['type'] == "fk":
+                    fk_obj = getattr(self, item['path'])
+                    if fk_obj != None:
+                        value = getattr( fk_obj, item['fkfield'])
+                elif item['type'] == "fk_id":
+                    # On purpose: do not allow downloading the actual ID of a foreign ky - id's migh change
+                    pass
+                    #fk_obj = getattr(self, item['path'])
+                    #if fk_obj != None:
+                    #    value = getattr( fk_obj, "id")
+                elif item['type'] == 'func':
+                    value = self.custom_get(item['path'], kwargs=kwargs)
+                    # return either as string or as object
+                    if keyfield == "name":
+                        # Adaptation for empty lists
+                        if value == "[]": value = ""
+                    else:
+                        if value == "": 
+                            value = None
+                        elif value[0] == '[':
+                            value = json.loads(value)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Austat/custom_getkv")
+        return key, value
+
+    def custom_set(self, path, value, **kwargs):
+        """Set related items"""
+
+        bResult = True
+        oErr = ErrHandle()
+        austat_method = "create_if_not_existing"
+
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            value_lst = []
+            if isinstance(value, str):
+                if value[0] == '[':
+                    # Make list from JSON
+                    value_lst = json.loads(value)
+                else:
+                    value_lst = value.split(",")
+                    for idx, item in enumerate(value_lst):
+                        value_lst[idx] = value_lst[idx].strip()
+            # Note: we skip a number of fields that are determined automatically
+            #       [ stype ]
+            if path == "brefs":
+                # Set the 'bibleref' field. Note: do *NOT* use value_lst here
+                self.bibleref = value
+                # Turn this into BibRange
+                self.do_ranges()
+            elif path == "keywordsU":
+                # Get the list of keywords
+                user_keywords = value_lst #  get_json_list(value)
+                for kw in user_keywords:
+                    # Find the keyword
+                    keyword = Keyword.objects.filter(name__iexact=kw).first()
+                    if keyword != None:
+                        # Add this keyword to the sermon for this user
+                        UserKeyword.objects.create(keyword=keyword, profile=profile, sermo=self)
+            elif path == "datasets":
+                # Walk the personal datasets
+                datasets = value_lst #  get_json_list(value)
+                for ds_name in datasets:
+                    # Get the actual dataset
+                    collection = Collection.objects.filter(name=ds_name, owner=profile, type="sermo", settype="pd").first()
+                    # Does it exist?
+                    if collection == None:
+                        # Create this set
+                        collection = Collection.objects.create(name=ds_name, owner=profile, type="sermo", settype="pd")
+                    # Add manuscript to collection
+                    highest = collection.collections_sermon.all().order_by('-order').first()
+                    order = 1 if highest == None else highest + 1
+                    CollectionCanwit.objects.create(collection=collection, sermon=self, order=order)
+            elif path == "austatlinks":
+                austatlink_names = value_lst #  get_json_list(value)
+                for austat_code in austatlink_names:
+                    # Get this Austat
+                    austat = Austat.objects.filter(code__iexact=austat_code).first()
+
+                    if austat == None:
+                        # Indicate that we didn't find it in the notes
+                        intro = ""
+                        if self.note != "": intro = "{}. ".format(self.note)
+                        self.note = "{}Please set manually the Austat link [{}]".format(intro, austat_code)
+                        self.save()
+                    else:
+                        # Make link between SSG and Austat
+                        CanwitAustat.objects.create(canwit=self, austat=austat, linktype="eqs")
+                # Ready
+            elif path == "austat_one":
+                oValue = value
+                austat_note = oValue.get('austat_note', "")
+                austat_coll = oValue.get('austat_coll')
+                austat_code = oValue['austat_link']
+
+                # Double check that the code is actually something
+                if not austat_code is None:
+                    if ";" in austat_code:
+                        austat_codes = [x.strip() for x in austat_code.split(";")]
+                    else:
+                        austat_codes = [ austat_code ]
+
+                    # Figure out what the collection is (if any)
+                    collection = None
+                    if not austat_coll is None:
+                        # Find a collection with this name
+                        collection = Collection.objects.filter(name__iexact=austat_coll, type="austat", settype="hc").first()
+                        if collection is None:
+                            # Create a collection with this name
+                            collection = Collection.objects.create(type="austat", name=austat_coll, settype="hc", scope="publ")
+
+                    # Walk all of them
+                    for austat_code in austat_codes:
+                        # Get this Austat
+                        austat = Austat.objects.filter(keycode__iexact=austat_code).first()
+
+                        if austat == None:
+                            if austat_method == "create_if_not_existing":
+                                # Make sure Author is set correctly
+                                author = self.author
+                                if author is None:
+                                    author = Author.objects.filter(name__iexact="undecided").first()
+                                # Create it
+                                austat = Austat.objects.create(
+                                    keycode=austat_code,atype="acc", stype="imp",
+                                    ftext=self.ftext, ftrans=self.ftrans,
+                                    author=author)
+                                # See if a Auwork can be determined
+                                if "." in austat_code:
+                                    auwork_key = ".".join( austat_code.split(".")[0:-1])
+                                    if auwork_key != "":
+                                        # Check if it exists already
+                                        auwork = Auwork.objects.filter(key__iexact=auwork_key).first()
+                                        if auwork is None:
+                                            auwork = Auwork.objects.create(key=auwork_key)
+                                        # Set a link to this
+                                        austat.auwork = auwork
+                                        # Also correct the austat keycode
+                                        austat.keycode = austat_code.split(".")[-1]
+                                        # Now we ae able to save it
+                                        austat.save()
+
+                            else:
+                                # Indicate that we didn't find it in the notes
+                                intro = ""
+                                if self.note != "": intro = "{}. ".format(self.note)
+                                self.note = "{}Please set manually the Austat link [{}]".format(intro, austat_code)
+                                self.save()
+
+                        # Try again: should we make a link?
+                        if not austat is None:
+                            # Make link between Austat and Austat
+                            obj = CanwitAustat.objects.create(canwit=self, austat=austat, linktype="eqs")
+                            if not obj is None and not austat_note is None and austat_note != "":
+                                obj.note = austat_note
+                                obj.save()
+
+                            # If there is a collection, then link Austat to that collection
+                            if not collection is None:
+                                coll_link = CollectionAustat.objects.filter(austat=austat, collection=collection).first()
+                                if coll_link is None:
+                                    coll_link = CollectionAustat.objects.create(austat=austat, collection=collection)
+                    # Ready
+            else:
+                # Figure out what to do in this case
+                pass
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Austat/custom_set")
+            bResult = False
+        return bResult
 
     def get_author(self):
         # Get a good name for the author
@@ -6087,6 +6540,17 @@ class Austat(models.Model):
             self.save()
         return True
 
+    def split_key(sValue):
+        work_key = ""
+        austat_key = ""
+        if not sValue is None and sValue != "":
+            arValue = sValue.split(".")
+            if len(arValue) > 1:
+                work_key = ".".join(arValue[:-1])
+                austat_key = arValue[-1]
+
+        return work_key, austat_key
+
 
 class AustatLink(models.Model):
     """Link to identical sermons that have a different signature"""
@@ -6181,6 +6645,37 @@ class AustatProject(models.Model):
         return response
     
 
+class AustatCorpus(models.Model):
+    """A corpus of SSG's"""
+
+    # [1] Each lock is created with a particular SSG as starting point
+    ssg = models.ForeignKey(Austat, related_name="ssgequalcorpora", on_delete=models.CASCADE)
+    # [1] Each lock belongs to a person
+    profile = models.ForeignKey(Profile, related_name="profileequalcorpora", on_delete=models.CASCADE)
+    # [1] List of most frequent words
+    mfw = models.TextField("Most frequent words", default = "[]")
+    # [1] And a date: the date of saving this relation
+    created = models.DateTimeField(default=get_current_datetime)
+
+    # [1] Status
+    status = models.TextField("Status", default = "empty")
+
+
+class AustatCorpusItem(models.Model):
+    """One item from the AustatCOrpus"""
+
+    # [1] Link-item 1: source
+    equal = models.ForeignKey(Austat, related_name="ssgcorpusequals", on_delete=models.CASCADE)
+    # [1] WOrds in this SSG's ftext and ftrans - stringified JSON
+    words = models.TextField("Words", default = "{}")
+    # [1] Number of canwit - the scount
+    scount = models.IntegerField("Canwit count", default = 0)
+    # [1] Name of the author
+    authorname = models.TextField("Author's name", default = "empty")
+    # [1] Link to the corpus itself
+    corpus = models.ForeignKey(AustatCorpus, related_name="corpusitems", on_delete=models.CASCADE)
+
+    
 class ManuscriptExt(models.Model):
     """External URL (link) that belongs to a particular manuscript"""
 
@@ -6195,6 +6690,9 @@ class ManuscriptExt(models.Model):
     def short(self):
         return self.url
        
+
+# =========================== COLLECTION RELATED ===================================
+
 
 class Collection(models.Model):
     """A collection can contain one or more sermons, manuscripts, gold sermons or super super golds"""
@@ -6629,6 +7127,9 @@ class Collection(models.Model):
         return sBack
 
 
+# =========================== MSITEM RELATED ===================================
+
+
 class MsItem(models.Model):
     """One item in a manuscript - can be sermon or heading"""
 
@@ -6798,6 +7299,9 @@ class Codhead(models.Model):
         return last
 
 
+# =========================== COLWIT RELATED ===================================
+
+
 class Colwit(models.Model):
     """A collection witness belongs to exactly one [Codhead] and several CanWits belong to the Colwit
     
@@ -6933,6 +7437,20 @@ class Colwit(models.Model):
             # count = self.comments.count()
         sBack = get_stype_light(self.stype, usercomment, count)
         return sBack
+
+
+class ColwitKeyword(models.Model):
+    """Relation between a Colwit and a Keyword"""
+
+    # [1] The link is between a Colwit instance ...
+    colwit = models.ForeignKey(Colwit, related_name="colwit_kw", on_delete=models.CASCADE)
+    # [1] ...and a keyword instance
+    keyword = models.ForeignKey(Keyword, related_name="colwit_kw", on_delete=models.CASCADE)
+    # [1] And a date: the date of saving this relation
+    created = models.DateTimeField(default=get_current_datetime)
+
+
+# =========================== CANWIT RELATED ===================================
 
 
 class Canwit(models.Model):
@@ -8396,6 +8914,54 @@ class Canwit(models.Model):
         return sUrl
           
 
+class CanwitKeyword(models.Model):
+    """Relation between a Canwit and a Keyword"""
+
+    # [1] The link is between a Canwit instance ...
+    canwit = models.ForeignKey(Canwit, related_name="canwit_kw", on_delete=models.CASCADE)
+    # [1] ...and a keyword instance
+    keyword = models.ForeignKey(Keyword, related_name="canwit_kw", on_delete=models.CASCADE)
+    # [1] And a date: the date of saving this relation
+    created = models.DateTimeField(default=get_current_datetime)
+
+
+class CanwitProject(models.Model):
+    """Relation between a Canwit and a Project"""
+
+    # [1] The link is between a Canwit instance ...
+    canwit = models.ForeignKey(Canwit, related_name="canwit_proj", on_delete=models.CASCADE)
+    # [1] ...and a project instance
+    project = models.ForeignKey(Project, related_name="canwit_proj", on_delete=models.CASCADE)
+    # [1] And a date: the date of saving this relation
+    created = models.DateTimeField(default=get_current_datetime)
+
+    def delete(self, using = None, keep_parents = False):
+        # Deletion is only allowed, if the project doesn't become 'orphaned'
+        count = self.canwit.projects.count()
+        if count > 1:
+            response = super(CanwitProject, self).delete(using, keep_parents)
+        else:
+            response = None
+        return response
+
+
+class AustatDist(models.Model):
+    """Keep track of the 'distance' between Canwit and Austat"""
+
+    # [1] The canwit
+    canwit = models.ForeignKey(Canwit, related_name="canwitsuperdist", on_delete=models.CASCADE)
+    # [1] The equal gold sermon (=SSG)
+    austat = models.ForeignKey(Austat, related_name="canwitsuperdist", on_delete=models.CASCADE)
+    # [1] Each sermon-to-equal keeps track of a distance
+    distance = models.FloatField("Distance", default=100.0)
+
+    def __str__(self):
+        return "{}".format(self.distance)
+
+
+# =========================== BIBREF RELATED ===================================
+
+
 class Range(models.Model):
     """A range in the bible from one place to another"""
 
@@ -8805,35 +9371,7 @@ class BibVerse(models.Model):
         return self.bkchvs
 
 
-class CanwitKeyword(models.Model):
-    """Relation between a Canwit and a Keyword"""
-
-    # [1] The link is between a Canwit instance ...
-    canwit = models.ForeignKey(Canwit, related_name="canwit_kw", on_delete=models.CASCADE)
-    # [1] ...and a keyword instance
-    keyword = models.ForeignKey(Keyword, related_name="canwit_kw", on_delete=models.CASCADE)
-    # [1] And a date: the date of saving this relation
-    created = models.DateTimeField(default=get_current_datetime)
-
-
-class CanwitProject(models.Model):
-    """Relation between a Canwit and a Project"""
-
-    # [1] The link is between a Canwit instance ...
-    canwit = models.ForeignKey(Canwit, related_name="canwit_proj", on_delete=models.CASCADE)
-    # [1] ...and a project instance
-    project = models.ForeignKey(Project, related_name="canwit_proj", on_delete=models.CASCADE)
-    # [1] And a date: the date of saving this relation
-    created = models.DateTimeField(default=get_current_datetime)
-
-    def delete(self, using = None, keep_parents = False):
-        # Deletion is only allowed, if the project doesn't become 'orphaned'
-        count = self.canwit.projects.count()
-        if count > 1:
-            response = super(CanwitProject, self).delete(using, keep_parents)
-        else:
-            response = None
-        return response
+# =========================== KEYWORD RELATED ===================================
 
 
 class ManuscriptKeyword(models.Model):
@@ -8845,6 +9383,20 @@ class ManuscriptKeyword(models.Model):
     keyword = models.ForeignKey(Keyword, related_name="manuscript_kw", on_delete=models.CASCADE)
     # [1] And a date: the date of saving this relation
     created = models.DateTimeField(default=get_current_datetime)
+
+
+class CodicoKeyword(models.Model):
+    """Relation between a Codico and a Keyword"""
+
+    # [1] The link is between a Manuscript instance ...
+    codico = models.ForeignKey(Codico, related_name="codico_kw", on_delete=models.CASCADE)
+    # [1] ...and a keyword instance
+    keyword = models.ForeignKey(Keyword, related_name="codico_kw", on_delete=models.CASCADE)
+    # [1] And a date: the date of saving this relation
+    created = models.DateTimeField(default=get_current_datetime)
+
+
+# =========================== PROJECT RELATED ===================================
 
 
 class ManuscriptProject(models.Model):
@@ -8865,28 +9417,6 @@ class ManuscriptProject(models.Model):
         else:
             response = None
         return response
-
-
-class CodicoKeyword(models.Model):
-    """Relation between a Codico and a Keyword"""
-
-    # [1] The link is between a Manuscript instance ...
-    codico = models.ForeignKey(Codico, related_name="codico_kw", on_delete=models.CASCADE)
-    # [1] ...and a keyword instance
-    keyword = models.ForeignKey(Keyword, related_name="codico_kw", on_delete=models.CASCADE)
-    # [1] And a date: the date of saving this relation
-    created = models.DateTimeField(default=get_current_datetime)
-
-
-class ColwitKeyword(models.Model):
-    """Relation between a Colwit and a Keyword"""
-
-    # [1] The link is between a Colwit instance ...
-    colwit = models.ForeignKey(Colwit, related_name="colwit_kw", on_delete=models.CASCADE)
-    # [1] ...and a keyword instance
-    keyword = models.ForeignKey(Keyword, related_name="colwit_kw", on_delete=models.CASCADE)
-    # [1] And a date: the date of saving this relation
-    created = models.DateTimeField(default=get_current_datetime)
 
 
 class ManuscriptCorpus(models.Model):
@@ -8921,37 +9451,6 @@ class ManuscriptCorpusLock(models.Model):
 
     # [1] Status
     status = models.TextField("Status", default = "empty")
-
-    
-class AustatCorpus(models.Model):
-    """A corpus of SSG's"""
-
-    # [1] Each lock is created with a particular SSG as starting point
-    ssg = models.ForeignKey(Austat, related_name="ssgequalcorpora", on_delete=models.CASCADE)
-    # [1] Each lock belongs to a person
-    profile = models.ForeignKey(Profile, related_name="profileequalcorpora", on_delete=models.CASCADE)
-    # [1] List of most frequent words
-    mfw = models.TextField("Most frequent words", default = "[]")
-    # [1] And a date: the date of saving this relation
-    created = models.DateTimeField(default=get_current_datetime)
-
-    # [1] Status
-    status = models.TextField("Status", default = "empty")
-
-
-class AustatCorpusItem(models.Model):
-    """One item from the AustatCOrpus"""
-
-    # [1] Link-item 1: source
-    equal = models.ForeignKey(Austat, related_name="ssgcorpusequals", on_delete=models.CASCADE)
-    # [1] WOrds in this SSG's ftext and ftrans - stringified JSON
-    words = models.TextField("Words", default = "{}")
-    # [1] Number of canwit - the scount
-    scount = models.IntegerField("Canwit count", default = 0)
-    # [1] Name of the author
-    authorname = models.TextField("Author's name", default = "empty")
-    # [1] Link to the corpus itself
-    corpus = models.ForeignKey(AustatCorpus, related_name="corpusitems", on_delete=models.CASCADE)
 
     
 class UserKeyword(models.Model):
@@ -9105,20 +9604,6 @@ class CanwitAustat(models.Model):
         # We're not really giving unique ones
         uniques = CanwitAustat.objects.exclude(canwit__mtype="tem").order_by('linktype', 'canwit__author__name')
         return uniques
-
-
-class AustatDist(models.Model):
-    """Keep track of the 'distance' between sermons and SSGs"""
-
-    # [1] The canwit
-    canwit = models.ForeignKey(Canwit, related_name="canwitsuperdist", on_delete=models.CASCADE)
-    # [1] The equal gold sermon (=SSG)
-    austat = models.ForeignKey(Austat, related_name="canwitsuperdist", on_delete=models.CASCADE)
-    # [1] Each sermon-to-equal keeps track of a distance
-    distance = models.FloatField("Distance", default=100.0)
-
-    def __str__(self):
-        return "{}".format(self.distance)
 
 
 class CanwitSignature(models.Model):

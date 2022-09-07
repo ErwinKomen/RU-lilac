@@ -38,7 +38,8 @@ import requests
 from lila.settings import APP_PREFIX, MEDIA_DIR
 from lila.utils import ErrHandle
 
-from lila.seeker.models import Manuscript, MsItem, Canwit, Profile, Report, Codico, Codhead, Location, LocationType, Library
+from lila.seeker.models import Manuscript, MsItem, Canwit, Profile, Report, Codico, Codhead, Location, LocationType, Library, \
+    Austat, Auwork
 from lila.seeker.views import app_editor
 from lila.reader.views import ReaderImport
 from lila.reader.forms import UploadFileForm
@@ -831,4 +832,171 @@ class ManuscriptUploadGalway(ReaderImport):
             oManu = None
 
         return oManu, oCodico
+
+
+class AustatUploadExcel(ReaderImport):
+    """Specific parameters for importing manuscripts from Excel"""
+
+    import_type = "excel"
+    sourceinfo_url = "https://www.ru.nl/english/people/meeder-s/"
+
+    def process_files(self, request, source, lResults, lHeader):
+        file_list = []
+        oErr = ErrHandle()
+        bOkay = True
+        code = ""
+        col_number = {}
+        col_defs = [
+            {"name": "key",         "def": ['key']                      },
+            {"name": "author",      "def": ['author']                   },
+            {"name": "auwork",      "def": ['work']                     },
+            {"name": "ftext",       "def": ['ftext', 'full text']       },
+            {"name": "ftrans",      "def": ['ftrans', 'translation']    },
+            {"name": "genres",      "def": ['genre(s)']                 },
+            {"name": "keywords",    "def": ['keywords']                 }
+            ]
+        oStatus = self.oStatus
+        try:
+            # Make sure we have the username
+            username = self.username
+            profile = Profile.get_user_profile(username)
+            team_group = app_editor
+            kwargs = {'profile': profile, 'username': username, 'team_group': team_group}
+
+            # Initialize column numbers
+            for oDef in col_defs:
+                col_number[oDef['name']] = -1
+
+            # Get the contents of the imported file
+            files = request.FILES.getlist('files_field')
+            if files != None:
+                for data_file in files:
+                    filename = data_file.name
+                    file_list.append(filename)
+
+                    # Set the status
+                    oStatus.set("reading", msg="file={}".format(filename))
+
+                    # Get the source file
+                    if data_file == None or data_file == "":
+                        self.arErr.append("No source file specified for the selected project")
+                    else:
+                        # Check the extension
+                        arFile = filename.split(".")
+                        extension = arFile[len(arFile)-1]
+
+                        lst_manual = []
+                        lst_read = []
+
+                        # Further processing depends on the extension
+                        oResult = {'status': 'ok', 'count': 0, 'austats': 0, 'msg': "", 'user': username}
+
+                        if extension == "xlsx":
+                            # This is an Excel file: read the file using openpyxl
+                            # Write data temporarily to the WRITABLE dir, but with a temporary filename
+                            tmp_path = os.path.abspath(os.path.join( MEDIA_DIR, filename))
+                            with io.open(tmp_path, "wb") as f:
+                                sData = data_file.read()
+                                f.write(sData)
+
+                            # Read string file
+                            wb = openpyxl.load_workbook(tmp_path, read_only=True)
+
+                            # Find out which sheets point to Work (AuWork) and to Austat
+                            sheetnames = wb.sheetnames
+                            ws_work = None
+                            ws_austat = None
+                            for sname in sheetnames:
+                                snameL = sname.lower()
+                                if snameL.find("work-") == 0:
+                                    ws_work = wb[sname]
+                                elif snameL.find("austat-") == 0:
+                                    ws_austat = wb[sname]
+
+                            # If there is a Auwork sheet, then read that first
+                            if not ws_work is None:
+                                # THere is a Auwork sheet: look for Auwork definitions
+                                oAuWork = {}
+                                pass
+
+                            # Do we have a worksheet with Austat items?
+                            if not ws_austat is None:
+                                # Get a list of the Austat excel columns
+                                row_num = 1
+                                col_num = 1
+                                bStop = False
+                                while not bStop:
+                                    k = ws_austat.cell(row=row_num, column=col_num).value
+                                    if k is None or k == "":
+                                        bStop = True
+                                    else:
+                                        col_name = k.lower()
+                                        for oDef in col_defs:
+                                            name = oDef['name']
+                                            if col_number[name] < 0:
+                                                for str_def in oDef['def']:
+                                                    if str_def in col_name:
+                                                        # Found it!
+                                                        col_number[name] = col_num
+                                                        break
+                                    col_num += 1
+
+                                # Make sure we at least have [ftext]
+                                if col_number['ftext'] >= 1:
+
+                                    # Walk through all rows
+                                    bStop = False
+                                    row_num = 2
+                                    while not bStop:
+                                        value = ws_austat.cell(row=row_num, column=1).value
+                                        bStop = (value is None or value == "")
+                                        if not bStop:
+                                            # Read the values for this row into dictionary [oValue]
+                                            oValue = {}
+                                            for field_name, col_num in col_number.items():
+                                                if col_num > 0:
+                                                    oValue[field_name] = ws_austat.cell(row=row_num, column=col_num).value
+
+                                            # We have all the values, process the essentials to create a CanWit (if it doesn't exist already)
+                                            val_key = oValue['key']
+                                            # Split into Auwork.key (short Work key) and Austat.keycode (number)
+                                            work_key, austat_key = Austat.split_key(val_key)
+                                            austat = Austat.objects.filter(auwork__key=work_key, keycode=austat_key).first()
+                                            if austat is None:
+                                                # Start creating a result
+                                                oResult = {}
+                                                oResult['key'] = val_key
+
+                                                # Make sure to indicate that each row in the Excel is an Austat description
+                                                oValue['type'] = 'austat'
+                                                oValue['work_key'] = work_key
+                                                oValue['austat_key'] = austat_key
+                                                austat = Austat.custom_add(oValue)
+                                                order += 1
+
+                                                oResult['austat'] = austat.id
+                                                oResult['lilacode'] = austat.get_lilacode()
+
+                                                # Add the result to the list of results
+                                                lResults.append(oResult)
+                                        # Go to the next row
+                                        row_num += 1
+
+ 
+
+                        # Create a report and add it to what we return
+                        oContents = {'headers': lHeader, 'list': lst_manual, 'read': lst_read}
+                        oReport = Report.make(username, "ixlsx", json.dumps(oContents))
+                                
+                        # Determine a status code
+                        statuscode = "error" if oResult == None or oResult['status'] == "error" else "completed"
+                        if oResult == None:
+                            self.arErr.append("There was an error. No Austats have been added")
+                        else:
+                            lResults.append(oResult)
+            code = "Imported using the [import_excel] function on this filew: {}".format(", ".join(file_list))
+        except:
+            bOkay = False
+            code = oErr.get_error_message()
+        return bOkay, code
 

@@ -1810,22 +1810,29 @@ class GenreForm(forms.ModelForm):
             oErr.DoError("GenreForm/init")
 
 
-class AuworkForm(forms.ModelForm):
+class AuworkForm(lilaModelForm):
     """Auwork editing and searching"""
 
     work_ta = forms.CharField(label=_("Work"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching works input-sm', 'placeholder': 'Work(s)...', 'style': 'width: 100%;'}))
     worklist     = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=AuworkWidget(attrs={'data-placeholder': 'Select multiple works...', 'style': 'width: 100%;', 'class': 'searching'}))
+    genrelist     = ModelMultipleChoiceField(queryset=None, required=False, 
+                widget=GenreWidget(attrs={'data-placeholder': 'Select multiple genres...', 'style': 'width: 100%;', 'class': 'searching'}))
+    kwlist     = ModelMultipleChoiceField(queryset=None, required=False, 
+                widget=KeywordWidget(attrs={'data-placeholder': 'Select multiple keywords...', 'style': 'width: 100%;', 'class': 'searching'}))
 
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = Auwork
-        fields = ['key', 'work', 'full']
+        fields = ['key', 'work', 'opus', 'date', 'full']
         widgets={'key':     forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
+                 'opus':    forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 
+                                                      'class': 'searching', 'placeholder': 'Latin name of this work...'}),
                  'work':    forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 
                                                       'class': 'searching', 'placeholder': 'Work...'}),
+                 'date':    forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching', 'placeholder': 'Date(s) of this work...'}),
                  'full':    forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 
                                                       'class': 'searching', 'placeholder': 'Full description...'})
                  }
@@ -1836,11 +1843,17 @@ class AuworkForm(forms.ModelForm):
 
         oErr = ErrHandle()
         try:
+            username = self.username
+            team_group = self.team_group
+            profile = Profile.get_user_profile(username)
+
             # Some fields are not required
             self.fields['key'].required = False
             self.fields['work'].required = False
             self.fields['full'].required = False
 
+            self.fields['genrelist'].queryset = Genre.objects.all().order_by('name')
+            self.fields['kwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
             self.fields['worklist'].queryset = Auwork.objects.all().order_by('key')
 
             # Get the instance
