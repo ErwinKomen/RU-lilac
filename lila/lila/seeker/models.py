@@ -4856,16 +4856,6 @@ class Codico(models.Model):
             sBack = markdown(self.notes, extensions=['nl2br'])
         return sBack
 
-    #def get_origin(self):
-    #    sBack = "-"
-    #    if self.origin:
-    #        # Just take the bare name of the origin
-    #        sBack = self.origin.name
-    #        if self.origin.location:
-    #            # Add the actual location if it is known
-    #            sBack = "{}: {}".format(sBack, self.origin.location.get_loc_name())
-    #    return sBack
-
     def get_origins(self, plain=False):
         """One codico can have a number of origins(s)"""
 
