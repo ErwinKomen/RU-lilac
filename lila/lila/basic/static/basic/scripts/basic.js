@@ -2319,6 +2319,84 @@ var ru = (function ($, ru) {
       },
 
       /**
+       * multil_check
+       *    Verify multil functionality
+       */
+      multil_check: function (elStart) {
+        var url_base = "https://{aws}.execute-api.eu-central-1.amazonaws.com/Prod/{mode}",
+            elMultilCheck = "",
+            sAwsList = "rkxy8021l6",
+            sAwsForest = "34kb2ospsg",
+            url_list = "",
+            url_forest = "";
+
+        try {
+          // Create the URLs
+          url_list = url_base.replace("{aws}", sAwsList).replace("{mode}", "list");
+          url_forest = url_base.replace("{aws}", sAwsForest).replace("{mode}", "rforest");
+
+          // Before we start
+          elMultilCheck = $(elStart).closest(".multil-main").find(".multil-check").first();
+          $(elMultilCheck).html(loc_sWaiting);
+
+          // Test getting a list
+          $.get(url_list, function (response) {
+            var data = null,
+                html = [],
+                features = null,
+                dataset = null;
+
+            // Action depends on the response
+            if (response === undefined || response === null || !("status" in response)) {
+              private_methods.errMsg("No status returned");
+            } else {
+              switch (response.status) {
+                case "ready":
+                case "ok":
+                  // Get the data
+                  data = response.data;
+                  features = data.Features;
+                  dataset = data.Dataset;
+
+                  // Compose a message
+                  html.push("<p>Results from /list:</p>");
+                  html.push("<table>");
+                  html.push("<tr><td>Features:</td><td>" + features.length + "</td></tr>");
+                  html.push("<tr><td>Dataset:</td><td>" + dataset.length + "</td></tr>");
+                  html.push("</table>");
+
+                  // SHow the message
+                  $(elMultilCheck).html(html.join("\n"));
+
+                  // Now call the /rforest method
+                  data = { calling: "usedatafilter", dataset: dataset };
+                  $.post(url_forest, data, function (post_response) {
+                    var verder = null;
+
+                    // Action depends on the response
+                    if (post_response === undefined || post_response === null || !("status" in post_response)) {
+                      private_methods.errMsg("No status returned");
+                    } else {
+                      switch (post_response.status) {
+                        case "ready":
+                        case "ok":
+                          verder = post_response;
+                          break;
+                      }
+                    }
+                  });
+
+                  break;
+              }
+            }
+          });
+
+        } catch (ex) {
+          private_methods.errMsg("multil_check", ex);
+        }
+      },
+
+      /**
         * result_download
         *   Trigger creating and downloading a result CSV / XLSX / JSON
         *
