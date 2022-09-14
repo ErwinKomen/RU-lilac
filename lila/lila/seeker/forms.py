@@ -1423,6 +1423,69 @@ class ColwitForm(lilaModelForm):
         return None
 
 
+class CanedForm(lilaModelForm):
+
+    austatone = ModelChoiceField(queryset=None, required=False,
+            widget=AustatWidget(attrs={'data-placeholder': 'Select an authoritative statement...', 'style': 'width: 100%;', 'class': 'searching'}))
+    collone = ModelChoiceField(queryset=None, required=False)
+    
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = Caned
+        fields = ['austat', 'collection', 'order', 'idno', 'ftext', 'ftrans']
+        widgets={
+            'idno':     forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 
+                                                'placeholder': 'Canon Edition number (the lilacode prepends the collection to it)'}),
+            'order':    forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'data-placeholder': 'Order number within collection'}),
+            'ftext':    forms.TextInput(attrs={'class': 'typeahead searching cwftexts input-sm', 'placeholder': 'Full text...', 'style': 'width: 100%;'}),
+            'ftrans':   forms.TextInput(attrs={'class': 'typeahead searching cwftrans input-sm', 'placeholder': 'Translation...', 'style': 'width: 100%;'}),
+                }
+
+    def __init__(self, *args, **kwargs):
+        # Start by executing the standard handling
+        super(CanedForm, self).__init__(*args, **kwargs)
+        oErr = ErrHandle()
+        try:
+            username = self.username
+            team_group = self.team_group
+            profile = Profile.get_user_profile(username)
+
+            # Some fields are not required
+            self.fields['idno'].required = False
+            self.fields['order'].required = False
+            self.fields['ftext'].required = False
+            self.fields['ftrans'].required = False
+            self.fields['collone'].required = False
+            self.fields['austatone'].required = False
+
+            self.fields['collone'].widget = CollOneHistWidget( attrs={'username': username, 'team_group': team_group,
+                        'data-placeholder': 'Select a collection...', 'style': 'width: 100%;', 'class': 'searching'})
+
+            prefix = "austat"
+            qs = Collection.get_scoped_queryset(prefix, username, team_group, settype="hc")
+            self.fields['collone'].queryset = qs
+
+            # Get the instance
+            if 'instance' in kwargs:
+                instance = kwargs['instance']
+
+                # Make sure the correct collection and austat are shown
+                if not instance.collection is None:
+                    self.fields['collone'].initial = instance.collection.id
+                    self.fields['collone'].widget.initial = instance.collection.id
+
+                if not instance.austat is None:
+                    self.fields['austatone'].initial = instance.austat.id
+                    self.fields['austatone'].widget.initial = instance.austat.id
+
+            iStop = 1
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CanedForm-init")
+        return None
+
+
 class CanwitForm(lilaModelForm):
     # Helper fields for Canwit fields
     stypelist   = ModelMultipleChoiceField(queryset=None, required=False, 
@@ -2818,7 +2881,7 @@ class SuperSermonGoldCollectionForm(forms.ModelForm):
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
-        model = CollectionAustat
+        model = Caned
         fields = ['austat', 'collection']
 
     def __init__(self, *args, **kwargs):

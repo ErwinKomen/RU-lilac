@@ -19,7 +19,7 @@ import json, copy
 from lila.utils import ErrHandle
 from lila.settings import TIME_ZONE
 from lila.seeker.models import get_current_datetime, get_crpp_date, build_abbr_list, COLLECTION_SCOPE, \
-    Collection, Manuscript, Profile, CollectionAustat, CanwitKeyword
+    Collection, Manuscript, Profile, Caned, CanwitKeyword
 
 STANDARD_LENGTH=255
 ABBR_LENGTH = 5
@@ -441,7 +441,7 @@ class SetList(models.Model):
             #   size
             # HC-specific:
             #   literature
-            qs = CollectionAustat.objects.filter(collection=coll).order_by('order').values(
+            qs = Caned.objects.filter(collection=coll).order_by('order').values(
                 'order', 'collection__name', 'collection__descrip', 'collection__settype', 
                 'super', 'super__code', 'super__author__name',
                 'super__incipit', 'super__explicit', 'super__sgcount', 'super__ssgcount')
@@ -463,7 +463,7 @@ class SetList(models.Model):
                     sgcount = obj['super__sgcount']
                     ssgcount = obj['super__ssgcount']
                     # Get the name(s) of the HC
-                    lst_hc = CollectionAustat.objects.filter(super=super, collection__settype="hc").values(
+                    lst_hc = Caned.objects.filter(super=super, collection__settype="hc").values(
                         'collection__id', 'collection__name')
                     hcs = ", ".join( [x['collection__name'] for x in lst_hc])
                     # ======== DEBUGGING ============
@@ -557,7 +557,7 @@ class SetList(models.Model):
                     srm_notes = obj['sermon__note']
 
                     # Get the name(s) of the HC
-                    lst_hc = CollectionAustat.objects.filter(super=super, collection__settype="hc").values(
+                    lst_hc = Caned.objects.filter(super=super, collection__settype="hc").values(
                         'collection__id', 'collection__name')
                     hcs = ", ".join( [x['collection__name'] for x in lst_hc])
                     # ======== DEBUGGING ============

@@ -5649,7 +5649,7 @@ class Austat(models.Model):
     keywords = models.ManyToManyField(Keyword, through="AustatKeyword", related_name="keywords_super")
 
     # [m] Many-to-many: one sermon can be a part of a series of collections
-    collections = models.ManyToManyField("Collection", through="CollectionAustat", related_name="collections_austat")
+    collections = models.ManyToManyField("Collection", through="Caned", related_name="collections_austat")
 
     # [m] Many-to-many: one Austat can belong to one or more projects
     projects = models.ManyToManyField(Project, through="AustatProject", related_name="project_austat")
@@ -6124,9 +6124,9 @@ class Austat(models.Model):
 
                             # If there is a collection, then link Austat to that collection
                             if not collection is None:
-                                coll_link = CollectionAustat.objects.filter(austat=austat, collection=collection).first()
+                                coll_link = Caned.objects.filter(austat=austat, collection=collection).first()
                                 if coll_link is None:
-                                    coll_link = CollectionAustat.objects.create(austat=austat, collection=collection)
+                                    coll_link = Caned.objects.create(austat=austat, collection=collection)
                     # Ready
             else:
                 # Figure out what to do in this case
@@ -6856,9 +6856,9 @@ class Collection(models.Model):
                     CollectionCanwit.objects.create(collection=new_copy, sermon=obj.sermon, order=obj.order)
             elif self.type == "austat":
                 # Copy SSGs
-                qs = CollectionAustat.objects.filter(collection=self).order_by("order")
+                qs = Caned.objects.filter(collection=self).order_by("order")
                 for obj in qs:
-                    CollectionAustat.objects.create(collection=new_copy, super=obj.austat, order=obj.order)
+                    Caned.objects.create(collection=new_copy, super=obj.austat, order=obj.order)
 
             # Change the name
             new_copy.name = "{}_{}".format(new_copy.name, new_copy.id)
@@ -7991,9 +7991,9 @@ class Canwit(models.Model):
 
                             # If there is a collection, then link Austat to that collection
                             if not collection is None:
-                                coll_link = CollectionAustat.objects.filter(austat=austat, collection=collection).first()
+                                coll_link = Caned.objects.filter(austat=austat, collection=collection).first()
                                 if coll_link is None:
-                                    coll_link = CollectionAustat.objects.create(austat=austat, collection=collection)
+                                    coll_link = Caned.objects.create(austat=austat, collection=collection)
                     # Ready
             else:
                 # Figure out what to do in this case
@@ -9903,7 +9903,7 @@ class CollectionMan(models.Model):
     order = models.IntegerField("Order", default = -1)
 
 
-class CollectionAustat(models.Model):
+class Caned(models.Model):
     """The link between a collection item and a Austat (authoritative statement)"""
 
     # [1] The Austat to which the collection item refers
@@ -9913,6 +9913,13 @@ class CollectionAustat(models.Model):
     # [0-1] Each combination of Collection-Austat has an identification number
     idno = models.CharField("Identifier", max_length=LONG_STRING, null=True, blank=True)
 
+    # [0-1] We would like to know the FULL TEXT
+    ftext = models.TextField("Full text", null=True, blank=True)
+    srchftext = models.TextField("Full text (searchable)", null=True, blank=True)
+    # [0-1] We would like to know the FULL TEXT TRANSLATION
+    ftrans = models.TextField("Translation", null=True, blank=True)
+    srchftrans = models.TextField("Translation (searchable)", null=True, blank=True)
+
     # [0-1] The order number for this Austat within the collection
     order = models.IntegerField("Order", default = -1)
 
@@ -9920,6 +9927,99 @@ class CollectionAustat(models.Model):
         # Just provide the idno
         sItem = self.idno
         return sItem
+
+    def get_austat(self):
+        """Get a string representation of the Austat that I link to"""
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            sAustat = self.austat.get_keycode()
+            url = reverse('austat_details', kwargs={'pk': self.austat.id})
+            sBack = "<span class='badge signature ot'><a href='{}' class='nostyle'>{}</a></span>".format(
+                url, sAustat)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Caned/get_austat")
+        return sBack
+
+    def get_collection(self):
+        """Get a string representation of the Collection that I link to"""
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            if self.collection.lilacode is None:
+                sHC = "Coll_{}".format(self.collection.id)
+            else:
+                sHC = "{}".format(self.collection.lilacode)
+            url = reverse("collhist_details", kwargs={'pk': self.collection.id})
+            sBack = "<span class='badge signature gr'><a href='{}' class='nostyle'>{}</a></span>".format(
+                url, sHC)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Caned/get_collection")
+        return sBack
+
+    def get_ftrans_markdown(self, incexp_type = "actual"):
+        """Get the contents of the explicit field using markdown"""
+
+        if incexp_type == "both":
+            parsed = adapt_markdown(self.ftrans)
+            search = self.srchftrans
+            sBack = "<div>{}</div><div class='searchincexp'>{}</div>".format(parsed, search)
+        elif incexp_type == "actual":
+            sBack = adapt_markdown(self.ftrans)
+        elif incexp_type == "search":
+            sBack = adapt_markdown(self.srchftrans)
+        return sBack
+
+    def get_ftext_markdown(self, incexp_type = "actual"):
+        """Get the contents of the ftext field using markdown"""
+        # Perform
+        if incexp_type == "both":
+            parsed = adapt_markdown(self.ftext)
+            search = self.srchftext
+            sBack = "<div>{}</div><div class='searchincexp'>{}</div>".format(parsed, search)
+        elif incexp_type == "actual":
+            sBack = adapt_markdown(self.ftext)
+        elif incexp_type == "search":
+            sBack = adapt_markdown(self.srchftext)
+        return sBack
+
+    def get_lilacode(self):
+        """Get a string representation of the Lilacode that I am"""
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            # Get the collection lilacode
+            html = []
+            if self.collection.lilacode is None:
+                html.append("Coll_{}".format(self.collection.id))
+            else:
+                html.append("{}".format(self.collection.lilacode))
+            # Get my own [idno]
+            idno = "?" if self.idno is None else self.idno
+            html.append(idno)
+            # Combine them with a period
+            sBack = ".".join(html)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Caned/get_lilacode")
+        return sBack
+
+    def get_idno(self):
+        """Get a string representation of the idno that I am"""
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            sBack = "-" if self.idno == "" else self.idno
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Caned/get_idno")
+        return sBack
 
 
 class CollectionProject(models.Model):

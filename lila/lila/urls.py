@@ -90,6 +90,10 @@ urlpatterns = [
     url(r'^canwit/edit(?:/(?P<pk>\d+))?/$', CanwitEdit.as_view(), name='canwit_edit'),
     url(r'^canwit/list', CanwitListView.as_view(), name='canwit_list'),
     
+    url(r'^caned/details(?:/(?P<pk>\d+))?/$', CanedDetails.as_view(), name='caned_details'),
+    url(r'^caned/edit(?:/(?P<pk>\d+))?/$', CanedEdit.as_view(), name='caned_edit'),
+    url(r'^caned/list', CanedListView.as_view(), name='caned_list'),
+    
     url(r'^colwit/details(?:/(?P<pk>\d+))?/$', ColwitDetails.as_view(), name='colwit_details'),
     url(r'^colwit/edit(?:/(?P<pk>\d+))?/$', ColwitEdit.as_view(), name='colwit_edit'),
     url(r'^colwit/list', ColwitListView.as_view(), name='colwit_list'),

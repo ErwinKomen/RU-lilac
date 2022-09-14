@@ -16,7 +16,7 @@ from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_
     ProvenanceMan, Provenance, Daterange, CollOverlap, BibRange, Feast, Comment, AustatDist, \
     Basket, BasketMan, BasketAustat, Litref, LitrefMan, LitrefCol, Report,  \
     Visit, Profile, Keyword, CanwitSignature, Status, Library, Collection, CollectionCanwit, \
-    CollectionMan, CollectionAustat, UserKeyword, Template, \
+    CollectionMan, Caned, UserKeyword, Template, \
     ManuscriptCorpus, ManuscriptCorpusLock, AustatCorpus, \
     Codico, OriginCodico, CodicoKeyword, ProvenanceCod, Project, ManuscriptProject, CanwitProject, \
     CollectionProject, AustatProject, \
@@ -28,6 +28,7 @@ adaptation_list = {
     'codico_list': [],
     'canwit_list': [],
     'austat_list': [],
+    'caned_list': ['canedftext'],
     "collection_list": [] 
     }
 
@@ -244,6 +245,40 @@ def add_codico_to_manuscript(manu):
 
 
 # =========== Part of austat_list ======================
+
+
+# =========== Part of caned_list ======================
+
+def adapt_canedftext(oStatus=None):
+    """Create Codico's and copy Manuscript information to Codico"""
+    oErr = ErrHandle()
+    bResult = True
+    msg = ""
+    oBack = dict(status="ok", msg="")
+
+    try:
+        # TODO: add code here and change to True
+        bResult = False
+
+        # Walk all the existing Caned items
+        with transaction.atomic():
+            for obj in Caned.objects.all():
+                # Get the austat
+                austat = obj.austat
+                # Copy the ftext/ftrans from there
+                if obj.ftext is None and not austat.ftext is None:
+                    obj.ftext = austat.ftext
+                    obj.ftrans = austat.ftrans
+                    obj.srchftext = austat.srchftext
+                    obj.srchftrans = austat.srchftrans
+                    obj.save()
+
+        # Note that we are indeed ready
+        bResult = True
+    except:
+        msg = oErr.get_error_message()
+        bResult = False
+    return bResult, msg
 
 
 # =========== Part of collection_list ==================
