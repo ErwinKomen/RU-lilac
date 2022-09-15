@@ -7415,13 +7415,14 @@ class Colwit(models.Model):
         oErr = ErrHandle()
         try:
             html = []
-            # Find out what collection we link to
-            if not self.collection is None and not self.collection.lilacode is None:
-                html.append(self.collection.lilacode)
+            # Issue #25: the order must be Manuscript "." Collection
             # Find out what manuscript we belong to
             manuscript = self.codhead.msitem.manu
             if not manuscript is None and not manuscript.lilacode is None:
                 html.append(manuscript.lilacode)
+            # Find out what collection we link to
+            if not self.collection is None and not self.collection.lilacode is None:
+                html.append(self.collection.lilacode)
             # Combine it all
             sBack = ".".join(html)
         except:
