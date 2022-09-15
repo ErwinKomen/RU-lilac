@@ -50,6 +50,52 @@ var ru = (function ($, ru) {
           'hist-svg': 'application/svg',
           'hist-png': 'image/png',
         },
+        loc_multil_row = {
+          "observation": 356,
+          "short_cite": "Syrett et al. (2017), Exp 2",
+          "published": "yes",
+          "data_collection": "Syrett2017",
+          "task_number": 2,
+          "target_language": "spanish",
+          "other_language": "english",
+          "task_type": "offline_comprehension",
+          "task_detailed": "picture_selection",
+          "linguistic_property": "quantifier",
+          "linguistic_property_detailed": "unos",
+          "bilingual_group": "syr2",
+          "monolingual_group": "syr_mono1",
+          "surface_overlap_author": "not_discussed",
+          "target_or_child_system": "NA",
+          "dominance": "?",
+          "language_home": "?",
+          "societal_language": "other_language",
+          "CLI_predicted": "yes",
+          "predicted_direction_difference_2L1": "lower",
+          "mean_age_2L1": 52,
+          "sd_age_2L1": "MD",
+          "age_min_2L1": 40,
+          "age_max_2L1": 65,
+          "mean_age_L1": 49,
+          "sd_age_L1": "MD",
+          "age_min_L1": 39,
+          "age_max_L1": 57,
+          "n_2L1": 36,
+          "n_L1": 22,
+          "mean_2L1": 33.3,
+          "mean_L1": 37.9,
+          "SD_2L1": 29.6,
+          "SD_L1": 27.5,
+          "mean_difference": -4.600000000000001,
+          "t": null,
+          "t_correct_sign": null,
+          "d": 0.1595536329149569,
+          "g": 0.15740717148560768,
+          "g_correct_sign": 0.15740717148560768,
+          "g_var": 0.07246364266582991,
+          "g_SE": 0.2691907180157405,
+          "g_W": 13.800023890760711,
+          "num_trials": 3
+        },
         dummy = 1;
 
     // Private methods specification
@@ -2327,13 +2373,24 @@ var ru = (function ($, ru) {
             elMultilCheck = "",
             sAwsList = "rkxy8021l6",
             sAwsForest = "34kb2ospsg",
+            bCheckForest = false,
+            multil_row = null,
+            multil_obs = null,
+            edit_key = "TOBEFILLEDIN",
             url_list = "",
+            url_add = "",
+            url_delete = "",
             url_forest = "";
 
         try {
           // Create the URLs
           url_list = url_base.replace("{aws}", sAwsList).replace("{mode}", "list");
+          url_add = url_base.replace("{aws}", sAwsList).replace("{mode}", "add");
+          url_delete = url_base.replace("{aws}", sAwsList).replace("{mode}", "delete");
           url_forest = url_base.replace("{aws}", sAwsForest).replace("{mode}", "rforest");
+
+          multil_row = loc_multil_row;
+          multil_obs = multil_row['observation'];
 
           // Before we start
           elMultilCheck = $(elStart).closest(".multil-main").find(".multil-check").first();
@@ -2368,23 +2425,63 @@ var ru = (function ($, ru) {
                   // SHow the message
                   $(elMultilCheck).html(html.join("\n"));
 
-                  // Now call the /rforest method
-                  data = { calling: "usedatafilter", dataset: dataset };
-                  $.post(url_forest, data, function (post_response) {
+                  // Now call the /add method
+                  data = JSON.stringify( {edit_key: edit_key, data: [ multil_row ]});
+
+                  $.post(url_add, data, function (post_add) {
                     var verder = null;
 
                     // Action depends on the response
-                    if (post_response === undefined || post_response === null || !("status" in post_response)) {
+                    if (post_add === undefined || post_add === null || !("status" in post_add)) {
                       private_methods.errMsg("No status returned");
                     } else {
-                      switch (post_response.status) {
+                      switch (post_add.status) {
                         case "ready":
                         case "ok":
-                          verder = post_response;
+                          verder = post_add;
+
+                          // Now calling the /delete method
+                          data = JSON.stringify({edit_key: edit_key, observations: [multil_obs]});
+                          $.post(url_delete, data, function (post_delete) {
+                            var verder = null;
+
+                            // Action depends on the response
+                            if (post_delete === undefined || post_delete === null || !("status" in post_delete)) {
+                              private_methods.errMsg("No status returned");
+                            } else {
+                              switch (post_delete.status) {
+                                case "ready":
+                                case "ok":
+                                  verder = post_delete;
+                                  break;
+                              }
+                            }
+                          });
+
                           break;
                       }
                     }
                   });
+
+                  if (bCheckForest) {
+                    // Now call the /rforest method
+                    data = { calling: "usedatafilter", dataset: dataset };
+                    $.post(url_forest, data, function (post_response) {
+                      var verder = null;
+
+                      // Action depends on the response
+                      if (post_response === undefined || post_response === null || !("status" in post_response)) {
+                        private_methods.errMsg("No status returned");
+                      } else {
+                        switch (post_response.status) {
+                          case "ready":
+                          case "ok":
+                            verder = post_response;
+                            break;
+                        }
+                      }
+                    });
+                  }
 
                   break;
               }
