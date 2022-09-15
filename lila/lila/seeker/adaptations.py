@@ -27,7 +27,7 @@ adaptation_list = {
     "manuscript_list": [],
     'codico_list': [],
     'canwit_list': [],
-    'austat_list': [],
+    'austat_list': ['keycodefull'],
     'caned_list': ['canedftext'],
     "collection_list": [] 
     }
@@ -245,6 +245,33 @@ def add_codico_to_manuscript(manu):
 
 
 # =========== Part of austat_list ======================
+
+def adapt_keycodefull(oStatus=None):
+    """Create Codico's and copy Manuscript information to Codico"""
+    oErr = ErrHandle()
+    bResult = True
+    msg = ""
+    oBack = dict(status="ok", msg="")
+
+    try:
+        # TODO: add code here and change to True
+        bResult = False
+
+        # Walk all the existing Caned items
+        with transaction.atomic():
+            for obj in Austat.objects.all():
+                # Adapt keycodefull if needed
+                keycodefull = obj.get_keycode()
+                if obj.keycodefull != keycodefull:
+                    obj.keycodefull = keycodefull
+                    obj.save()
+
+        # Note that we are indeed ready
+        bResult = True
+    except:
+        msg = oErr.get_error_message()
+        bResult = False
+    return bResult, msg
 
 
 # =========== Part of caned_list ======================

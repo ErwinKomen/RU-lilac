@@ -839,6 +839,7 @@ class AustatUploadExcel(ReaderImport):
 
     import_type = "excel"
     sourceinfo_url = "https://www.ru.nl/english/people/meeder-s/"
+    template_name = "reader/import_austats.html"
 
     def process_files(self, request, source, lResults, lHeader):
         file_list = []
@@ -849,11 +850,15 @@ class AustatUploadExcel(ReaderImport):
         col_defs = [
             {"name": "key",         "def": ['key']                      },
             {"name": "author",      "def": ['author']                   },
+            {"name": "opus",        "def": ['opus']                     },
             {"name": "auwork",      "def": ['work']                     },
+            {"name": "date",        "def": ['date']                     },
             {"name": "ftext",       "def": ['ftext', 'full text']       },
             {"name": "ftrans",      "def": ['ftrans', 'translation']    },
             {"name": "genres",      "def": ['genre(s)']                 },
-            {"name": "keywords",    "def": ['keywords']                 }
+            {"name": "keywords",    "def": ['keywords']                 },
+            {"name": "editions",    "def": ['editions']                 },
+            {"name": "signatures",  "def": ['cpl']                      }
             ]
         oStatus = self.oStatus
         try:
@@ -972,10 +977,13 @@ class AustatUploadExcel(ReaderImport):
                                                 oValue['work_key'] = work_key
                                                 oValue['austat_key'] = austat_key
                                                 austat = Austat.custom_add(oValue)
-                                                order += 1
+
+                                                # Not sure what to do with 'order'
+                                                # order += 1
 
                                                 oResult['austat'] = austat.id
-                                                oResult['lilacode'] = austat.get_lilacode()
+                                                oResult['keycode'] = austat.get_keycode()
+                                                oResult['ftext'] = "-" if austat.ftext is None else austat.ftext
 
                                                 # Add the result to the list of results
                                                 lResults.append(oResult)
@@ -984,16 +992,21 @@ class AustatUploadExcel(ReaderImport):
 
  
 
-                        # Create a report and add it to what we return
-                        oContents = {'headers': lHeader, 'list': lst_manual, 'read': lst_read}
-                        oReport = Report.make(username, "ixlsx", json.dumps(oContents))
+                        ## Create a report and add it to what we return
+                        #oContents = {'headers': lHeader, 'list': lst_manual, 'read': lst_read}
+                        #oReport = Report.make(username, "ixlsx", json.dumps(oContents))
                                 
-                        # Determine a status code
-                        statuscode = "error" if oResult == None or oResult['status'] == "error" else "completed"
-                        if oResult == None:
-                            self.arErr.append("There was an error. No Austats have been added")
-                        else:
-                            lResults.append(oResult)
+                        ## Determine a status code
+                        #statuscode = "error" if oResult == None or oResult['status'] == "error" else "completed"
+                        #if oResult == None:
+                        #    self.arErr.append("There was an error. No Austats have been added")
+                        #else:
+                        #    lResults.append(oResult)
+
+                    # Set the status
+                    oStatus.set("finishing", msg="file={}".format(filename))
+
+
             code = "Imported using the [import_excel] function on this filew: {}".format(", ".join(file_list))
         except:
             bOkay = False

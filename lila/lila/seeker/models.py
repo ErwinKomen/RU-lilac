@@ -5615,6 +5615,7 @@ class Austat(models.Model):
     date = models.CharField("Date", null=True, blank=True, max_length=LONG_STRING)
     # [0-1] The 'key' for this authoritative statement
     keycode = models.CharField("Statement code", blank=True, null=True, max_length=STANDARD_LENGTH)
+    keycodefull = models.CharField("Statement code in full", blank=True, null=True, max_length=STANDARD_LENGTH)
     auwork = models.ForeignKey(Auwork, on_delete=models.SET_NULL, related_name="auwork_austats", blank=True, null=True)
     # [0-1] The number of this AuStat (numbers are 1-based, per author)
     number = models.IntegerField("Number", blank=True, null=True)
@@ -5660,13 +5661,14 @@ class Austat(models.Model):
     # SPecification for download/upload
     specification = [
         {'name': 'Key',                 'type': '',      'path': 'key'},
-        {'name': 'Author',              'type': 'fk',    'path': 'author', 'fkfield': 'name'},
+        {'name': 'Author',              'type': 'fk',    'path': 'author', 'fkfield': 'name', 'model': 'Author'},
         {'name': 'Work',                'type': 'fk',    'path': 'auwork', 'fkfield': 'name'},
         {'name': 'Full text',           'type': 'field', 'path': 'ftext'},
         {'name': 'Translation',         'type': 'field', 'path': 'ftrans'},
 
         {'name': 'Genre(s)',            'type': 'func',  'path': 'genres'},
         {'name': 'Keywords',            'type': 'func',  'path': 'keywords'},
+        {'name': 'Personal Datasets',   'type': 'func',  'path': 'datasets'},
 
 
         #{'name': 'Next',                'type': '',      'path': 'next'},
@@ -5687,7 +5689,6 @@ class Austat(models.Model):
         #{'name': 'Keywords (user)',     'type': 'func',  'path': 'keywordsU'},
         #{'name': 'Gryson/Clavis (manual)','type': 'func',  'path': 'signaturesM'},
         #{'name': 'Gryson/Clavis (auto)','type': 'func',  'path': 'signaturesA'},
-        #{'name': 'Personal Datasets',   'type': 'func',  'path': 'datasets'},
         #{'name': 'Literature',          'type': 'func',  'path': 'literature'},
         #{'name': 'Austat links',        'type': 'func',  'path': 'austatlinks'},
         #{'name': 'Austat one link',     'type': 'func',  'path': 'austat_one'},
@@ -5708,6 +5709,11 @@ class Austat(models.Model):
             srchftrans = get_searchable(self.ftrans)
             if self.srchftrans != srchftrans:
                 self.srchftrans = srchftrans
+
+            # Adapt keycodefull if needed
+            keycodefull = self.get_keycode()
+            if self.keycodefull != keycodefull:
+                self.keycodefull = keycodefull
 
             # Double check the number and the code
             if self != None and self.author_id != None and self.author != None:
@@ -5853,29 +5859,23 @@ class Austat(models.Model):
             if auwork is None:
                 # Need more information
                 opus = oAustat.get('opus')
-                work = oAustat.get('work')
+                work = oAustat.get('auwork')
                 date = oAustat.get('date')
-                genre = oAustat.get('genre')
+                genre = oAustat.get('genres')
 
                 # There is no Auwork yet, so this will have to be made first, on the basis of fields:
                 #   work_key, opus, work, date, genre
                 auwork = Auwork.objects.create(key=work_key, opus=opus, work=work, date=date)
-
-                # The genre must be treated separately
-                if not genre is None and genre != "":
-                    obj_genre = Genre.objects.filter(name__iexact=genre).first()
-                    if obj_genre is None:
-                        obj_genre = Genre.objects.create(name=genre)
-
-                    # Knowing there is a genre, it should be linked to the Auwork
-                    obj_link = AuworkGenre.objects.create(genre=obj_genre, auwork=auwork)
 
             # The Austat must be created on the basis of:
             #   Auwork, austat_key, full text, translation
             obj = Austat.objects.filter(auwork=auwork, keycode=austat_key).first()
             if obj is None:
                 # Create one with default items
-                obj = Austat.objects.create(auwork=auwork, keycode=austat_key)
+                # NOTE: 
+                # - the stype must be initialized correctly as 'imported'
+                # - the atype must be initialized as 'accepted' (i.e. accepted by all projects)
+                obj = Austat.objects.create(auwork=auwork, keycode=austat_key, stype="imp", atype="acc")
 
                 # Process all fields in the Specification
                 for oField in Austat.specification:
@@ -6015,6 +6015,32 @@ class Austat(models.Model):
                 self.bibleref = value
                 # Turn this into BibRange
                 self.do_ranges()
+            elif path == "genres":
+                genres = value_lst
+                for sGenre in genres:
+                    # Find the genre by string
+                    genre = Genre.objects.filter(name__iexact=sGenre).first()
+                    # If the genre is not existing yet: create it
+                    if genre is None:
+                        genre = Genre.objects.create(name=sGenre)
+                    # Double check to see if there is no link between [self] and [genre] yet
+                    obj = AustatGenre.objects.filter(equal=self, genre=genre).first()
+                    if obj is None:
+                        # Create that link
+                        obj = AustatGenre.objects.create(equal=self, genre=genre)
+            elif path == "keywords":
+                keywords = value_lst
+                for kw in keywords:
+                    # Find the keyword
+                    keyword = Keyword.objects.filter(name__iexact=kw).first()
+                    if keyword is None:
+                        # Create it
+                        keyword = Keyword.objects.create(name=kw)
+                    # Double check to see if there is no link between [self] and [genre] yet
+                    obj = AustatKeyword.objects.filter(equal=self, keyword=keyword).first()
+                    if obj is None:
+                        # Create that link
+                        obj = AustatKeyword.objects.create(equal=self, keyword=keyword)
             elif path == "keywordsU":
                 # Get the list of keywords
                 user_keywords = value_lst #  get_json_list(value)
@@ -6022,112 +6048,116 @@ class Austat(models.Model):
                     # Find the keyword
                     keyword = Keyword.objects.filter(name__iexact=kw).first()
                     if keyword != None:
-                        # Add this keyword to the sermon for this user
-                        UserKeyword.objects.create(keyword=keyword, profile=profile, sermo=self)
+                        # Add this keyword to the AUSTAT for this user - provided it is not existing yet
+                        obj = UserKeyword.objects.filter(keyword=keyword, profile=profile, austat=self).first()
+                        if obj is None:
+                            obj = UserKeyword.objects.create(keyword=keyword, profile=profile, austat=self)
             elif path == "datasets":
                 # Walk the personal datasets
                 datasets = value_lst #  get_json_list(value)
                 for ds_name in datasets:
                     # Get the actual dataset
-                    collection = Collection.objects.filter(name=ds_name, owner=profile, type="sermo", settype="pd").first()
+                    collection = Collection.objects.filter(name=ds_name, owner=profile, type="austat", settype="pd").first()
                     # Does it exist?
                     if collection == None:
                         # Create this set
-                        collection = Collection.objects.create(name=ds_name, owner=profile, type="sermo", settype="pd")
-                    # Add manuscript to collection
-                    highest = collection.collections_sermon.all().order_by('-order').first()
+                        collection = Collection.objects.create(name=ds_name, owner=profile, type="austat", settype="pd")
+                    # Add current AUSTAT to collection via Caned
+                    highest = collection.collections_austat.all().order_by('-order').first()
                     order = 1 if highest == None else highest + 1
-                    CollectionCanwit.objects.create(collection=collection, sermon=self, order=order)
-            elif path == "austatlinks":
-                austatlink_names = value_lst #  get_json_list(value)
-                for austat_code in austatlink_names:
-                    # Get this Austat
-                    austat = Austat.objects.filter(code__iexact=austat_code).first()
+                    # Collection.objects.create(collection=collection, sermon=self, order=order)
+                    Caned.objects.create(collection=collection, austat=self, order=order)
 
-                    if austat == None:
-                        # Indicate that we didn't find it in the notes
-                        intro = ""
-                        if self.note != "": intro = "{}. ".format(self.note)
-                        self.note = "{}Please set manually the Austat link [{}]".format(intro, austat_code)
-                        self.save()
-                    else:
-                        # Make link between SSG and Austat
-                        CanwitAustat.objects.create(canwit=self, austat=austat, linktype="eqs")
-                # Ready
-            elif path == "austat_one":
-                oValue = value
-                austat_note = oValue.get('austat_note', "")
-                austat_coll = oValue.get('austat_coll')
-                austat_code = oValue['austat_link']
+            #elif path == "austatlinks":
+            #    austatlink_names = value_lst #  get_json_list(value)
+            #    for austat_code in austatlink_names:
+            #        # Get this Austat
+            #        austat = Austat.objects.filter(code__iexact=austat_code).first()
 
-                # Double check that the code is actually something
-                if not austat_code is None:
-                    if ";" in austat_code:
-                        austat_codes = [x.strip() for x in austat_code.split(";")]
-                    else:
-                        austat_codes = [ austat_code ]
+            #        if austat == None:
+            #            # Indicate that we didn't find it in the notes
+            #            intro = ""
+            #            if self.note != "": intro = "{}. ".format(self.note)
+            #            self.note = "{}Please set manually the Austat link [{}]".format(intro, austat_code)
+            #            self.save()
+            #        else:
+            #            # Make link between SSG and Austat
+            #            CanwitAustat.objects.create(canwit=self, austat=austat, linktype="eqs")
+            #    # Ready
+            #elif path == "austat_one":
+            #    oValue = value
+            #    austat_note = oValue.get('austat_note', "")
+            #    austat_coll = oValue.get('austat_coll')
+            #    austat_code = oValue['austat_link']
 
-                    # Figure out what the collection is (if any)
-                    collection = None
-                    if not austat_coll is None:
-                        # Find a collection with this name
-                        collection = Collection.objects.filter(name__iexact=austat_coll, type="austat", settype="hc").first()
-                        if collection is None:
-                            # Create a collection with this name
-                            collection = Collection.objects.create(type="austat", name=austat_coll, settype="hc", scope="publ")
+            #    # Double check that the code is actually something
+            #    if not austat_code is None:
+            #        if ";" in austat_code:
+            #            austat_codes = [x.strip() for x in austat_code.split(";")]
+            #        else:
+            #            austat_codes = [ austat_code ]
 
-                    # Walk all of them
-                    for austat_code in austat_codes:
-                        # Get this Austat
-                        austat = Austat.objects.filter(keycode__iexact=austat_code).first()
+            #        # Figure out what the collection is (if any)
+            #        collection = None
+            #        if not austat_coll is None:
+            #            # Find a collection with this name
+            #            collection = Collection.objects.filter(name__iexact=austat_coll, type="austat", settype="hc").first()
+            #            if collection is None:
+            #                # Create a collection with this name
+            #                collection = Collection.objects.create(type="austat", name=austat_coll, settype="hc", scope="publ")
 
-                        if austat == None:
-                            if austat_method == "create_if_not_existing":
-                                # Make sure Author is set correctly
-                                author = self.author
-                                if author is None:
-                                    author = Author.objects.filter(name__iexact="undecided").first()
-                                # Create it
-                                austat = Austat.objects.create(
-                                    keycode=austat_code,atype="acc", stype="imp",
-                                    ftext=self.ftext, ftrans=self.ftrans,
-                                    author=author)
-                                # See if a Auwork can be determined
-                                if "." in austat_code:
-                                    auwork_key = ".".join( austat_code.split(".")[0:-1])
-                                    if auwork_key != "":
-                                        # Check if it exists already
-                                        auwork = Auwork.objects.filter(key__iexact=auwork_key).first()
-                                        if auwork is None:
-                                            auwork = Auwork.objects.create(key=auwork_key)
-                                        # Set a link to this
-                                        austat.auwork = auwork
-                                        # Also correct the austat keycode
-                                        austat.keycode = austat_code.split(".")[-1]
-                                        # Now we ae able to save it
-                                        austat.save()
+            #        # Walk all of them
+            #        for austat_code in austat_codes:
+            #            # Get this Austat
+            #            austat = Austat.objects.filter(keycode__iexact=austat_code).first()
 
-                            else:
-                                # Indicate that we didn't find it in the notes
-                                intro = ""
-                                if self.note != "": intro = "{}. ".format(self.note)
-                                self.note = "{}Please set manually the Austat link [{}]".format(intro, austat_code)
-                                self.save()
+            #            if austat == None:
+            #                if austat_method == "create_if_not_existing":
+            #                    # Make sure Author is set correctly
+            #                    author = self.author
+            #                    if author is None:
+            #                        author = Author.objects.filter(name__iexact="undecided").first()
+            #                    # Create it
+            #                    austat = Austat.objects.create(
+            #                        keycode=austat_code,atype="acc", stype="imp",
+            #                        ftext=self.ftext, ftrans=self.ftrans,
+            #                        author=author)
+            #                    # See if a Auwork can be determined
+            #                    if "." in austat_code:
+            #                        auwork_key = ".".join( austat_code.split(".")[0:-1])
+            #                        if auwork_key != "":
+            #                            # Check if it exists already
+            #                            auwork = Auwork.objects.filter(key__iexact=auwork_key).first()
+            #                            if auwork is None:
+            #                                auwork = Auwork.objects.create(key=auwork_key)
+            #                            # Set a link to this
+            #                            austat.auwork = auwork
+            #                            # Also correct the austat keycode
+            #                            austat.keycode = austat_code.split(".")[-1]
+            #                            # Now we ae able to save it
+            #                            austat.save()
 
-                        # Try again: should we make a link?
-                        if not austat is None:
-                            # Make link between Austat and Austat
-                            obj = CanwitAustat.objects.create(canwit=self, austat=austat, linktype="eqs")
-                            if not obj is None and not austat_note is None and austat_note != "":
-                                obj.note = austat_note
-                                obj.save()
+            #                else:
+            #                    # Indicate that we didn't find it in the notes
+            #                    intro = ""
+            #                    if self.note != "": intro = "{}. ".format(self.note)
+            #                    self.note = "{}Please set manually the Austat link [{}]".format(intro, austat_code)
+            #                    self.save()
 
-                            # If there is a collection, then link Austat to that collection
-                            if not collection is None:
-                                coll_link = Caned.objects.filter(austat=austat, collection=collection).first()
-                                if coll_link is None:
-                                    coll_link = Caned.objects.create(austat=austat, collection=collection)
-                    # Ready
+            #            # Try again: should we make a link?
+            #            if not austat is None:
+            #                # Make link between Austat and Austat
+            #                obj = CanwitAustat.objects.create(canwit=self, austat=austat, linktype="eqs")
+            #                if not obj is None and not austat_note is None and austat_note != "":
+            #                    obj.note = austat_note
+            #                    obj.save()
+
+            #                # If there is a collection, then link Austat to that collection
+            #                if not collection is None:
+            #                    coll_link = Caned.objects.filter(austat=austat, collection=collection).first()
+            #                    if coll_link is None:
+            #                        coll_link = Caned.objects.create(austat=austat, collection=collection)
+            #        # Ready
             else:
                 # Figure out what to do in this case
                 pass
