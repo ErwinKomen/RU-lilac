@@ -10,18 +10,6 @@ var $ = jQuery;
       // Initialize event listeners
       ru.basic.init_events();
       // ru.basic.init_typeahead();
-      $.extend({
-        jpost: function (url, body, funback) {
-          return $.ajax({
-            type: 'POST',
-            url: url,
-            data: JSON.stringify(body, null, "  "),
-            contentType: "application/json",
-            dataType: 'json',
-            success: function (ev) { funback(ev);}
-          });
-        }
-      });
       // Initialize Bootstrap popover
       // Note: this is used when hovering over the question mark button
       $('[data-toggle="popover"]').popover();
