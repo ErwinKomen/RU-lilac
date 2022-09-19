@@ -10,7 +10,18 @@ var $ = jQuery;
       // Initialize event listeners
       ru.basic.init_events();
       // ru.basic.init_typeahead();
-
+      $.extend({
+        jpost: function (url, body, funback) {
+          return $.ajax({
+            type: 'POST',
+            url: url,
+            data: JSON.stringify(body, null, "  "),
+            contentType: "application/json",
+            dataType: 'json',
+            success: function (ev) { funback(ev);}
+          });
+        }
+      });
       // Initialize Bootstrap popover
       // Note: this is used when hovering over the question mark button
       $('[data-toggle="popover"]').popover();
@@ -108,7 +119,7 @@ var ru = (function ($, ru) {
         return "something";
       },
 
-      copyToClipboard: function(elem) {
+      copyToClipboard: function (elem) {
         // create hidden text element, if it doesn't already exist
         var targetId = "_hiddenCopyText_";
         var elConfirm = "";
@@ -170,7 +181,7 @@ var ru = (function ($, ru) {
             // clear temporary content
             target.textContent = "";
           }
-          
+
           return succeed;
         } catch (ex) {
           private_methods.errMsg("copyToClipboard", ex);
@@ -204,8 +215,8 @@ var ru = (function ($, ru) {
        */
       colwrap_switch: function (colnum, set) {
         var lColWrap = null,
-            elW = null,
-            idx = -1;
+          elW = null,
+          idx = -1;
 
         try {
           // Get the current value
@@ -2373,7 +2384,8 @@ var ru = (function ($, ru) {
             elMultilCheck = "",
             sAwsList = "rkxy8021l6",
             sAwsForest = "34kb2ospsg",
-            bCheckForest = false,
+            bCheckForest = true,
+            bCheckAddDel = false,
             multil_row = null,
             multil_obs = null,
             edit_key = "TOBEFILLEDIN",
@@ -2401,6 +2413,9 @@ var ru = (function ($, ru) {
             var data = null,
                 html = [],
                 features = null,
+                dsetclean = [],
+                item = null,
+                i = 0,
                 dataset = null;
 
             // Action depends on the response
@@ -2425,60 +2440,76 @@ var ru = (function ($, ru) {
                   // SHow the message
                   $(elMultilCheck).html(html.join("\n"));
 
-                  // Now call the /add method
-                  data = JSON.stringify( {edit_key: edit_key, data: [ multil_row ]});
+                  if (bCheckAddDel) {
+                    // Now call the /add method
+                    data = JSON.stringify({ edit_key: edit_key, data: [multil_row] });
 
-                  $.post(url_add, data, function (post_add) {
-                    var verder = null;
-
-                    // Action depends on the response
-                    if (post_add === undefined || post_add === null || !("status" in post_add)) {
-                      private_methods.errMsg("No status returned");
-                    } else {
-                      switch (post_add.status) {
-                        case "ready":
-                        case "ok":
-                          verder = post_add;
-
-                          // Now calling the /delete method
-                          data = JSON.stringify({edit_key: edit_key, observations: [multil_obs]});
-                          $.post(url_delete, data, function (post_delete) {
-                            var verder = null;
-
-                            // Action depends on the response
-                            if (post_delete === undefined || post_delete === null || !("status" in post_delete)) {
-                              private_methods.errMsg("No status returned");
-                            } else {
-                              switch (post_delete.status) {
-                                case "ready":
-                                case "ok":
-                                  verder = post_delete;
-                                  break;
-                              }
-                            }
-                          });
-
-                          break;
-                      }
-                    }
-                  });
-
-                  if (bCheckForest) {
-                    // Now call the /rforest method
-                    data = { calling: "usedatafilter", dataset: dataset };
-                    $.post(url_forest, data, function (post_response) {
+                    $.post(url_add, data, function (post_add) {
                       var verder = null;
 
                       // Action depends on the response
-                      if (post_response === undefined || post_response === null || !("status" in post_response)) {
+                      if (post_add === undefined || post_add === null || !("status" in post_add)) {
                         private_methods.errMsg("No status returned");
                       } else {
-                        switch (post_response.status) {
+                        switch (post_add.status) {
                           case "ready":
                           case "ok":
-                            verder = post_response;
+                            verder = post_add;
+
+                            // Now calling the /delete method
+                            data = JSON.stringify({ edit_key: edit_key, observations: [multil_obs] });
+                            $.post(url_delete, data, function (post_delete) {
+                              var verder = null;
+
+                              // Action depends on the response
+                              if (post_delete === undefined || post_delete === null || !("status" in post_delete)) {
+                                private_methods.errMsg("No status returned");
+                              } else {
+                                switch (post_delete.status) {
+                                  case "ready":
+                                  case "ok":
+                                    verder = post_delete;
+                                    break;
+                                }
+                              }
+                            });
+
                             break;
                         }
+                      }
+                    });
+
+                  }
+
+                  if (bCheckForest) {
+                    // Now call the /rforest method
+
+                    // First clean up the dataset to something where there are no "MD" in SD_L1
+                    for (i = 0; i < dataset.length; i++) {
+                      item = dataset[i];
+                      if (item['SD_L1'] !== "MD" && item['SD_L1'] !== "NA") {
+                        // We may copy it
+                        dsetclean.push(item);
+                      }
+                    }
+
+                    // UNCLEAN: data = { calling: "usedatafilter", dataset: dataset };
+                    // Using CLEANED data
+                    data = { calling: "usedatafilter", dataset: dsetclean };
+                    // Make sure to STRINGIFY the data, so that it is in the body
+                    $.post(url_forest, JSON.stringify(data), function (post_response) {
+                      var rfiltermsg = null;
+
+                      // Action depends on the response
+                      if (post_response === undefined || post_response === null) {
+                        private_methods.errMsg("empty response");
+                      } else if (post_response.errorMessage !== undefined) {
+                        // Some kind of error occurred
+                        rfiltermsg = post_response.errorMessage;
+                        $(elMultilCheck).html(rfiltermsg);
+                      } else {
+                        // We will have received an array of values
+                        $(elMultilCheck).html(post_response, null, "  ");
                       }
                     });
                   }
