@@ -6,8 +6,6 @@
     <RootNamespace>lila</RootNamespace>
     <InterpreterId>MSBuild|lila|$(MSBuildProjectFullPath)</InterpreterId>
     <WebBrowserPort>6900</WebBrowserPort>
-    <WebBrowserUrl>
-    </WebBrowserUrl>
     <SuppressConfigureTestFrameworkPrompt>true</SuppressConfigureTestFrameworkPrompt>
     <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
     <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
@@ -231,6 +229,8 @@
     <Content Include="lila\basic\templates\basic\basic_list.html" />
     <Content Include="lila\basic\templates\basic\filter_help.html" />
     <Content Include="lila\lict\templates\lict\lict.html" />
+    <Content Include="lila\reader\templates\reader\import_austats.html" />
+    <Content Include="lila\reader\templates\reader\import_canwits.html" />
     <Content Include="lila\reader\templates\reader\import_manuscripts.html" />
     <Content Include="lila\seeker\static\seeker\content\bootstrap.css" />
     <Content Include="lila\seeker\static\seeker\content\bootstrap.min.css" />

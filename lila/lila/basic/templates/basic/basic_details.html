@@ -24,15 +24,15 @@
         <div class="row">&nbsp;</div>
         <div class="row">
           <!-- Possibility to go back-->
-          <div class="col-md-1">
+          <div class="col-md-1 tdnowrap">
             {% if backbutton %}
-              <a class="btn jumbo-1" 
+              <a class="btn jumbo-1 btn-sm" 
                  href="{{listview}}{% if params %}?{{params|safe}}{% endif %}"
                  title="Return to the list of items">&lt;&lt;</a>
             {% endif %}
             <!-- Any additional buttons here in the topleft -->
             {% for buttonspec in topleftbuttons %}
-              <a class="btn jumbo-1" href="{{buttonspec.url}}"
+              <a class="btn jumbo-1 btn-sm" href="{{buttonspec.url}}"
                  title="{{buttonspec.title}}">{{buttonspec.label|safe}}</a>
             {% endfor %}
           </div>
@@ -320,7 +320,7 @@
 
           <!-- Button for History and for Editing (if user has permission) -->
           <div class="col-md-1">
-            {% if history_button %}
+            {% if history_button and is_app_editor %}
               <!-- History button -->
             <a class="view-mode btn jumbo-1"
                data-toggle="modal" 

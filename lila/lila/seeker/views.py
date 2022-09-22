@@ -1627,19 +1627,28 @@ class AuworkListView(BasicList):
     prefix = "wrk"
     has_select2 = True
     in_team = False
-    order_cols = ['key', 'work', 'date', '']
+    order_cols = ['key', 'work', 'opus', 'date', '']
     order_default = order_cols
     order_heads = [
         {'name': 'Key code',  'order': 'o=1', 'type': 'str', 'field': 'key',  'linkdetails': True},
         {'name': 'Work',      'order': 'o=2', 'type': 'str', 'field': 'work', 'linkdetails': True, 'main': True},
-        {'name': 'Date',      'order': 'o=3', 'type': 'str', 'field': 'date', 'linkdetails': True},
+        {'name': 'Opus',      'order': 'o=3', 'type': 'str', 'field': 'opus', 'linkdetails': True},
+        {'name': 'Date',      'order': 'o=4', 'type': 'str', 'field': 'date', 'linkdetails': True},
         {'name': 'Frequency', 'order': '',    'type': 'str', 'custom': 'links'},
         ]
-    filters = [ {"name": "Key code",         "id": "filter_keycode",     "enabled": False},
-               ]
+    filters = [ 
+        {"name": "Key code",    "id": "filter_keycode", "enabled": False},
+        {"name": "Work",        "id": "filter_work",    "enabled": False},
+        {"name": "Opus",        "id": "filter_opus",    "enabled": False},
+        ]
     searches = [
         {'section': '', 'filterlist': [
-            {'filter': 'keycode',   'dbfield': 'key',   'keyS': 'keycode_ta', 'keyList': 'keylist', 'infield': 'name' },
+            #{'filter': 'keycode',   'dbfield': 'key',   'keyS': 'keycode_ta', 'keyList': 'keylist',  'infield': 'name' },
+            #{'filter': 'work',      'dbfield': 'work',  'keyS': 'work_ta',    'keyList': 'worklist', 'infield': 'name' },
+            #{'filter': 'opus',      'dbfield': 'opus',  'keyS': 'opus_ta',    'keyList': 'opuslist', 'infield': 'name' },
+            {'filter': 'keycode',   'dbfield': 'key',   'keyS': 'key_ta'},
+            {'filter': 'work',      'dbfield': 'work',  'keyS': 'work_ta' },
+            {'filter': 'opus',      'dbfield': 'opus',  'keyS': 'opus_ta' },
             ]}
         ]
 
@@ -4163,47 +4172,54 @@ class LitRefListView(ListView):
     paginate_by = 2000
     template_name = 'seeker/literature_list.html'
     entrycount = 0    
+    entrycount_collection = 0
+    qd = None
     # EK: nee dus, dit zijn geen projecten. plural_name = "Projects"
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
         context = super(LitRefListView, self).get_context_data(**kwargs)
 
-        # Get parameters
-        initial = self.request.GET
+        oErr = ErrHandle()
+        try:
+            # Get the parameters passed on with the GET or the POST request
+            initial = self.request.GET if self.request.method == "GET" else self.request.POST
 
-        # Determine the count for literature references
-        context['entrycount'] = self.entrycount # self.get_queryset().count()
+            # Determine the count for literature references
+            context['entrycount'] = self.entrycount # self.get_queryset().count()
         
-        # Set the prefix
-        context['app_prefix'] = APP_PREFIX
+            # Set the prefix
+            context['app_prefix'] = APP_PREFIX
 
-        # Make sure the paginate-values are available
-        context['paginateValues'] = paginateValues
+            # Make sure the paginate-values are available
+            context['paginateValues'] = paginateValues
 
-        if 'paginate_by' in initial:
-            context['paginateSize'] = int(initial['paginate_by'])
-        else:
-            context['paginateSize'] = paginateSize
+            if 'paginate_by' in initial:
+                context['paginateSize'] = int(initial['paginate_by'])
+            else:
+                context['paginateSize'] = paginateSize
 
-        # Set the title of the application
-        context['title'] = "lila literature info"
+            # Set the title of the application
+            context['title'] = "LiLaC literature info"
 
-        # Change name of the qs for edition references 
-        context['edition_list'] = self.get_editionset() 
+            # Change name of the qs for collection references 
+            context['collection_list'] = self.get_collectionset() 
 
-        # Determine the count for edition references
-        context['entrycount_edition'] = self.entrycount_edition
+            # Determine the count for collection references
+            context['entrycount_collection'] = self.entrycount_collection
 
-        # Check if user may upload
-        context['is_authenticated'] = user_is_authenticated(self.request)
-        context['is_app_uploader'] = user_is_ingroup(self.request, app_uploader)
-        context['is_app_editor'] = user_is_ingroup(self.request, app_editor)
+            # Check if user may upload
+            context['is_authenticated'] = user_is_authenticated(self.request)
+            context['is_app_uploader'] = user_is_ingroup(self.request, app_uploader)
+            context['is_app_editor'] = user_is_ingroup(self.request, app_editor)
 
-        # Process this visit and get the new breadcrumbs object
-        prevpage = reverse('home')
-        context['prevpage'] = prevpage
-        context['breadcrumbs'] = get_breadcrumbs(self.request, "Literature references", True)
+            # Process this visit and get the new breadcrumbs object
+            prevpage = reverse('home')
+            context['prevpage'] = prevpage
+            context['breadcrumbs'] = get_breadcrumbs(self.request, "Literature references", True)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("LitRefListView/get_context_data")
 
         # Return the calculated context
         return context
@@ -4214,23 +4230,49 @@ class LitRefListView(ListView):
         """
         return self.paginate_by
     
-    # Queryset literature references
     def get_queryset(self):
-        # Get the parameters passed on with the GET or the POST request
-        get = self.request.GET if self.request.method == "GET" else self.request.POST
-        get = get.copy()
-        self.get = get
+        """Get queryset literature references"""
 
-        # Calculate the final qs for the manuscript litrefs
-        litref_ids = [x['reference'] for x in LitrefMan.objects.all().values('reference')]
+        qs = None
+        oErr = ErrHandle()
+        try:
 
-        # Combine the two qs into one and filter
-        qs = Litref.objects.filter(id__in=litref_ids).order_by('short')
+            # Calculate the final qs for the manuscript litrefs
+            litref_ids = [x['reference'] for x in LitrefMan.objects.all().values('reference')]
 
-        # Determine the length
-        self.entrycount = len(qs)
+            # Combine the two qs into one and filter
+            qs = Litref.objects.filter(id__in=litref_ids).order_by('short')
 
+            # Determine the length
+            self.entrycount = qs.count()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("LitRefListView/get_queryset")
         # Return the resulting filtered and sorted queryset
         return qs
+
+    def get_collectionset(self):
+        """Get Queryset collection references"""
+
+        qs = None
+        oErr = ErrHandle()
+        try:
+            # Calculate the final qs for the litrefs between an edition item and a SG
+            ediref_ids = [x['reference'] for x in LitrefCol.objects.all().values('reference')]
+       
+            # Sort and filter all editions
+            qs = Litref.objects.filter(id__in=ediref_ids).order_by('full')
+
+            # Determine the length
+            self.entrycount_collection = qs.count()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("LitRefListView/get_collectionset")
+        # Return the resulting filtered and sorted queryset
+        return qs
+
+
 
 

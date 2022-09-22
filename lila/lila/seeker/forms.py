@@ -244,7 +244,7 @@ class CollectionOneWidget(ModelSelect2Widget):
         return qs
 
 
-class CollectionWidget(ModelSelect2MultipleWidget):
+class CollectionWidget_Spurious(ModelSelect2MultipleWidget):
     model = Collection
     search_fields = [ 'name__icontains' ]
 
@@ -1876,8 +1876,12 @@ class GenreForm(forms.ModelForm):
 class AuworkForm(lilaModelForm):
     """Auwork editing and searching"""
 
+    key_ta = forms.CharField(label=_("Key"), required=False,
+                widget=forms.TextInput(attrs={'class': 'typeahead searching works input-sm', 'placeholder': 'Key code(s)...', 'style': 'width: 100%;'}))
     work_ta = forms.CharField(label=_("Work"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching works input-sm', 'placeholder': 'Work(s)...', 'style': 'width: 100%;'}))
+    opus_ta = forms.CharField(label=_("Opus"), required=False,
+                widget=forms.TextInput(attrs={'class': 'typeahead searching works input-sm', 'placeholder': 'Opus(s)...', 'style': 'width: 100%;'}))
     worklist     = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=AuworkWidget(attrs={'data-placeholder': 'Select multiple works...', 'style': 'width: 100%;', 'class': 'searching'}))
     genrelist     = ModelMultipleChoiceField(queryset=None, required=False, 
@@ -1913,6 +1917,8 @@ class AuworkForm(lilaModelForm):
             # Some fields are not required
             self.fields['key'].required = False
             self.fields['work'].required = False
+            self.fields['opus'].required = False
+            self.fields['date'].required = False
             self.fields['full'].required = False
 
             self.fields['genrelist'].queryset = Genre.objects.all().order_by('name')
