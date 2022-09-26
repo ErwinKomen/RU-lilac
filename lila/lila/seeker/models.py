@@ -8950,6 +8950,17 @@ class Canwit(models.Model):
         # Get the URL to edit this sermon
         sUrl = "" if self.id == None else reverse("canwit_edit", kwargs={'pk': self.id})
         return sUrl
+
+    def update_lila(self):
+        """Double check and update the lilacodefull on this particular object"""
+
+        # If needed, adapt the lilacode as calculated via get_lilacode()
+        lilacodefull = self.get_lilacode()
+        if self.lilacodefull is None or self.lilacodefull != lilacodefull:
+            self.lilacodefull = lilacodefull
+            self.save()
+        # Return okay always
+        return True
           
 
 class CanwitKeyword(models.Model):
