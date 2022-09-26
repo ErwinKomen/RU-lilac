@@ -315,7 +315,11 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
-/lila/static/seeker/scripts
+/lila/static/seeker
+/lila/static/basic
+/lila/static/bible
+/lila/static/reader
+/lila/static/stylo
 /lila/lila/seeker/migrations
 /lila/lila/basic/migrations
 /lila/lila/bible/migrations
