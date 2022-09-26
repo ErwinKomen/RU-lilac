@@ -2947,7 +2947,7 @@ class Manuscript(models.Model):
     # [0-1] One manuscript can only belong to one particular library
     #     Note: deleting a library sets the Manuscript.library to NULL
     library = models.ForeignKey(Library, null=True, blank=True, on_delete = models.SET_NULL, related_name="library_manuscripts")
-    # [1] Each manuscript has an identification number
+    # [1] Each manuscript has an identification number: Shelf Mark
     idno = models.CharField("Identifier", max_length=LONG_STRING, null=True, blank=True)
     # [0-1] The LiLaC code for this particular Canwit
     lilacode = models.CharField("LiLaC code", null=True, blank=True, max_length=LONG_STRING)
