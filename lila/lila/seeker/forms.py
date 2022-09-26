@@ -217,7 +217,7 @@ class CollectionManuWidget(CollectionWidget):
 
 class CollectionCanwitWidget(CollectionWidget):
     """Like Collection, but then for: Sermon"""
-    type = "sermo"
+    type = "canwit"
 
 
 class CollectionAustatWidget(CollectionWidget):
@@ -1687,7 +1687,7 @@ class CanwitForm(lilaModelForm):
             self.fields['collist_m'].widget = CollectionManuWidget( attrs={'username': username, 'team_group': team_group,
                         'data-placeholder': 'Select multiple manuscript collections...', 'style': 'width: 100%;', 'class': 'searching'})
             self.fields['collist_s'].widget = CollectionCanwitWidget( attrs={'username': username, 'team_group': team_group,
-                        'data-placeholder': 'Select multiple sermon manifestation collections...', 'style': 'width: 100%;', 'class': 'searching'})
+                        'data-placeholder': 'Select multiple canon witness manifestation collections...', 'style': 'width: 100%;', 'class': 'searching'})
             self.fields['collist_ssg'].widget = CollectionAustatWidget( attrs={'username': username, 'team_group': team_group, 'settype': 'pd',
                         'data-placeholder': 'Select multiple Authoritative statement collections...', 'style': 'width: 100%;', 'class': 'searching'})
             self.fields['collist_hist'].widget = CollectionAustatWidget( attrs={'username': username, 'team_group': team_group, 'settype': 'hc',
@@ -1697,7 +1697,7 @@ class CanwitForm(lilaModelForm):
 
             # Note: the collection filters must use the SCOPE of the collection
             self.fields['collist_m'].queryset = Collection.get_scoped_queryset('manu', username, team_group)
-            self.fields['collist_s'].queryset = Collection.get_scoped_queryset('sermo', username, team_group)
+            self.fields['collist_s'].queryset = Collection.get_scoped_queryset('canwit', username, team_group)
             self.fields['collist_ssg'].queryset = Collection.get_scoped_queryset('austat', username, team_group, settype='pd') 
             self.fields['collist_hist'].queryset = Collection.get_scoped_queryset('austat', username, team_group, settype='hc')
 
