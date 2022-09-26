@@ -2995,7 +2995,13 @@ var ru = (function ($, ru) {
                 $(elThis).addClass("jumbo-1");
                 // Must hide it and reset target
                 $(target).addClass("hidden");
+
+                // Process the <input> element
                 $(target).find("input").each(function (idx, elThis) {
+                  $(elThis).val("");
+                });
+                // Process the <textarea> element
+                $(target).find("textarea").each(function (idx, elThis) {
                   $(elThis).val("");
                 });
                 // Also reset all select 2 items
