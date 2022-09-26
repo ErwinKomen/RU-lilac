@@ -800,6 +800,7 @@ class OriginCodWidget(ModelSelect2MultipleWidget):
 class ProjectWidget(ModelSelect2MultipleWidget):
     model = Project
     search_fields = [ 'name__icontains' ]
+    queryset = None
 
     def label_from_instance(self, obj):
         return obj.name
@@ -1649,7 +1650,8 @@ class CanwitForm(lilaModelForm):
             self.fields['manuidlist'].queryset = Manuscript.objects.filter(mtype='man').order_by('idno')
             self.fields['authorlist'].queryset = Author.objects.all().order_by('name')
             self.fields['feastlist'].queryset = Feast.objects.all().order_by('name')
-            self.fields['projlist'].queryset = profile.projects.all().order_by('name').distinct()
+            # self.fields['projlist'].queryset = profile.projects.all().order_by('name').distinct()
+            self.fields['projlist'].queryset = Project.objects.all().order_by('name').distinct()
             self.fields['projlist'].widget.queryset = self.fields['projlist'].queryset
             self.fields['kwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
             self.fields['ukwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)

@@ -7559,7 +7559,7 @@ class Canwit(models.Model):
     distances = models.ManyToManyField(Austat, through="AustatDist", related_name="distances_sermons")
 
     # [m] Many-to-many: one manuscript can belong to one or more projects
-    projects = models.ManyToManyField(Project, through="CanwitProject", related_name="project_sermons")
+    projects = models.ManyToManyField(Project, through="CanwitProject", related_name="project_canwits")
 
     # [0-1] Every Canon Witness *MAY* be part of a collection witness 
     colwit = models.ForeignKey(Colwit, null=True, blank=True, on_delete = models.CASCADE, related_name="colwititems")

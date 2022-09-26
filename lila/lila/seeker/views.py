@@ -3058,36 +3058,49 @@ class ProjectEdit(BasicDetails):
                     count += 1
             return count
             
+        oErr = ErrHandle()
+        try:
+            # Only moderators and superusers are to be allowed to create and delete project labels
+            if user_is_ingroup(self.request, app_moderator) or user_is_ingroup(self.request, app_developer): 
+                # Define the main items to show and edit
+                context['mainitems'] = [
+                    {'type': 'plain', 'label': "Name:",     'value': instance.name, 'field_key': "name"},
+                    {'type': 'line',  'label': "Editors:",  'value': instance.get_editor_markdown()}
+                    ]       
 
-        # Only moderators and superusers are to be allowed to create and delete project labels
-        if user_is_ingroup(self.request, app_moderator) or user_is_ingroup(self.request, app_developer): 
-            # Define the main items to show and edit
-            context['mainitems'] = [
-                {'type': 'plain', 'label': "Name:",     'value': instance.name, 'field_key': "name"},
-                {'type': 'line',  'label': "Editors:",  'value': instance.get_editor_markdown()}
-                ]       
+                # Also add a delete Warning Statistics message (see issue #485)
+                lst_proj_m = ManuscriptProject.objects.filter(project=instance).values('manuscript__id')
+                lst_proj_hc = CollectionProject.objects.filter(project=instance).values('collection__id')
+                lst_proj_s = CanwitProject.objects.filter(project=instance).values('canwit__id')
+                lst_proj_ssg = AustatProject.objects.filter(project=instance).values('equal__id')
 
-            # Also add a delete Warning Statistics message (see issue #485)
-            lst_proj_m = ManuscriptProject.objects.filter(project=instance).values('manuscript__id')
-            lst_proj_hc = CollectionProject.objects.filter(project=instance).values('collection__id')
-            lst_proj_s = CanwitProject.objects.filter(project=instance).values('sermon__id')
-            lst_proj_ssg = AustatProject.objects.filter(project=instance).values('equal__id')
-
-            count_m =  len(lst_proj_m)
-            count_hc =  len(lst_proj_hc)
-            count_s =  len(lst_proj_s)
-            count_ssg = len(lst_proj_ssg)
-            single_m = get_singles(lst_proj_m, ManuscriptProject, "manuscript")
-            single_hc = get_singles(lst_proj_hc, CollectionProject, "collection")
-            single_s = get_singles(lst_proj_s, CanwitProject, "sermon")
-            single_ssg = get_singles(lst_proj_ssg, AustatProject, "equal")
+                count_m =  len(lst_proj_m)
+                count_hc =  len(lst_proj_hc)
+                count_s =  len(lst_proj_s)
+                count_ssg = len(lst_proj_ssg)
+                single_m = get_singles(lst_proj_m, ManuscriptProject, "manuscript")
+                single_hc = get_singles(lst_proj_hc, CollectionProject, "collection")
+                single_s = get_singles(lst_proj_s, CanwitProject, "canwit")
+                single_ssg = get_singles(lst_proj_ssg, AustatProject, "equal")
             
-            local_context = dict(
-                project=instance, 
-                count_m=count_m, count_hc=count_hc, count_s=count_s, count_ssg=count_ssg,
-                single_m=single_m, single_hc=single_hc, single_s=single_s, single_ssg=single_ssg,
-                )
-            context['delete_message'] = render_to_string('seeker/project_statistics.html', local_context, self.request)
+                local_context = dict(
+                    project=instance, 
+                    count_m=count_m, count_hc=count_hc, count_s=count_s, count_ssg=count_ssg,
+                    single_m=single_m, single_hc=single_hc, single_s=single_s, single_ssg=single_ssg,
+                    )
+                context['delete_message'] = render_to_string('seeker/project_statistics.html', local_context, self.request)
+            else:
+                # Make sure user cannot delete
+                self.no_delete = True
+                # Provide minimal read-only information 
+                context['mainitems'] = [
+                    {'type': 'plain', 'label': "Name:",     'value': instance.name}
+                    # Do not provide more information, i.e. don't give the name of the editors to the user
+                    ]       
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Project/add_to_context")
+
         # Return the context we have made
         return context
     
@@ -3148,8 +3161,8 @@ class ProjectListView(BasicList):
 
             elif custom == "sermolink":
                 # Link to the sermons in this project
-                count = instance.project_sermons.count() 
-                url = reverse('search_canwit')
+                count = instance.project_canwits.count() 
+                url = reverse('canwit_list')
                 if count > 0:                 
                     html.append("<a href='{}?sermo-projlist={}'><span class='badge jumbo-3 clickable' title='{} sermons in this project'>{}</span></a>".format(
                         url, instance.id, count, count))
