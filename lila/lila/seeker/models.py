@@ -4330,7 +4330,7 @@ class Codico(models.Model):
     provenances = models.ManyToManyField("Provenance", through="ProvenanceCod")
     # [m] Many-to-many: one codico can have a series of origins (though this series is limited to one)
     #                   and each of these can have its own note attached to it
-    origins = models.ManyToManyField("Origin", through="OriginCodico")
+    origins = models.ManyToManyField("Origin", through="OriginCodico", related_name="origin_codicos")
      # [m] Many-to-many: keywords per Codico
     keywords = models.ManyToManyField(Keyword, through="CodicoKeyword", related_name="keywords_codi")
     # [m] Many-to-many: one codico can have a series of user-supplied comments
