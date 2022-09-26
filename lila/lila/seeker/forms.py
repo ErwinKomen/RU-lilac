@@ -101,6 +101,24 @@ class BookWidget(ModelSelect2Widget):
         return Book.objects.all().order_by('idno').distinct()
 
 
+class CanwitMultiWidget(ModelSelect2MultipleWidget):
+    model = Canwit
+    search_fields = ['lilacodefull__icontains']
+    addonly = False
+
+    def label_from_instance(self, obj):
+        # sLabel = obj.get_label(do_incexpl = False)
+        sLabel = obj.get_lilacode()
+        return sLabel
+
+    def get_queryset(self):
+        if self.addonly:
+            qs = Canwit.objects.none()
+        else:
+            qs = Canwit.objects.filter(lilacodefull__isnull=False, mtype='man').order_by('lilacodefull').distinct()
+        return qs
+
+
 class CheckboxString(CheckboxInput):
 
     def value_from_datadict(self, data, files, name):
@@ -1529,10 +1547,11 @@ class CanwitForm(lilaModelForm):
                 widget=CanwitSuperAddOnlyWidget(attrs={'data-placeholder': 'Add links with the green "+" sign...', 
                                                   'placeholder': 'Linked Fons formalis...', 'style': 'width: 100%;', 'class': 'searching'}))
     lilalist  = ModelMultipleChoiceField(queryset=None, required=False, 
-                    widget=AustatMultiWidget(attrs={'data-placeholder': 'Select multiple lila codes...', 'style': 'width: 100%;', 
+                    widget=CanwitMultiWidget(attrs={'data-placeholder': 'Select multiple lila codes...', 'style': 'width: 100%;', 
                                                        'class': 'searching'}))
-    #lilacode  = forms.CharField(label=_("lila code"), required=False, 
-    #            widget=forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'placeholder': 'lila code. Use wildcards, e.g: *002.*, *003'}))
+    #lilalist  = ModelMultipleChoiceField(queryset=None, required=False, 
+    #                widget=AustatMultiWidget(attrs={'data-placeholder': 'Select multiple lila codes...', 'style': 'width: 100%;', 
+    #                                                   'class': 'searching'}))
     bibreflist    = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=BibrefAddonlyWidget(attrs={'data-placeholder': 'Use the "+" sign to add references...', 'style': 'width: 100%;', 'class': 'searching'}))
     bibrefbk    = forms.ModelChoiceField(queryset=None, required=False, 
@@ -1668,7 +1687,7 @@ class CanwitForm(lilaModelForm):
             # The available Sermondescr-Equal list
             self.fields['superlist'].queryset = CanwitAustat.objects.none()
             self.fields['formalislist'].queryset = CanwitAustat.objects.none()
-            self.fields['lilalist'].queryset = Austat.objects.filter(code__isnull=False, moved__isnull=True, atype='acc').order_by('code')
+            self.fields['lilalist'].queryset = Canwit.objects.filter(lilacodefull__isnull=False, mtype='man').order_by('lilacodefull')
             self.fields['bibrefbk'].queryset = Book.objects.all().order_by('idno')
 
             self.fields['manutype'].queryset = FieldChoice.objects.filter(field=MANUSCRIPT_TYPE).exclude(abbr='tem').order_by("english_name")

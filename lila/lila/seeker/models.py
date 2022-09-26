@@ -7529,6 +7529,7 @@ class Canwit(models.Model):
     verses = models.TextField("List of verses", null=True, blank=True)
     # [0-1] The LiLaC code for this particular Canwit
     lilacode = models.CharField("LiLaC code", null=True, blank=True, max_length=LONG_STRING)
+    lilacodefull = models.CharField("LiLaC code full (calculated)", null=True, blank=True, max_length=LONG_STRING)
 
     # [1] Every Canwit has a status - this is *NOT* related to model 'Status'
     stype = models.CharField("Status", choices=build_abbr_list(STATUS_TYPE), max_length=5, default="man")
@@ -8852,6 +8853,12 @@ class Canwit(models.Model):
             srchftrans = get_searchable(self.ftrans)
             if self.srchftrans != srchftrans:
                 self.srchftrans = srchftrans
+
+        # If needed, adapt the lilacode as calculated via get_lilacode()
+        lilacodefull = self.get_lilacode()
+        if self.lilacodefull is None or self.lilacodefull != lilacodefull:
+            self.lilacodefull = lilacodefull
+
         # Preliminary saving, before accessing m2m fields
         response = super(Canwit, self).save(force_insert, force_update, using, update_fields)
         # Process signatures

@@ -26,7 +26,7 @@ from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_
 adaptation_list = {
     "manuscript_list": [],
     'codico_list': [],
-    'canwit_list': [],
+    'canwit_list': ['lilacodefull'],
     'austat_list': ['keycodefull'],
     'caned_list': ['canedftext'],
     "collection_list": [] 
@@ -242,6 +242,29 @@ def add_codico_to_manuscript(manu):
 
 
 # =========== Part of canwit_list ======================
+
+def adapt_lilacodefull(oStatus=None):
+    """Re-save Canwit objects, so that lilacodefull is calculated"""
+
+    oErr = ErrHandle()
+    bResult = True
+    msg = ""
+    oBack = dict(status="ok", msg="")
+
+    try:
+        # TODO: add code here and change to True
+        bResult = False
+
+        # Walk all the existing Caned items
+        with transaction.atomic():
+            for obj in Canwit.objects.all():
+                obj.save()
+        # Note that we are indeed ready
+        bResult = True
+    except:
+        msg = oErr.get_error_message()
+        bResult = False
+    return bResult, msg
 
 
 # =========== Part of austat_list ======================
