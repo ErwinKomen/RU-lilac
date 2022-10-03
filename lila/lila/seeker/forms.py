@@ -1447,6 +1447,13 @@ class CanedForm(lilaModelForm):
     austatone = ModelChoiceField(queryset=None, required=False,
             widget=AustatWidget(attrs={'data-placeholder': 'Select an authoritative statement...', 'style': 'width: 100%;', 'class': 'searching'}))
     collone = ModelChoiceField(queryset=None, required=False)
+    collist_hist =  ModelMultipleChoiceField(queryset=None, required=False)
+    ssgcode     = forms.CharField(label=_("lila code"), required=False,
+                widget=forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 
+                                    'placeholder': 'lila code. Use wildcards, e.g: *002.*, *003'}))
+    ssglilalist  = ModelMultipleChoiceField(queryset=None, required=False, 
+                    widget=AustatMultiWidget(attrs={'data-placeholder': 'Select multiple lila codes...', 'style': 'width: 100%;', 
+                                                       'class': 'searching'}))
     
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
@@ -1471,19 +1478,26 @@ class CanedForm(lilaModelForm):
             profile = Profile.get_user_profile(username)
 
             # Some fields are not required
+            self.fields['austat'].required = False
+            self.fields['collection'].required = False
             self.fields['idno'].required = False
             self.fields['order'].required = False
             self.fields['ftext'].required = False
             self.fields['ftrans'].required = False
+            self.fields['ssgcode'].required = False
             self.fields['collone'].required = False
             self.fields['austatone'].required = False
 
             self.fields['collone'].widget = CollOneHistWidget( attrs={'username': username, 'team_group': team_group,
                         'data-placeholder': 'Select a collection...', 'style': 'width: 100%;', 'class': 'searching'})
+            self.fields['collist_hist'].widget = CollectionAustatWidget( attrs={'username': username, 'team_group': team_group, 'settype': 'hc',
+                        'data-placeholder': 'Select multiple historical collections...', 'style': 'width: 100%;', 'class': 'searching'})
 
             prefix = "austat"
             qs = Collection.get_scoped_queryset(prefix, username, team_group, settype="hc")
             self.fields['collone'].queryset = qs
+            self.fields['collist_hist'].queryset = qs # Collection.get_scoped_queryset('austat', username, team_group, settype='hc')
+            self.fields['ssglilalist'].queryset = Austat.objects.filter(keycodefull__isnull=False, moved__isnull=True, atype='acc').order_by('keycodefull') 
 
             # Get the instance
             if 'instance' in kwargs:
