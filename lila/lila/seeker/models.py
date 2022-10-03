@@ -2849,7 +2849,7 @@ class Keyword(models.Model):
     def __str__(self):
         return self.name
 
-    def freqsermo(self):
+    def freqcanwit(self):
         """Frequency in manifestation sermons"""
         freq = self.keywords_sermon.all().count()
         return freq
@@ -3418,6 +3418,15 @@ class Manuscript(models.Model):
                     if collection == None:
                         # Create this set
                         collection = Collection.objects.create(name=ds_name, owner=profile, type="manu", settype="pd")
+                    # Once there is a collection, make sure it has a valid owner
+                    if not profile is None and collection.owner is None:
+                        collection.owner = profile
+                        collection.save()
+                    # once a collection has been created, make sure it gets assigned to a project
+                    if not profile is None and collection.projects.count() == 0:
+                        # Assign the default projects
+                        projects = profile.get_defaults()
+                        collection.set_projects(projects)
                     # Add manuscript to collection
                     highest = CollectionMan.objects.filter(collection=collection).order_by('-order').first()
                     if highest != None and highest.order >= 0:
@@ -5370,7 +5379,7 @@ class Genre(models.Model):
     def __str__(self):
         return self.name
 
-    def freqsermo(self):
+    def freqcanwit(self):
         """Frequency in manifestation sermons"""
         freq = 0 # self.keywords_sermon.all().count()
         return freq
@@ -5907,6 +5916,11 @@ class Austat(models.Model):
                 # Be sure to save the object
                 obj.save()
 
+                # once an austat has been created, make sure it gets assigned to a project
+                if not profile is None and obj.projects.count() == 0:
+                    # Assign the default projects
+                    projects = profile.get_defaults()
+                    obj.set_projects(projects)
         except:
             msg = oErr.get_error_message()
             oErr.DoError("Austat/custom_add")
@@ -6062,6 +6076,15 @@ class Austat(models.Model):
                     if collection == None:
                         # Create this set
                         collection = Collection.objects.create(name=ds_name, owner=profile, type="austat", settype="pd")
+                    # Once there is a collection, make sure it has a valid owner
+                    if not profile is None and collection.owner is None:
+                        collection.owner = profile
+                        collection.save()
+                    # once a collection has been created, make sure it gets assigned to a project
+                    if not profile is None and collection.projects.count() == 0:
+                        # Assign the default projects
+                        projects = profile.get_defaults()
+                        collection.set_projects(projects)
                     # Add current AUSTAT to collection via Caned
                     highest = collection.collections_austat.all().order_by('-order').first()
                     order = 1 if highest == None else highest + 1
@@ -6570,6 +6593,24 @@ class Austat(models.Model):
             self.save()
         return True
 
+    def set_projects(self, projects):
+        """Make sure there are connections between myself and the projects"""
+
+        oErr = ErrHandle()
+        bBack = True
+        try:
+            for project in projects:
+                # Create a connection between this austat and the projects
+                obj_ps = AustatProject.objects.filter(project=project, austat=self).first()
+                if obj_ps is None:
+                    # Create this link
+                    obj_ps = AustatProject.objects.create(project=project, austat=self)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Austat/set_projects")
+            bBack = False
+        return bBack
+
     def split_key(sValue):
         work_key = ""
         austat_key = ""
@@ -6825,9 +6866,9 @@ class Collection(models.Model):
 
         return "\n".join(html)
 
-    def freqsermo(self):
-        """Frequency in manifestation sermons"""
-        freq = self.collections_sermon.all().count()
+    def freqcanwit(self):
+        """Frequency in canon witnesses"""
+        freq = self.collections_canwit.all().count()
         return freq
         
     def freqmanu(self):
@@ -6879,11 +6920,11 @@ class Collection(models.Model):
                 qs = CollectionMan.objects.filter(collection=self).order_by("order")
                 for obj in qs:
                     CollectionMan.objects.create(collection=new_copy, manuscript=obj.manuscript, order=obj.order)
-            elif self.type == "sermo":
+            elif self.type == "canwit":
                 # Copy sermons
                 qs = CollectionCanwit.objects.filter(collection=self).order_by("order")
                 for obj in qs:
-                    CollectionCanwit.objects.create(collection=new_copy, sermon=obj.sermon, order=obj.order)
+                    CollectionCanwit.objects.create(collection=new_copy, canwit=obj.canwit, order=obj.order)
             elif self.type == "austat":
                 # Copy SSGs
                 qs = Caned.objects.filter(collection=self).order_by("order")
@@ -7061,7 +7102,7 @@ class Collection(models.Model):
         size = 0
         lHtml = []
         if self.type == "sermo":
-            size = self.freqsermo()
+            size = self.freqcanwit()
             # Determine where clicking should lead to
             url = "{}?sermo-collist_s={}".format(reverse('canwit_list'), self.id)
         elif self.type == "manu":
@@ -7155,6 +7196,25 @@ class Collection(models.Model):
         lhtml.append("<span class='collection'><a href='{}'>{}</a></span>".format(url,self.name))
         sBack = "\n".join(lhtml)
         return sBack
+
+    def set_projects(self, projects):
+        """Make sure there are connections between myself and the projects"""
+
+        oErr = ErrHandle()
+        bBack = True
+        try:
+            for project in projects:
+                # Create a connection between this project and the collection
+                obj_ps = CollectionProject.objects.filter(project=project, collection=self).first()
+                if obj_ps is None:
+                    # Create this link
+                    obj_ps = CollectionProject.objects.create(collection=self, project=project)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Collection/set_projects")
+            bBack = False
+        return bBack
+
 
 
 # =========================== MSITEM RELATED ===================================
@@ -7551,7 +7611,7 @@ class Canwit(models.Model):
     austats = models.ManyToManyField(Austat, through="CanwitAustat", related_name="austat_canwits")
 
     # [m] Many-to-many: one sermon can be a part of a series of collections 
-    collections = models.ManyToManyField("Collection", through="CollectionCanwit", related_name="collections_sermon")
+    collections = models.ManyToManyField("Collection", through="CollectionCanwit", related_name="collections_canwit")
 
     # [m] Many-to-many: one manuscript can have a series of user-supplied comments
     comments = models.ManyToManyField(Comment, related_name="comments_sermon")
@@ -7606,8 +7666,8 @@ class Canwit(models.Model):
         {'name': 'Full text',           'type': 'field', 'path': 'ftext'},
         {'name': 'Translation',         'type': 'field', 'path': 'ftrans'},
         {'name': 'Postscriptum',        'type': 'field', 'path': 'postscriptum'},
-        {'name': 'Feast',               'type': 'fk',    'path': 'feast', 'fkfield': 'name'},
-        {'name': 'Bible reference(s)',  'type': 'func',  'path': 'brefs'},
+        #{'name': 'Feast',               'type': 'fk',    'path': 'feast', 'fkfield': 'name'},
+        #{'name': 'Bible reference(s)',  'type': 'func',  'path': 'brefs'},
         {'name': 'Cod. notes',          'type': 'field', 'path': 'additional'},
         {'name': 'Note',                'type': 'field', 'path': 'note'},
         {'name': 'Keywords',            'type': 'func',  'path': 'keywords'},
@@ -7692,7 +7752,7 @@ class Canwit(models.Model):
             bStatus = False
         return bStatus, msg
 
-    def custom_add(oSermo, manuscript, order=None, parent=None, **kwargs):
+    def custom_add(oCanwit, manuscript, order=None, parent=None, **kwargs):
         """Add a sermon to a manuscript according to the specifications provided"""
 
         oErr = ErrHandle()
@@ -7712,14 +7772,14 @@ class Canwit(models.Model):
                 return obj
 
             # Figure out whether this sermon item already exists or not
-            type = oSermo.get('type', "")
-            locus = oSermo.get('locus', "")
-            ftext = oSermo.get("ftext", "")
-            lilacode = oSermo.get('lilacode', "")
+            type = oCanwit.get('type', "")
+            locus = oCanwit.get('locus', "")
+            ftext = oCanwit.get("ftext", "")
+            lilacode = oCanwit.get('lilacode', "")
             # The Lilacode that we use here must be the part after the last period
             if "." in lilacode:
                 lilacode = lilacode.split(".")[-1]
-                oSermo['lilacode'] = lilacode
+                oCanwit['lilacode'] = lilacode
 
             if locus != "" and ftext != "":
                 # Try retrieve an existing one
@@ -7755,18 +7815,18 @@ class Canwit(models.Model):
 
             # Convert 'austat_link' + 'austat_note' into one object
             oAustat = dict(
-                austat_link=oSermo.get("austat_link"), 
-                austat_note=oSermo.get("austat_note"),
-                austat_coll=oSermo.get("collection"))
-            oSermo['austat_one'] = oAustat
+                austat_link=oCanwit.get("austat_link"), 
+                austat_note=oCanwit.get("austat_note"),
+                austat_coll=oCanwit.get("collection"))
+            oCanwit['austat_one'] = oAustat
                         
             if type.lower() == "structural":
                 # Possibly add the title
-                title = oSermo.get('title')
+                title = oCanwit.get('title')
                 if title != "" and title != None:
                     obj.title = title
                 # Possibly add the locus
-                locus = oSermo.get('locus')
+                locus = oCanwit.get('locus')
                 if locus != "" and locus != None:
                     obj.locus = locus
             else:
@@ -7775,7 +7835,7 @@ class Canwit(models.Model):
                     field = oField.get(keyfield).lower()
                     if keyfield == "path" and oField.get("type") == "fk_id":
                         field = "{}_id".format(field)
-                    value = oSermo.get(field)
+                    value = oCanwit.get(field)
                     readonly = oField.get('readonly', False)
                 
                     if value != None and value != "" and not readonly:
@@ -7928,15 +7988,24 @@ class Canwit(models.Model):
                 datasets = value_lst #  get_json_list(value)
                 for ds_name in datasets:
                     # Get the actual dataset
-                    collection = Collection.objects.filter(name=ds_name, owner=profile, type="sermo", settype="pd").first()
+                    collection = Collection.objects.filter(name=ds_name, owner=profile, type="canwit", settype="pd").first()
                     # Does it exist?
                     if collection == None:
                         # Create this set
-                        collection = Collection.objects.create(name=ds_name, owner=profile, type="sermo", settype="pd")
+                        collection = Collection.objects.create(name=ds_name, owner=profile, type="canwit", settype="pd")
+                    # Once there is a collection, make sure it has a valid owner
+                    if not profile is None and collection.owner is None:
+                        collection.owner = profile
+                        collection.save()
+                    # once a collection has been created, make sure it gets assigned to a project
+                    if not profile is None and collection.projects.count() == 0:
+                        # Assign the default projects
+                        projects = profile.get_defaults()
+                        collection.set_projects(projects)
                     # Add manuscript to collection
-                    highest = collection.collections_sermon.all().order_by('-order').first()
+                    highest = collection.collections_canwit.all().order_by('-order').first()
                     order = 1 if highest == None else highest + 1
-                    CollectionCanwit.objects.create(collection=collection, sermon=self, order=order)
+                    CollectionCanwit.objects.create(collection=collection, canwit=self, order=order)
             elif path == "austatlinks":
                 austatlink_names = value_lst #  get_json_list(value)
                 for austat_code in austatlink_names:
@@ -7974,6 +8043,15 @@ class Canwit(models.Model):
                         if collection is None:
                             # Create a collection with this name
                             collection = Collection.objects.create(type="austat", name=austat_coll, settype="hc", scope="publ")
+                        # Once there is a collection, make sure it has a valid owner
+                        if not profile is None and collection.owner is None:
+                            collection.owner = profile
+                            collection.save()
+                        # once a collection has been created, make sure it gets assigned to a project
+                        if not profile is None and collection.projects.count() == 0:
+                            # Assign the default projects
+                            projects = profile.get_defaults()
+                            collection.set_projects(projects)
 
                     # Walk all of them
                     for austat_code in austat_codes:
@@ -8005,6 +8083,12 @@ class Canwit(models.Model):
                                         austat.keycode = austat_code.split(".")[-1]
                                         # Now we ae able to save it
                                         austat.save()
+
+                                # once an Austat has been created, make sure it gets assigned to a project
+                                if not profile is None and austat.projects.count() == 0:
+                                    # Assign the default projects
+                                    projects = profile.get_defaults()
+                                    austat.set_projects(projects)
 
                             else:
                                 # Indicate that we didn't find it in the notes

@@ -1449,7 +1449,7 @@ class GenreListView(BasicList):
         if custom == "links":
             html = []
             # Get the HTML code for the links of this instance
-            #number = instance.freqsermo()
+            #number = instance.freqcanwit()
             #if number > 0:
             #    url = reverse('canwit_list')
             #    html.append("<a href='{}?sermo-genrelist={}'>".format(url, instance.id))
@@ -1777,7 +1777,7 @@ class KeywordListView(BasicList):
         if custom == "links":
             html = []
             # Get the HTML code for the links of this instance
-            number = instance.freqsermo()
+            number = instance.freqcanwit()
             if number > 0:
                 url = reverse('canwit_list')
                 html.append("<a href='{}?sermo-kwlist={}'>".format(url, instance.id))
