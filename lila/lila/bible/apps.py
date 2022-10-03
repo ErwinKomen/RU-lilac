@@ -2,4 +2,5 @@ from django.apps import AppConfig
 
 
 class bibleConfig(AppConfig):
-    name = 'bible'
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'lila.bible'

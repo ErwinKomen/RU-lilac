@@ -2,4 +2,5 @@ from django.apps import AppConfig
 
 
 class lictConfig(AppConfig):
-    name = 'lict'
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'lila.lict'
