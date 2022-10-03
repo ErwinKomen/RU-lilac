@@ -395,14 +395,14 @@ class AustatMultiWidget(ModelSelect2MultipleWidget):
 
     def label_from_instance(self, obj):
         # sLabel = obj.get_label(do_incexpl = False)
-        sLabel = obj.get_code()
+        sLabel = obj.get_keycode()
         return sLabel
 
     def get_queryset(self):
         if self.addonly:
             qs = Austat.objects.none()
         else:
-            qs = Austat.objects.filter(code__isnull=False, moved__isnull=True, atype='acc').order_by('code').distinct()
+            qs = Austat.objects.filter(keycodefull__isnull=False, moved__isnull=True, atype='acc').order_by('keycodefull').distinct()
         return qs
 
 
@@ -1185,8 +1185,8 @@ class SearchSermonForm(forms.Form):
     """Note: only for SEARCHING"""
 
     author = forms.CharField(label=_("Author"), required=False)
-    incipit = forms.CharField(label=_("Incipit"), required=False)
-    explicit = forms.CharField(label=_("Explicit"), required=False)
+    ftext = forms.CharField(label=_("Full text"), required=False)
+    ftrans = forms.CharField(label=_("Translation"), required=False)
     title = forms.CharField(label=_("Title"), required=False)
     feast = forms.CharField(label=_("Feast"), required=False)
     keyword = forms.CharField(label=_("Keyword"), required=False)
@@ -2247,37 +2247,39 @@ class CollectionForm(lilaModelForm):
                 widget=KeywordWidget(attrs={'data-placeholder': 'Select multiple keywords...', 'style': 'width: 100%;', 'class': 'searching'}))
     ssgnumber   = forms.CharField(label=_("Author Number"), required=False,
                 widget=forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'data-placeholder': 'Author number'}))
-    ssgincipit  = forms.CharField(label=_("Incipit"), required=False,
-                widget=forms.TextInput(attrs={'class': 'typeahead searching asftexts input-sm', 'placeholder': 'Incipit...', 'style': 'width: 100%;'}))
-    ssgexplicit = forms.CharField(label=_("Explicit"), required=False,
-                widget=forms.TextInput(attrs={'class': 'typeahead searching asftrans input-sm', 'placeholder': 'Explicit...', 'style': 'width: 100%;'}))
+    ssgftext  = forms.CharField(label=_("Full text"), required=False,
+                widget=forms.TextInput(attrs={'class': 'typeahead searching asftexts input-sm', 'placeholder': 'Full text...', 'style': 'width: 100%;'}))
+    ssgftrans = forms.CharField(label=_("Translation"), required=False,
+                widget=forms.TextInput(attrs={'class': 'typeahead searching asftrans input-sm', 'placeholder': 'Translation...', 'style': 'width: 100%;'}))
     ssgstype    = forms.ChoiceField(label=_("Stype"), required=False, widget=forms.Select(attrs={'style': 'width: 100%;'}))
     
     
-    # SERMON-specific
-    sermoincipit  = forms.CharField(label=_("Incipit"), required=False,
-                widget=forms.TextInput(attrs={'class': 'typeahead searching asftexts input-sm', 'placeholder': 'Incipit...', 'style': 'width: 100%;'}))
-    sermoexplicit = forms.CharField(label=_("Explicit"), required=False,
-                widget=forms.TextInput(attrs={'class': 'typeahead searching asftrans input-sm', 'placeholder': 'Explicit...', 'style': 'width: 100%;'}))
-    sermotitle  = forms.CharField(label=_("Title"), required=False,
+    # CANWIT-specific
+    canwitftext  = forms.CharField(label=_("Full text"), required=False,
+                widget=forms.TextInput(attrs={'class': 'typeahead searching asftexts input-sm', 'placeholder': 'Full text...', 'style': 'width: 100%;'}))
+    canwitftrans = forms.CharField(label=_("Translation"), required=False,
+                widget=forms.TextInput(attrs={'class': 'typeahead searching asftrans input-sm', 'placeholder': 'Translation...', 'style': 'width: 100%;'}))
+    canwitcode  = forms.CharField(label=_("Lilac Code"), required=False,
                 widget=forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'placeholder': 'Title'}))
-    sermofeast  = forms.CharField(label=_("Feast"), required=False,
-                widget=forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'placeholder': 'Feast'}))
+    #canwitfeast  = forms.CharField(label=_("Feast"), required=False,
+    #            widget=forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'placeholder': 'Feast'}))
     bibrefbk    = forms.ModelChoiceField(queryset=None, required=False, 
                 widget=BookWidget(attrs={'data-placeholder': 'Select a book...', 'style': 'width: 30%;', 'class': 'searching'}))
     bibrefchvs  = forms.CharField(label=_("Bible reference"), required=False, 
                 widget=forms.TextInput(attrs={'class': 'searching', 'style': 'width: 30%;', 'placeholder': 'Use Chapter or Chapter:verse'}))
-    sermonote  = forms.CharField(label=_("Note"), required=False,
+    canwitnote  = forms.CharField(label=_("Note"), required=False,
                 widget=forms.TextInput(attrs={'class': 'searching', 'style': 'width: 100%;', 'placeholder': 'Note'}))
-    sermoauthorname = forms.CharField(label=_("Author"), required=False, 
+    canwitauthorname = forms.CharField(label=_("Author"), required=False, 
                 widget=forms.TextInput(attrs={'class': 'typeahead searching authors input-sm', 'placeholder': 'Author...', 'style': 'width: 100%;'}))
 
-    sermokwlist     = ModelMultipleChoiceField(queryset=None, required=False, 
+    canwitkwlist     = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=KeywordWidget(attrs={'data-placeholder': 'Select multiple keywords...', 'style': 'width: 100%;', 'class': 'searching'}))
-    sermostypelist   = ModelMultipleChoiceField(queryset=None, required=False, 
+    canwitstypelist   = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=StypeWidget(attrs={'data-placeholder': 'Select multiple status types...', 'style': 'width: 100%;'}))
-    sermoauthorlist  = ModelMultipleChoiceField(queryset=None, required=False, 
+    canwitauthorlist  = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=AuthorWidget(attrs={'data-placeholder': 'Select multiple authors...', 'style': 'width: 100%;', 'class': 'searching'}))
+    canwitlilalist  = ModelMultipleChoiceField(queryset=None, required=False, 
+                widget=CanwitMultiWidget(attrs={'data-placeholder': 'Select multiple Lilac codes...', 'style': 'width: 100%;', 'class': 'searching'}))
     # MANUSCRIPT-specific
     manuidno    = forms.CharField(label=_("Manuscript"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching manuidnos input-sm', 'placeholder': 'Shelfmarks using wildcards...', 'style': 'width: 100%;'}))
@@ -2365,13 +2367,14 @@ class CollectionForm(lilaModelForm):
             # SSG section
             self.fields['ssgstypelist'].queryset = FieldChoice.objects.filter(field=STATUS_TYPE).order_by("english_name")
             self.fields['ssgauthorlist'].queryset = Author.objects.all().order_by('name') 
-            self.fields['ssglilalist'].queryset = Austat.objects.filter(code__isnull=False, moved__isnull=True, atype='acc').order_by('code') 
+            self.fields['ssglilalist'].queryset = Austat.objects.filter(keycodefull__isnull=False, moved__isnull=True, atype='acc').order_by('keycodefull') 
             self.fields['ssgkwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
 
             # S section
-            self.fields['sermokwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
-            self.fields['sermostypelist'].queryset = FieldChoice.objects.filter(field=STATUS_TYPE).order_by("english_name")
-            self.fields['sermoauthorlist'].queryset = Author.objects.all().order_by('name')
+            self.fields['canwitkwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
+            self.fields['canwitstypelist'].queryset = FieldChoice.objects.filter(field=STATUS_TYPE).order_by("english_name")
+            self.fields['canwitauthorlist'].queryset = Author.objects.all().order_by('name')
+            self.fields['canwitlilalist'].queryset = Canwit.objects.filter(lilacodefull__isnull=False, mtype='man').order_by('lilacodefull') 
 
             # M section
             self.fields['manuidlist'].queryset = Manuscript.objects.filter(mtype='man').order_by('idno')
@@ -2416,7 +2419,7 @@ class CollectionForm(lilaModelForm):
 
                 # Note: the collection filters must use the SCOPE of the collection
                 self.fields['collist_m'].queryset = Collection.get_scoped_queryset('manu', username, team_group)
-                self.fields['collist_s'].queryset = Collection.get_scoped_queryset('sermo', username, team_group)
+                self.fields['collist_s'].queryset = Collection.get_scoped_queryset('canwit', username, team_group)
                 self.fields['collist_ssg'].queryset = Collection.get_scoped_queryset('austat', username, team_group)
             
 
@@ -2627,9 +2630,9 @@ class AustatForm(lilaModelForm):
                 widget=AuthorWidget(attrs={'data-placeholder': 'Select multiple authors...', 'style': 'width: 100%;', 'class': 'searching'}))
     newauthor = ModelChoiceField(queryset=None, required=False,
                 widget=AuthorOneWidget(attrs={'data-placeholder': 'Select one author...', 'style': 'width: 100%;', 'class': 'searching'}))
-    newftext = forms.CharField(label=_("Incipit"), required=False,
+    newftext = forms.CharField(label=_("Full text"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching asftexts input-sm', 'placeholder': 'Full text...', 'style': 'width: 100%;'}))
-    newftrans = forms.CharField(label=_("Explicit"), required=False,
+    newftrans = forms.CharField(label=_("Translation"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching asftexts input-sm', 'placeholder': 'Translation...', 'style': 'width: 100%;'}))
     signature = forms.CharField(label=_("Signature"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching signatures input-sm', 'placeholder': 'Signature/code (Gryson, Clavis)...', 'style': 'width: 100%;'}))
