@@ -40,6 +40,12 @@ from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_
     Project, ManuscriptProject, CollectionProject, AustatProject, CanwitProject, \
     get_reverse_spec, LINK_EQUAL, LINK_PRT, LINK_BIDIR, LINK_PARTIAL, STYPE_IMPORTED, STYPE_EDITED, STYPE_MANUAL, LINK_UNSPECIFIED
 
+# ======= from RU-Basic ========================
+from lila.basic.views import BasicPart, BasicList, BasicDetails, make_search_list, add_rel_item, adapt_search, \
+   adapt_m2m, adapt_m2o, treat_bom, \
+   user_is_ingroup, user_is_authenticated, user_is_superuser, \
+   app_developer, app_moderator, app_editor, app_userplus, app_uploader
+
 
 # ============= API VIEWS ============================
 
@@ -325,10 +331,9 @@ def sync_lila(request):
     context = {'title': 'Synclila',
                'message': 'Radboud University lila'
                }
-    template_name = 'seeker/synclila.html'
+    template_name = 'seeker/synclilac.html'
     context['is_app_uploader'] = user_is_ingroup(request, app_uploader)
     context['is_app_editor'] = user_is_ingroup(request, app_editor)
-    context['is_enrich_editor'] = user_is_ingroup(request, enrich_editor)
     context['is_app_moderator'] = user_is_superuser(request) or user_is_ingroup(request, app_moderator)
     context['is_superuser'] = user_is_superuser(request)
 
@@ -373,18 +378,7 @@ def sync_start(request):
             # Formulate a response
             data['status'] = 'done'
 
-            if synctype == "entries":
-                # Use the synchronisation object that contains all relevant information
-                oStatus.set("loading")
-
-                # Update the models with the new information
-                oResult = process_lib_entries(oStatus)
-                if oResult == None or oResult['result'] == False:
-                    data.status = 'error'
-                elif oResult != None:
-                    data['count'] = oResult
-
-            elif synctype == "zotero":
+            if synctype == "zotero":
                 # Use the synchronisation object that contains all relevant information
                 oStatus.set("loading")
 
@@ -395,18 +389,6 @@ def sync_start(request):
                     data['count'] = oResult
                 else:
                     data['status'] = 'error {}'.format(msg)
-
-            elif synctype == "codico":
-                # Use the synchronisation object that contains all relevant information
-                oStatus.set("loading")
-
-                # Perform the adaptation
-                bResult, msg = adapt_codicocopy(oStatus=oStatus)
-                
-                if bResult:
-                    data['count'] = 1
-                else:
-                    data['status'] = "error {}".format(msg) 
 
     except:
         oErr.DoError("sync_start error")
