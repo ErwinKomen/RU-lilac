@@ -2198,14 +2198,16 @@ class Litref(models.Model):
             # Now walk all Litrefs again to see where fields are missing
             processing = 0
             for obj in Litref.objects.all():
-                oData = json.loads(obj.data)
-                if oData.get('itemType') in Litref.ok_types and obj.full == "" and obj.short == "":
-                    # Do this one again
-                    obj.read_zotero(data=oData)
-                    processing += 1
-                    # Update status
-                    oBack['processed'] = processing
-                    if oStatus != None: oStatus.set("ok", oBack)
+                sData = obj.data
+                if not sData is None and sData != "":
+                    oData = json.loads(obj.data)
+                    if oData.get('itemType') in Litref.ok_types and obj.full == "" and obj.short == "":
+                        # Do this one again
+                        obj.read_zotero(data=oData)
+                        processing += 1
+                        # Update status
+                        oBack['processed'] = processing
+                        if oStatus != None: oStatus.set("ok", oBack)
             if processing > 0:
                 oBack['processed'] = processing
                     
@@ -2239,7 +2241,7 @@ class Litref(models.Model):
                         # Do a complete check on all KV pairs
                         oDataZotero = item['data']
                         oDataLitref = json.loads(obj.data)
-                        if force:
+                        if force or obj.short == "":
                             bNeedChanging = True
                         else:
                             bNeedChanging = False
@@ -2776,7 +2778,7 @@ class Litref(models.Model):
         if plain:
             sBack = self.short
         else:
-            adapt_markdown(self.short, lowercase=False)
+            sBack = adapt_markdown(self.short, lowercase=False)
         return sBack
 
 
