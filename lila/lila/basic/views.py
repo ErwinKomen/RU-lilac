@@ -1821,10 +1821,12 @@ class BasicDetails(DetailView):
                                                 oErr.DoError("BasicDetails/get_context_data")
                                                 context['errors'] = {'subform':  msg }
 
-                                if formset.is_valid():
+                                # if formset.is_valid():
+                                try:
                                     # Load an explicitly empty formset
                                     formset = formsetClass(initial=[], prefix=prefix, form_kwargs=form_kwargs)
-                                else:
+                                # else:
+                                except:
                                     # Retain the original formset, that now contains the error specifications per form
                                     # But: do *NOT* add an additional form to it
                                     pass

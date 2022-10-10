@@ -63,7 +63,7 @@ from lila.seeker.forms import SearchCollectionForm, SearchManuscriptForm, Search
     AuthorSearchForm, UploadFileForm, UploadFilesForm, ManuscriptForm, CanwitForm, CommentForm, \
     AuthorEditForm, BibRangeForm, FeastForm, \
     CanwitSuperForm, SearchUrlForm, GenreForm, AuworkForm, \
-    CanwitSignatureForm, AustatLinkForm, \
+    CanwitSignatureForm, AustatLinkForm, AuworkEditionForm, \
     ReportEditForm, SourceEditForm, ManuscriptProvForm, LocationForm, LocationRelForm, OriginForm, \
     LibraryForm, ManuscriptExtForm, ManuscriptLitrefForm, CanwitKeywordForm, KeywordForm, \
     ManuscriptKeywordForm, DaterangeForm, ProjectForm, CanwitCollectionForm, CollectionForm, \
@@ -79,7 +79,7 @@ from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_
     ProvenanceMan, Provenance, Daterange, CollOverlap, BibRange, Feast, Comment, AustatDist, \
     Basket, BasketMan, BasketAustat, Litref, LitrefMan, LitrefCol, Report, \
     Visit, Profile, Keyword, CanwitSignature, Status, Library, Collection, CollectionCanwit, \
-    CollectionMan, Caned, UserKeyword, Template, Genre, Auwork, \
+    CollectionMan, Caned, UserKeyword, Template, Genre, Auwork, EdirefWork, \
     ManuscriptCorpus, ManuscriptCorpusLock, AustatCorpus, ProjectEditor, \
     Codico, ProvenanceCod, OriginCodico, CodicoKeyword, Reconstruction, \
     Project, ManuscriptProject, CollectionProject, AustatProject, CanwitProject, \
@@ -1485,6 +1485,16 @@ class AuworkEdit(BasicDetails):
     history_button = True
     mainitems = []
 
+    WediFormSet = inlineformset_factory(Auwork, EdirefWork,
+                                         form = AuworkEditionForm, min_num=0,
+                                         fk_name = "auwork",
+                                         extra=0, can_delete=True, can_order=False)
+
+    formset_objects = [{'formsetClass': WediFormSet,  'prefix': 'wedi',  'readonly': False, 'noinit': True, 'linkfield': 'auwork'}]
+
+    stype_edi_fields = ['key', 'opus', 'work', 'date', 'full',
+                        'EdirefWork', 'edilist']
+
     def custom_init(self, instance):
         # Check if there is a 'key' parameter
         if instance is None:
@@ -1507,6 +1517,8 @@ class AuworkEdit(BasicDetails):
                 {'type': 'plain', 'label': "Full description:", 'value': instance.full, 'field_key': 'full'},
                 {'type': 'line',  'label': "Genre(s):",         'value': instance.get_genres_markdown(),   'field_list': 'genrelist'},
                 {'type': 'line',  'label': "Keywords:",         'value': instance.get_keywords_markdown(), 'field_list': 'kwlist'},
+                {'type': 'line',  'label': "Editions:",         'value': instance.get_edirefs_markdown(),
+                 'multiple': True, 'field_list': 'edilist', 'fso': self.formset_objects[0], 'template_selection': 'ru.lila.litref_template'}
                 ]
 
             # Signal that we have select2
@@ -1529,7 +1541,12 @@ class AuworkEdit(BasicDetails):
         oErr = ErrHandle()
                 
         try:
-            # (3) 'genres'
+            # Process many-to-many changes: Add and remove relations in accordance with the new set passed on by the user
+            # (1) 'editions'
+            edilist = form.cleaned_data['edilist']
+            adapt_m2m(EdirefWork, instance, "auwork", edilist, "reference", extra=['pages'], related_is_through = True)
+
+            # (2) 'genres'
             genrelist = form.cleaned_data['genrelist']
             adapt_m2m(AuworkGenre, instance, "auwork", genrelist, "genre")
 
@@ -1544,6 +1561,34 @@ class AuworkEdit(BasicDetails):
 
     def get_history(self, instance):
         return lila_get_history(instance)
+
+    def process_formset(self, prefix, request, formset):
+
+        errors = []
+        bResult = True
+        instance = formset.instance
+        for form in formset:
+            if form.is_valid():
+                cleaned = form.cleaned_data
+
+                if prefix == "wedi":
+                    # Edition processing
+                    newpages = ""
+                    if 'newpages' in cleaned and cleaned['newpages'] != "":
+                        newpages = cleaned['newpages']
+                    # Also get the litref
+                    if 'oneref' in cleaned:
+                        litref = cleaned['oneref']
+                        # Check if all is in order
+                        if litref:
+                            form.instance.reference = litref
+                            if newpages:
+                                form.instance.pages = newpages
+                    # Note: it will get saved with form.save()
+            else:
+                errors.append(form.errors)
+                bResult = False
+        return None
 
 
 class AuworkDetails(AuworkEdit):

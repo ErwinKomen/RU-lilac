@@ -5478,6 +5478,11 @@ class Auwork(models.Model):
     # [0-1] A Auwork may have a full description
     full = models.TextField("Full description", null=True, blank=True)
 
+    # [1] Every Auwork has a status - this is *NOT* related to model 'Status'
+    stype = models.CharField("Status", choices=build_abbr_list(STATUS_TYPE), max_length=5, default="-")
+    # [0-1] Status note
+    snote = models.TextField("Status note(s)", default="[]")
+
     # ============== MANYTOMANY connections
     # [0-n] Many-to-many: keywords per Canwit
     keywords = models.ManyToManyField(Keyword, through="AuworkKeyword", related_name="keywords_auwork")
@@ -5548,6 +5553,20 @@ class Auwork(models.Model):
             oErr.DoError("Auwork.save")
             return None
 
+    def get_edirefs_markdown(self):
+        lHtml = []
+        # Visit all editions
+        for edi in self.auwork_edirefworks.all().order_by('-reference__year', 'reference__short'):
+            # Determine where clicking should lead to
+            url = "{}#edi_{}".format(reverse('literature_list'), edi.reference.id)
+            # Create a display for this item
+            edi_display = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(url,edi.get_short_markdown())
+            if edi_display not in lHtml:
+                lHtml.append(edi_display)
+
+        sBack = ", ".join(lHtml)
+        return sBack
+
     def get_genres_markdown(self):
         lHtml = []
         oErr = ErrHandle()
@@ -5576,7 +5595,7 @@ class Auwork(models.Model):
 
         sBack = ", ".join(lHtml)
         return sBack
-        
+
 
 class AuworkKeyword(models.Model):
     """Relation between a Auwork and a Keyword"""
@@ -6225,6 +6244,14 @@ class Austat(models.Model):
 
         lHtml = []
         # Visit all editions
+        # Visit all editions
+        for edi in self.auwork.auwork_edirefworks.all().order_by('-reference__year', 'reference__short'):
+            # Determine where clicking should lead to
+            url = "{}#edi_{}".format(reverse('literature_list'), edi.reference.id)
+            # Create a display for this item
+            edi_display = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(url,edi.get_short_markdown())
+            if edi_display not in lHtml:
+                lHtml.append(edi_display)
 
         sBack = ", ".join(lHtml)
         return sBack
@@ -6379,13 +6406,39 @@ class Austat(models.Model):
         # Return the results
         return "".join(lHtml)
 
-    def get_litrefs_markdown(self):
-        """Get all the literature references associated with the CanWits (?) in this equality set (?)"""
+    def get_litrefs_markdown(self, plain=False):
+        """Get all the literature references associated with this Austat"""
 
         lHtml = []
-        # Visit all editions
-        sBack = ", ".join(lHtml)
+        oErr = ErrHandle()
+        sBack = ""
+        try:
+            # Visit all literature references
+            for litref in self.austat_litrefaustats.all().order_by('reference__short'):
+                if plain:
+                    lHtml.append(litref.get_short_markdown(plain))
+                else:
+                    # Determine where clicking should lead to
+                    url = "{}#lit_{}".format(reverse('literature_list'), litref.reference.id)
+                    # Create a display for this item
+                    lHtml.append("<span class='badge signature cl'><a href='{}'>{}</a></span>".format(url,litref.get_short_markdown()))
+
+            if plain:
+                sBack = json.dumps(lHtml)
+            else:
+                sBack = ", ".join(lHtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Austat/get_litrefs_markdown")
         return sBack
+
+    #def get_litrefs_markdown(self):
+    #    """Get all the literature references associated with the CanWits (?) in this equality set (?)"""
+
+    #    lHtml = []
+    #    # Visit all editions
+    #    sBack = ", ".join(lHtml)
+    #    return sBack
 
     def get_moved_code(self):
         """Get the lila code of the one this is replaced by"""
@@ -9941,6 +9994,78 @@ class LitrefCol(models.Model):
         if self.collection_id and self.reference_id:
             # Do the saving initially
             response = super(LitrefCol, self).save(force_insert, force_update, using, update_fields)
+        # Then return the response: should be "None"
+        return response
+
+    def get_short(self):
+        short = ""
+        if self.reference:
+            short = self.reference.get_short()
+            if self.pages and self.pages != "":
+                short = "{}, pp {}".format(short, self.pages)
+        return short
+
+    def get_short_markdown(self, plain=False):
+        short = self.get_short()
+        if plain:
+            sBack = short
+        else:
+            sBack = adapt_markdown(short, lowercase=False)
+        return sBack
+
+
+class LitrefAustat(models.Model):
+    """The link between a literature item and an authoritative statement"""
+    
+    # [1] The literature item
+    reference = models.ForeignKey(Litref, related_name="reference_litrefaustats", on_delete=models.CASCADE)
+    # [1] The Austat to which the literature item refers
+    austat = models.ForeignKey(Austat, related_name = "austat_litrefaustats", on_delete=models.CASCADE)
+    # [0-1] The first and last page of the reference
+    pages = models.CharField("Pages", blank = True, null = True,  max_length=MAX_TEXT_LEN)
+
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+        response = None
+        # Double check the ESSENTIALS (pages may be empty)
+        if self.austat_id and self.reference_id:
+            # Do the saving initially
+            response = super(LitrefAustat, self).save(force_insert, force_update, using, update_fields)
+        # Then return the response: should be "None"
+        return response
+
+    def get_short(self):
+        short = ""
+        if self.reference:
+            short = self.reference.get_short()
+            if self.pages and self.pages != "":
+                short = "{}, pp {}".format(short, self.pages)
+        return short
+
+    def get_short_markdown(self, plain=False):
+        short = self.get_short()
+        if plain:
+            sBack = short
+        else:
+            sBack = adapt_markdown(short, lowercase=False)
+        return sBack
+
+
+class EdirefWork(models.Model):
+    """The link between a literature item and an Authoritive Work (Auwork)"""
+    
+    # [1] The literature item
+    reference = models.ForeignKey(Litref, related_name="reference_edirefworks", on_delete=models.CASCADE)
+    # [1] The SermonGold to which the literature item refers
+    auwork = models.ForeignKey(Auwork, related_name = "auwork_edirefworks", on_delete=models.CASCADE)
+    # [0-1] The first and last page of the reference
+    pages = models.CharField("Pages", blank = True, null = True,  max_length=MAX_TEXT_LEN)
+
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+        response = None
+        # Double check the ESSENTIALS (pages may be empty)
+        if self.auwork_id and self.reference_id:
+            # Do the saving initially
+            response = super(EdirefWork, self).save(force_insert, force_update, using, update_fields)
         # Then return the response: should be "None"
         return response
 

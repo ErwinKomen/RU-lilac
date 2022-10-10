@@ -59,11 +59,9 @@
                           <li><a href="{% url 'genre_list' %}" title="Genres">Genres</a></li>
                           <li><a href="{% url 'keyword_list' %}" title="Keywords">Keywords</a></li>
                           <li><a href="{% url 'location_list' %}" title="List of source information">Locations</a></li>
-                          <li><a href="{% url 'feast_list' %}" title="List of Feasts">Feasts</a></li>
                           {% if is_app_editor %}
                             <li role="separator" class="divider"></li>
                             <li><a href="{% url 'provenance_list' %}" title="List of provenances">Provenances</a></li>
-                            <li><a href="{% url 'bibrange_list' %}" title="List of Bible references">Bible references</a></li>
                             <li><a href="{% url 'origin_list' %}" title="List of defined manuscript origins">Origins</a></li>
                             <li><a href="{% url 'report_list' %}" title="List reports of uploading etc.">Reports</a></li>
                             <li><a href="{% url 'source_list' %}" title="List of source information">Sources</a></li>

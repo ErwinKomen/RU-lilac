@@ -388,6 +388,30 @@ class DaterangeWidget(ModelSelect2MultipleWidget):
         return qs
 
 
+class EdirefWorkWidget(ModelSelect2MultipleWidget):
+    model = EdirefWork
+    search_fields = [ 'reference__full__icontains' ]
+
+    def label_from_instance(self, obj):
+        # The label only gives the SHORT version!!
+        return obj.get_short()
+
+    def get_queryset(self):
+        return EdirefWork.objects.all().order_by('reference__full', 'pages').distinct()
+
+
+class LitrefAustatWidget(ModelSelect2MultipleWidget):
+    model = LitrefAustat
+    search_fields = [ 'reference__full__icontains' ]
+
+    def label_from_instance(self, obj):
+        # The label only gives the SHORT version!!
+        return obj.get_short()
+
+    def get_queryset(self):
+        return LitrefAustat.objects.all().order_by('reference__full', 'pages').distinct()
+
+
 class AustatMultiWidget(ModelSelect2MultipleWidget):
     model = Austat
     search_fields = ['code__icontains', 'id__icontains', 'author__name__icontains']
@@ -1908,21 +1932,71 @@ class GenreForm(forms.ModelForm):
             oErr.DoError("GenreForm/init")
 
 
+class AuworkEditionForm(forms.ModelForm):
+    """Facilitate editing an edition + page reference"""
+
+    oneref = forms.ModelChoiceField(queryset=None, required=False, help_text="editable", 
+               widget=LitrefWidget(attrs={'data-placeholder': 'Select one reference...', 'style': 'width: 100%;', 'class': 'searching'}))
+    newpages  = forms.CharField(label=_("Page range"), required=False, help_text="editable", 
+               widget=forms.TextInput(attrs={'class': 'input-sm', 'placeholder': 'Page range...',  'style': 'width: 100%;'}))
+    ## ORIGINAL:
+    #litref = forms.CharField(required=False)
+    litref_ta = forms.CharField(label=_("Reference"), required=False, 
+                widget=forms.TextInput(attrs={'class': 'typeahead searching litrefs input-sm', 'placeholder': 'Reference...',  'style': 'width: 100%;'}))
+    typeaheads = ["litrefs"]
+
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = EdirefWork
+        fields = ['reference', 'auwork', 'pages']
+        widgets={'pages':     forms.TextInput(attrs={'placeholder': 'Page range...', 'style': 'width: 100%;'})
+                 }
+
+    def __init__(self, *args, **kwargs):
+        # Start by executing the standard handling
+        super(AuworkEditionForm, self).__init__(*args, **kwargs)
+        self.fields['reference'].required = False
+        #self.fields['litref'].required = False
+        self.fields['litref_ta'].required = False
+        # EK: Added for Sermon Gold new approach 
+        self.fields['newpages'].required = False
+        self.fields['oneref'].required = False
+        self.fields['oneref'].queryset = Litref.objects.exclude(full="").order_by('full')
+        # Get the instance
+        if 'instance' in kwargs:
+            instance = kwargs['instance']
+            # Check if the initial reference should be added
+            if instance.reference != None:
+                self.fields['litref_ta'].initial = instance.reference.get_short() 
+
+    def clean(self):
+        cleaned_data = super(AuworkEditionForm, self).clean()
+        litref = cleaned_data.get("litref")
+        oneref = cleaned_data.get("oneref")     # EK: added for new approach (also in the "if-statement")
+        reference = cleaned_data.get("reference")
+        if reference == None and (litref == None or litref == "") and (oneref == None or oneref == ""):
+            # There is an error
+            raise forms.ValidationError("Cannot find the reference. Make sure to select it. If it is not available, add it in Zotero and import it in LiLaC")
+   
+
 class AuworkForm(lilaModelForm):
     """Auwork editing and searching"""
 
-    key_ta = forms.CharField(label=_("Key"), required=False,
+    key_ta      = forms.CharField(label=_("Key"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching works input-sm', 'placeholder': 'Key code(s)...', 'style': 'width: 100%;'}))
-    work_ta = forms.CharField(label=_("Work"), required=False,
+    work_ta     = forms.CharField(label=_("Work"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching works input-sm', 'placeholder': 'Work(s)...', 'style': 'width: 100%;'}))
-    opus_ta = forms.CharField(label=_("Opus"), required=False,
+    opus_ta     = forms.CharField(label=_("Opus"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching works input-sm', 'placeholder': 'Opus(s)...', 'style': 'width: 100%;'}))
-    worklist     = ModelMultipleChoiceField(queryset=None, required=False, 
+    worklist    = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=AuworkWidget(attrs={'data-placeholder': 'Select multiple works...', 'style': 'width: 100%;', 'class': 'searching'}))
-    genrelist     = ModelMultipleChoiceField(queryset=None, required=False, 
+    genrelist   = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=GenreWidget(attrs={'data-placeholder': 'Select multiple genres...', 'style': 'width: 100%;', 'class': 'searching'}))
-    kwlist     = ModelMultipleChoiceField(queryset=None, required=False, 
+    kwlist      = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=KeywordWidget(attrs={'data-placeholder': 'Select multiple keywords...', 'style': 'width: 100%;', 'class': 'searching'}))
+    edilist     = ModelMultipleChoiceField(queryset=None, required=False, 
+                widget=EdirefWorkWidget(attrs={'data-placeholder': 'Select multiple editions...', 'style': 'width: 100%;', 'class': 'searching'}))
 
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
@@ -1959,10 +2033,14 @@ class AuworkForm(lilaModelForm):
             self.fields['genrelist'].queryset = Genre.objects.all().order_by('name')
             self.fields['kwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
             self.fields['worklist'].queryset = Auwork.objects.all().order_by('key')
+            self.fields['edilist'].queryset = EdirefWork.objects.all().order_by('reference__full', 'pages').distinct()
 
             # Get the instance
             if 'instance' in kwargs:
                 instance = kwargs['instance']
+
+                self.fields['edilist'].initial = [x.pk for x in instance.auwork_edirefworks.all().order_by('reference__full', 'pages')]
+
         except:
             msg = oErr.get_error_message()
             oErr.DoError("AuworkForm/init")
@@ -2635,6 +2713,53 @@ class CanwitKeywordForm(forms.ModelForm):
                 self.fields['name'].initial = kw
 
 
+class LitrefAustatForm(forms.ModelForm):
+    """Facilitate editing an edition + page reference"""
+
+    oneref = forms.ModelChoiceField(queryset=None, required=False, help_text="editable", 
+               widget=LitrefWidget(attrs={'data-placeholder': 'Select one reference...', 'style': 'width: 100%;', 'class': 'searching'}))
+    newpages  = forms.CharField(label=_("Page range"), required=False, help_text="editable", 
+               widget=forms.TextInput(attrs={'class': 'input-sm', 'placeholder': 'Page range...',  'style': 'width: 100%;'}))
+    litref_ta = forms.CharField(label=_("Reference"), required=False, 
+                widget=forms.TextInput(attrs={'class': 'typeahead searching litrefs input-sm', 'placeholder': 'Reference...',  'style': 'width: 100%;'}))
+    typeaheads = ["litrefs"]
+
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = LitrefAustat
+        fields = ['reference', 'austat', 'pages']
+        widgets={'pages':     forms.TextInput(attrs={'placeholder': 'Page range...', 'style': 'width: 100%;'})
+                 }
+
+    def __init__(self, *args, **kwargs):
+        # Start by executing the standard handling
+        super(LitrefAustatForm, self).__init__(*args, **kwargs)
+        self.fields['reference'].required = False
+        #self.fields['litref'].required = False
+        self.fields['litref_ta'].required = False
+        # EK: Added for Sermon Gold new approach 
+        self.fields['newpages'].required = False
+        self.fields['oneref'].required = False
+        self.fields['oneref'].queryset = Litref.objects.exclude(full="").order_by('full')
+        # Get the instance
+        if 'instance' in kwargs:
+            instance = kwargs['instance']
+            # Check if the initial reference should be added
+            if instance.reference != None:
+                self.fields['litref_ta'].initial = instance.reference.get_short() 
+
+    def clean(self):
+        cleaned_data = super(LitrefAustatForm, self).clean()
+        # litref = cleaned_data.get("litref")
+        oneref = cleaned_data.get("oneref")     # EK: added for new approach (also in the "if-statement")
+        reference = cleaned_data.get("reference")
+        # if reference == None and (litref == None or litref == "") and (oneref == None or oneref == ""):
+        if reference == None and (oneref == None or oneref == ""):
+            # There is an error
+            raise forms.ValidationError("Cannot find the reference. Make sure to select it. If it is not available, add it in Zotero and import it in LiLaC")
+   
+
 class AustatForm(lilaModelForm):
     stypelist   = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=StypeWidget(attrs={'data-placeholder': 'Select multiple status types...', 'style': 'width: 100%;'}))
@@ -2671,6 +2796,8 @@ class AustatForm(lilaModelForm):
                 widget=ProjectWidget(attrs={'data-placeholder': 'Select multiple projects...', 'style': 'width: 100%;', 'class': 'searching'}))
     ukwlist     = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=KeywordWidget(attrs={'data-placeholder': 'Select multiple user-keywords...', 'style': 'width: 100%;', 'class': 'searching'}))
+    litlist     = ModelMultipleChoiceField(queryset=None, required=False, 
+                widget=LitrefAustatWidget(attrs={'data-placeholder': 'Select multiple literatur references...', 'style': 'width: 100%;', 'class': 'searching'}))
     scount      = forms.IntegerField(min_value=-1, required=False,
                 widget=forms.NumberInput(attrs={'class': 'searching', 'style': 'width: 20%;', 'data-placeholder': 'Sermon set size'}))
     ssgcount    = forms.IntegerField(min_value=-1, required=False,
@@ -2738,7 +2865,7 @@ class AustatForm(lilaModelForm):
             self.fields['genrelist'].queryset = Genre.objects.all().order_by('name')
             self.fields['kwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
             self.fields['ukwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
-            # self.fields['superlist'].queryset = Austat.objects.all().order_by('code', 'author__name', 'number')
+            self.fields['litlist'].queryset = LitrefAustat.objects.all().order_by('reference__full', 'pages').distinct()
 
             self.fields['projlist'].queryset = profile.projects.all().order_by('name').distinct()
             self.fields['projlist'].widget.queryset = self.fields['projlist'].queryset
@@ -2803,6 +2930,8 @@ class AustatForm(lilaModelForm):
                 self.fields['kwlist'].initial = [x.pk for x in instance.keywords.all().order_by('name')]
                 self.fields['ukwlist'].initial = [x.keyword.pk for x in instance.austat_userkeywords.filter(profile=profile).order_by('keyword__name')]
                 self.fields['projlist'].initial = [x.pk for x in instance.projects.all().order_by('name')] #
+                self.fields['litlist'].initial = [x.pk for x in instance.austat_litrefaustats.all().order_by('reference__full', 'pages')]
+                
                 if not instance.auwork is None:
                     self.fields['worklist'].initial = [x.pk for x in Auwork.objects.filter(id=instance.auwork.id).order_by('key')]
 
