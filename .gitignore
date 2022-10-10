@@ -374,5 +374,10 @@ FodyWeavers.xsd
 # Python stuff
 *.pyc
 
+/lila/lila/basic/migrations
+/lila/lila/bible/migrations
 /lila/lila/lict/migrations
+/lila/lila/reader/migrations
+/lila/lila/seeker/migrations
+/lila/lila/stylo/migrations
 /lila/static

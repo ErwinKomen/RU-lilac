@@ -382,6 +382,9 @@ var ru = (function ($, ru) {
 
           // Get the table height and the table width
           tableHeight = elTable.offsetHeight;
+          if (tableHeight === undefined) {
+            tableHeight = $(elTable).height();
+          }
           // Add a div with a listener
           for (var i = 0; i < cols.length; i++) {
             div = private_methods.createDiv(tableHeight, i);
@@ -1718,6 +1721,36 @@ var ru = (function ($, ru) {
 
             }
 
+          });
+
+          // Related clicking behaviour
+          $("[related-target]").unbind("click").on("click", function (evt) {
+            var elThis = $(this),
+                elButton = null,
+                elRoot = null;
+
+            // Find the root
+            elRoot = $(elThis).attr("related-target");
+            elButton = $(elThis).find("a.btn").first();
+            // Action depends on root visibility
+            if ($(elRoot).hasClass("hidden")) {
+              // it is not visible: show it
+              $(elRoot).removeClass("hidden");
+
+              // Change the color of the button??
+              $(elButton).removeClass("jumbo-1");
+              $(elButton).addClass("jumbo-3");
+
+              // Call resizable grid
+              private_methods.resizableGrid($(elRoot));
+            } else {
+              // It is already showing: hide it
+              $(elRoot).addClass("hidden");
+
+              // Change the color of the button??
+              $(elButton).removeClass("jumbo-3");
+              $(elButton).addClass("jumbo-1");
+            }
           });
 
           // Resizable table columns
