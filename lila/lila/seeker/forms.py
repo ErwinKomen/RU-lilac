@@ -1932,6 +1932,43 @@ class GenreForm(forms.ModelForm):
             oErr.DoError("GenreForm/init")
 
 
+class LitrefForm(forms.ModelForm):
+    """Litref editing and searching"""
+
+    full_ta = forms.CharField(label=_("Full reference"), required=False,
+                widget=forms.TextInput(attrs={'class': 'typeahead searching input-sm', 'placeholder': 'Full reference(s)...', 'style': 'width: 100%;'}))
+
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = Litref
+        fields = ['short', 'full']
+        widgets={
+            'short':    forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
+            'full':     forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 
+                                                      'class': 'searching', 'placeholder': 'Full reference...'})
+            }
+
+    def __init__(self, *args, **kwargs):
+        # Start by executing the standard handling
+        super(LitrefForm, self).__init__(*args, **kwargs)
+
+        oErr = ErrHandle()
+        try:
+            # Some fields are not required
+            self.fields['short'].required = False
+            self.fields['full'].required = False
+
+            # self.fields['genrelist'].queryset = Litref.objects.all().order_by('name')
+
+            # Get the instance
+            if 'instance' in kwargs:
+                instance = kwargs['instance']
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("LitrefForm/init")
+
+
 class AuworkEditionForm(forms.ModelForm):
     """Facilitate editing an edition + page reference"""
 

@@ -181,6 +181,10 @@ urlpatterns = [
     url(r'^genre/details(?:/(?P<pk>\d+))?/$', GenreDetails.as_view(), name='genre_details'),
     url(r'^genre/edit(?:/(?P<pk>\d+))?/$', GenreEdit.as_view(), name='genre_edit'),
 
+    url(r'^litref/list', LitrefListView.as_view(), name='litref_list'),
+    url(r'^litref/details(?:/(?P<pk>\d+))?/$', LitrefDetails.as_view(), name='litref_details'),
+    url(r'^litref/edit(?:/(?P<pk>\d+))?/$', LitrefEdit.as_view(), name='litref_edit'),
+
     url(r'^auwork/list', AuworkListView.as_view(), name='auwork_list'),
     url(r'^auwork/details(?:/(?P<pk>\d+))?/$', AuworkDetails.as_view(), name='auwork_details'),
     url(r'^auwork/edit(?:/(?P<pk>\d+))?/$', AuworkEdit.as_view(), name='auwork_edit'),

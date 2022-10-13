@@ -381,3 +381,4 @@ FodyWeavers.xsd
 /lila/lila/seeker/migrations
 /lila/lila/stylo/migrations
 /lila/static
+/lila/lila/seeker/static/seeker/scripts/litref.js

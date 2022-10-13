@@ -33,13 +33,13 @@
                 <span><a id="sync_start_zotero" class="btn btn-primary btn-xs" 
                     sync-start="{% url 'sync_start' %}?synctype=zotero" 
                     sync-progress="{% url 'sync_progress' %}?synctype=zotero" 
-                    onclick="ru.lila.sync_start('zotero')">Synchronize the literature references</a>
+                    onclick="ru.lila.sync_start(this, 'zotero')">Synchronize the literature references</a>
                 </span>
                 {% if is_superuser %}
                   <span><a id="sync_start_zotero" class="btn btn-primary btn-xs" 
                       sync-start="{% url 'sync_start' %}?synctype=zotero&force=true" 
                       sync-progress="{% url 'sync_progress' %}?synctype=zotero" 
-                      onclick="ru.lila.sync_start('zotero')">Force synchronize all literature</a>
+                      onclick="ru.lila.sync_start(this, 'zotero')">Force synchronize all literature</a>
                   </span>
                 {% endif %}
               </div>

@@ -1242,7 +1242,7 @@ var ru = (function ($, ru) {
        *      Start synchronisation
        *
        */
-      sync_start : function(sSyncType) {
+      sync_start: function(elStart, sSyncType) {
         var oJson = {},
             oData = {},
             i,
@@ -1275,7 +1275,13 @@ var ru = (function ($, ru) {
         ru.lila.oSyncTimer = window.setTimeout(function () { ru.lila.sync_progress(sSyncType, oJson); }, 3000);
 
         // Define the URL
-        sUrl = $("#sync_start_" + sSyncType).attr('sync-start');
+        if ($(elStart).attr('sync-start') !== undefined) {
+          // Take this one
+          sUrl = $(elStart).attr('sync-start');
+        } else {
+          // Take the other one
+          sUrl = $("#sync_start_" + sSyncType).attr('sync-start');
+        }
         $.ajax({
           url: sUrl,
           type: "GET",

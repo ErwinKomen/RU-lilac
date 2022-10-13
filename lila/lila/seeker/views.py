@@ -61,7 +61,7 @@ from lila.settings import APP_PREFIX, MEDIA_DIR, WRITABLE_DIR
 from lila.utils import ErrHandle
 from lila.seeker.forms import SearchCollectionForm, SearchManuscriptForm, SearchManuForm, SearchSermonForm, LibrarySearchForm, SignUpForm, \
     AuthorSearchForm, UploadFileForm, UploadFilesForm, ManuscriptForm, CanwitForm, CommentForm, \
-    AuthorEditForm, BibRangeForm, FeastForm, \
+    AuthorEditForm, BibRangeForm, FeastForm, LitrefForm, \
     CanwitSuperForm, SearchUrlForm, GenreForm, AuworkForm, \
     CanwitSignatureForm, AustatLinkForm, AuworkEditionForm, \
     ReportEditForm, SourceEditForm, ManuscriptProvForm, LocationForm, LocationRelForm, OriginForm, \
@@ -142,6 +142,8 @@ def get_usercomments(type, instance, profile):
     return qs
 
 def get_application_context(request, context):
+    context['is_authenticated'] = user_is_authenticated(request)
+    context['authenticated'] = context['is_authenticated'] 
     context['is_app_uploader'] = user_is_ingroup(request, app_uploader)
     context['is_app_editor'] = user_is_ingroup(request, app_editor)
     context['is_app_moderator'] = user_is_superuser(request) or user_is_ingroup(request, app_moderator)
@@ -1468,6 +1470,89 @@ class GenreListView(BasicList):
             sBack = "\n".join(html)
 
         return sBack, sTitle
+
+
+# ============= EDITOR PROVIDED LITREF VIEWS ============================
+
+
+class LitrefEdit(BasicDetails):
+    """The details of one litref"""
+
+    model = Litref
+    mForm = LitrefForm
+    prefix = 'lit'
+    title = "Litref Details"
+    rtype = "json"
+    no_delete = True
+    permission = "readonly"
+    mainitems = []
+    
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+
+        # Define the main items to show 
+        # NOTE: do *NOT* allow editing. That should take place within Zotero
+        context['mainitems'] = [
+            {'type': 'safe',  'label': "Short:",    'value': instance.get_short_markdown()   },
+            {'type': 'safe',  'label': "Full:",     'value': instance.get_full_markdown()    },
+            {'type': 'plain', 'label': "Created:",  'value': instance.get_created() },
+            {'type': 'plain', 'label': "Saved:",    'value': instance.get_saved()   }
+            ]
+        # Return the context we have made
+        return context
+
+
+class LitrefDetails(LitrefEdit):
+    """Like Litref Edit, but then html output"""
+    rtype = "html"
+    
+
+class LitrefListView(BasicList):
+    """Search and list litrefs"""
+
+    model = Litref
+    listform = LitrefForm
+    prefix = "lit"
+    has_select2 = True
+    in_team = False
+    new_button = False
+    bUseFilter = True
+    order_cols = ['short', 'full', 'saved']
+    order_default = order_cols
+    order_heads = [
+        {'name': 'Short',   'order': 'o=1', 'type': 'str', 'field': 'short', 'linkdetails': True},
+        {'name': 'Full',    'order': 'o=2', 'type': 'str', 'custom': 'full', 'linkdetails': True, 'main': True},
+        {'name': 'Date',    'order': 'o=3', 'type': 'str', 'custom': 'date', 'linkdetails': True,
+         'title':   'Date when this literature reference has been last updated'}]
+    filters = [ 
+        {"name": "Full",    "id": "filter_full",     "enabled": False},
+        ]
+    searches = [
+        {'section': '', 'filterlist': [
+            {'filter': 'full',    'dbfield': 'full',   'keyS': 'full_ta'   },
+            ]}
+        ]
+
+    def initializations(self):
+        return None
+
+    def get_field_value(self, instance, custom):
+        sBack = ""
+        sTitle = ""
+        if custom == "full":
+            sBack = instance.get_full_markdown()
+        elif custom == "date":
+            sBack = instance.get_saved()
+
+        return sBack, sTitle
+
+    def adapt_search(self, fields):
+        lstExclude=None
+        qAlternative = None
+
+        # Make sure empty references are not shown
+        lstExclude = [ Q(short__isnull=True) | Q(short="") ]             
+        return fields, lstExclude, qAlternative
 
 
 # ============= AUWORK VIEWS ============================================
@@ -4266,10 +4351,8 @@ class LitRefListView(ListView):
             # Determine the count for collection references
             context['entrycount_collection'] = self.entrycount_collection
 
-            # Check if user may upload
-            context['is_authenticated'] = user_is_authenticated(self.request)
-            context['is_app_uploader'] = user_is_ingroup(self.request, app_uploader)
-            context['is_app_editor'] = user_is_ingroup(self.request, app_editor)
+            # Add the standard authenticated, uploader,editor and moderator groups
+            context = get_application_context(self.request, context)
 
             # Process this visit and get the new breadcrumbs object
             prevpage = reverse('home')
