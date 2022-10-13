@@ -6294,17 +6294,28 @@ class Austat(models.Model):
         """Get all the editions associated with the CanWits (?) in this equality set (?)"""
 
         lHtml = []
-        # Visit all editions
-        # Visit all editions
-        for edi in self.auwork.auwork_edirefworks.all().order_by('-reference__year', 'reference__short'):
-            # Determine where clicking should lead to
-            url = "{}#edi_{}".format(reverse('literature_list'), edi.reference.id)
-            # Create a display for this item
-            edi_display = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(url,edi.get_short_markdown())
-            if edi_display not in lHtml:
-                lHtml.append(edi_display)
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            # Get a list of all editions
+            qs = self.auwork.auwork_edirefworks.all().order_by('-reference__year', 'reference__short')
+            if qs.count() == 0:
+                # No work to show
+                sBack = "-"
+            else:
+                # Visit all editions
+                for edi in qs:
+                    # Determine where clicking should lead to
+                    url = "{}#edi_{}".format(reverse('literature_list'), edi.reference.id)
+                    # Create a display for this item
+                    edi_display = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(url,edi.get_short_markdown())
+                    if edi_display not in lHtml:
+                        lHtml.append(edi_display)
 
-        sBack = ", ".join(lHtml)
+                sBack = ", ".join(lHtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_editions_markdown")
         return sBack
 
     def get_ftrans_markdown(self, incexp_type = "actual"):
