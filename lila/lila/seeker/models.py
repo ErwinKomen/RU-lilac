@@ -6665,10 +6665,26 @@ class Austat(models.Model):
         # Return the results
         return "".join(lHtml)
 
-    def get_work(self):
+    def get_work(self, as_html=False):
+        oErr = ErrHandle()
         sBack = "-"
-        if not self.auwork is None:
-            sBack = self.auwork.work
+        try:
+            if not self.auwork is None:
+                auwork = self.auwork
+                if as_html:
+                    html = []
+                    # Find out what the URL is of the work
+                    url = reverse('auwork_details', kwargs={'pk': auwork.id})
+                    # Now create a HTML 
+                    html.append("<span class='badge signature cl'><a href='{}'>{}</a></span>".format(url, auwork.work))
+                    # Combine into a string
+                    sBack = "\n".join(html)
+                else:
+                    # simply provide the text of the work
+                    sBack = auwork.work
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Austat/get_work")
         return sBack
 
     def lila_code(auth_num, iNumber):
