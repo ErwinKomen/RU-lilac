@@ -20,14 +20,14 @@
 
   <div class="col-md-12 collapse" id="man-list">
     <table>
-      <thead><tr><th>#</th><th>File</th><th>Manuscript</th><th>Sermons</th></tr></thead>
+      <thead><tr><th>Order</th><th>Manu</th><th>Shelfmark</th><th>LiLaC code</th></tr></thead>
       <tbody>
         {% for item in results %}
           <tr>
-            <td>{{forloop.counter}}</td>
-            <td>{{item.filename}}</td>
-            <td>{{item.name}}</td>
-            <td>{{item.sermons}}</td>
+            <td>{{item.count}}</td>
+            <td>{{item.manu}}</td>
+            <td>{{item.idno}}</td>
+            <td>{{item.lilacode}}</td>
           </tr>
         {% endfor %}
       </tbody>

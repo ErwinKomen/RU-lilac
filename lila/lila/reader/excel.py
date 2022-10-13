@@ -50,20 +50,42 @@ class ManuscriptUploadExcel(ReaderImport):
     """Specific parameters for importing manuscripts from Excel"""
 
     import_type = "excel"
-    sourceinfo_url = "https://www.ru.nl/english/people/boodts-s/"
+    sourceinfo_url = "https://www.ru.nl/lilac/upload_manuscripts"
+    model = Manuscript
+    template_name = "reader/import_manuscripts.html"
 
     def process_files(self, request, source, lResults, lHeader):
         file_list = []
         oErr = ErrHandle()
         bOkay = True
         code = ""
+        col_number = {}
+        col_defs = [
+            {"name": "lilacode",    "def": ['key']                      },
+            {"name": "idno",        "def": ['shelf mark', 'shelfmark']  },
+            {"name": "lcity",       "def": ['city']                     },
+            {"name": "lcountry",    "def": ['country']                  },
+            {"name": "library",     "def": ['library']                  },
+            {"name": "origins",     "def": ['origin']                   },
+            {"name": "dates",       "def": ['date']                     },
+            {"name": "provenances", "def": ['provenance']               },
+            {"name": "script",      "def": ['script']                   },
+            {"name": "size",        "def": ['size']                     },
+            {"name": "notes",       "def": ['notes']                    },
+            ]
         oStatus = self.oStatus
+
         try:
             # Make sure we have the username
             username = self.username
             profile = Profile.get_user_profile(username)
             team_group = app_editor
-            kwargs = {'profile': profile, 'username': username, 'team_group': team_group}
+            kwargs = {'profile': profile, 'username': username, 'team_group': team_group, 
+                      'keyfield': 'path', 'source': source}
+
+            # Initialize column numbers
+            for oDef in col_defs:
+                col_number[oDef['name']] = -1
 
             # Get the contents of the imported file
             files = request.FILES.getlist('files_field')
@@ -101,126 +123,76 @@ class ManuscriptUploadExcel(ReaderImport):
                             wb = openpyxl.load_workbook(tmp_path, read_only=True)
                             sheetnames = wb.sheetnames
                             ws_manu = None
-                            ws_sermo = None
                             for sname in sheetnames:
                                 if "manu" in sname.lower():
                                     ws_manu = wb[sname]
-                                elif "sermo" in sname.lower():
-                                    ws_sermo = wb[sname]
                             # Do we have a manuscript worksheet?
                             if ws_manu != None:
-                                # Process the manuscript-proper details: columns Name and Value
-                                oManu = {}
-                                row_num = 1
-                                if ws_manu.cell(row=row_num, column=1).value.lower() == "field" and \
-                                   ws_manu.cell(row=row_num, column=2).value.lower() == "value":
-                                    # we can skip the first row
-                                    row_num += 1
+                                # Get a list of all columns (in lower case)
+                                self.get_columns_excel(ws_manu, col_defs, col_number)
+
+                                # Walk through all rows
                                 bStop = False
-                                while not bStop:
-                                    k = ws_manu.cell(row=row_num, column=1).value
-                                    v = ws_manu.cell(row=row_num, column=2).value
-                                    if k == "" or k == None:
-                                        bStop = True
+                                row_num = 2
+                                value = ws_manu.cell(row=row_num, column=1).value
+                                while not bStop and not value is None or value == "":
+                                    # Collect the data from this row
+                                    oManu = self.get_row_excel(ws_manu, row_num, col_number)
+
+                                    # Check if this manuscript already exists
+                                    idno = oManu.get("idno")
+                                    lilacode = oManu.get("lilacode")
+                                    bExists = False
+                                    if idno is None:
+                                        # Try to locate it by lilacode
+                                        if not lilacode is None:
+                                            bExists = Manuscript.objects.filter(lilacode__iexact=lilacode).exists()
                                     else:
-                                        row_num += 1
-                                        k = k.lower()
-                                        oManu[k] = v
-                                # We have an object with key/value pairs: process it
-                                manu = Manuscript.custom_add(oManu, **kwargs)
+                                        # Do we have a lilacode
+                                        if lilacode is None:
+                                            # There is no lilacode
+                                            bExists = Manuscript.objects.filter(idno__iexact=idno).exists()
+                                        else:
+                                            bExists = Manuscript.objects.filter(idno__iexact=idno, lilacode__iexact=lilacode).exists()
 
-                                # Now get the codicological unit that has been automatically created and adapt it
-                                codico = manu.manuscriptcodicounits.first()
-                                if codico != None:
-                                    oManu['manuscript'] = manu
-                                    codico = Codico.custom_add(oManu, **kwargs)
+                                    if not bExists:
+                                        # Add this manuscript using custom_add()
+                                        manu = Manuscript.custom_add(oManu, **kwargs)
 
-                                oResult['count'] += 1
-                                oResult['obj'] = manu
-                                oResult['name'] = manu.idno
+                                        # Now get the codicological unit that has been automatically created and adapt it
+                                        codico = manu.manuscriptcodicounits.first()
+                                        if codico != None:
+                                            oManu['manuscript'] = manu
+                                            codico = Codico.custom_add(oManu, **kwargs)
 
-                                # Check if there is a "Sermon" worksheet
-                                if ws_sermo != None:
-                                    # Get the column names
-                                    row_num = 1
-                                    column = 1
-                                    header = []
-                                    v = ws_sermo.cell(row=row_num, column=column).value
-                                    while v != None and v != "" and v != "-":                                        
-                                        header.append(v.lower())
-                                        column += 1
-                                        v = ws_sermo.cell(row=row_num, column=column).value
-                                    # Process the sermons in this sheet
-                                    canwit_list = []
-                                    column = 1
+                                        oResult['count'] += 1
+                                        oResult['manu'] = manu.id
+                                        oResult['idno'] = manu.idno
+                                        oResult['lilacode'] = manu.lilacode
+
+                                        # Add the result to the list of results
+                                        lResults.append(oResult)
+
+                                    # Go to the next row
                                     row_num += 1
-                                    v = ws_sermo.cell(row=row_num, column=column).value
-                                    while v != "" and v != None:
-                                        # ==== DEBUG ====
-                                        oErr.Status("Upload excel row_num={}".format(row_num))
-                                        # ===============
-
-                                        # Create a new sermon object
-                                        oSermon = {}
-                                        # Process this row
-                                        for idx, col_name in enumerate(header):
-                                            column = idx + 1
-                                            oSermon[col_name] = ws_sermo.cell(row=row_num, column=column).value
-                                        # Process this sermon
-                                        order = oSermon['order']
-                                        sermon = Canwit.custom_add(oSermon, manu, order)
-
-                                        oResult['sermons'] += 1
-
-                                        # Get parent, firstchild, next
-                                        parent = oSermon['parent']
-                                        firstchild = oSermon['firstchild']
-                                        nextone = oSermon['next']
-                                        # Add to list
-                                        canwit_list.append({'order': order, 'parent': parent, 'firstchild': firstchild,
-                                                            'next': nextone, 'sermon': sermon})
-                                        # GO to the next row for the next sermon
-                                        row_num += 1
-                                        column = 1
-                                        v = ws_sermo.cell(row=row_num, column=column).value
-
-                                    # Now process the parent/firstchild/next items
-                                    with transaction.atomic():
-                                        for oSermo in canwit_list:
-                                            # Get the p/f/n numbers
-                                            parent_id = oSermo['parent']
-                                            firstchild_id = oSermo['firstchild']
-                                            next_id = oSermo['next']
-                                            # Process parent
-                                            if parent_id != '' and parent_id != None:
-                                                # parent_id = str(parent_id)
-                                                parent = next((obj['sermon'] for obj in canwit_list if obj['order'] == parent_id), None)
-                                                oSermo['sermon'].msitem.parent = parent.msitem
-                                                oSermo['sermon'].msitem.save()
-                                            # Process firstchild
-                                            if firstchild_id != '' and firstchild_id != None:
-                                                # firstchild_id = str(firstchild_id)
-                                                firstchild = next((obj['sermon'] for obj in canwit_list if obj['order'] == firstchild_id), None)
-                                                oSermo['sermon'].msitem.firstchild = firstchild.msitem
-                                                oSermo['sermon'].msitem.save()
-                                            # Process next
-                                            if next_id != '' and next_id != None:
-                                                # next_id = str(next_id)
-                                                nextone = next((obj['sermon'] for obj in canwit_list if obj['order'] == next_id), None)
-                                                oSermo['sermon'].msitem.next = nextone.msitem
-                                                oSermo['sermon'].msitem.save()
+                                    # Get the values from there
+                                    value = ws_manu.cell(row=row_num, column=1).value
 
 
-                        # Create a report and add it to what we return
-                        oContents = {'headers': lHeader, 'list': lst_manual, 'read': lst_read}
-                        oReport = Report.make(username, "ixlsx", json.dumps(oContents))
+
+                        ## Create a report and add it to what we return
+                        #oContents = {'headers': lHeader, 'list': lst_manual, 'read': lst_read}
+                        #oReport = Report.make(username, "ixlsx", json.dumps(oContents))
                                 
-                        # Determine a status code
-                        statuscode = "error" if oResult == None or oResult['status'] == "error" else "completed"
-                        if oResult == None:
-                            self.arErr.append("There was an error. No manuscripts have been added")
-                        else:
-                            lResults.append(oResult)
+                        ## Determine a status code
+                        #statuscode = "error" if oResult == None or oResult['status'] == "error" else "completed"
+                        #if oResult == None:
+                        #    self.arErr.append("There was an error. No manuscripts have been added")
+                        #else:
+                        #    lResults.append(oResult)
+
+                    # Set the status
+                    oStatus.set("finishing", msg="file={}".format(filename))
             code = "Imported using the [import_excel] function on this filew: {}".format(", ".join(file_list))
         except:
             bOkay = False
@@ -255,6 +227,7 @@ class ManuscriptUploadCanwits(ReaderImport):
             {"name": "austat_note", "def": ['fons materialis (note)']   }
             ]
         oStatus = self.oStatus
+
         try:
             # Make sure we have the username
             username = self.username
@@ -339,24 +312,25 @@ class ManuscriptUploadCanwits(ReaderImport):
                                 #    locus, ftext, ftrans, bibref
                                 # Optional columns, once the CanWit has been established:
                                 #    collection, austat link, 
-                                row_num = 1
-                                col_num = 1
-                                bStop = False
-                                while not bStop:
-                                    k = ws.cell(row=row_num, column=col_num).value
-                                    if k is None or k == "":
-                                        bStop = True
-                                    else:
-                                        col_name = k.lower()
-                                        for oDef in col_defs:
-                                            name = oDef['name']
-                                            if col_number[name] < 0:
-                                                for str_def in oDef['def']:
-                                                    if str_def in col_name:
-                                                        # Found it!
-                                                        col_number[name] = col_num
-                                                        break
-                                    col_num += 1
+                                self.get_columns_excel(ws, col_defs, col_number)
+                                #row_num = 1
+                                #col_num = 1
+                                #bStop = False
+                                #while not bStop:
+                                #    k = ws.cell(row=row_num, column=col_num).value
+                                #    if k is None or k == "":
+                                #        bStop = True
+                                #    else:
+                                #        col_name = k.lower()
+                                #        for oDef in col_defs:
+                                #            name = oDef['name']
+                                #            if col_number[name] < 0:
+                                #                for str_def in oDef['def']:
+                                #                    if str_def in col_name:
+                                #                        # Found it!
+                                #                        col_number[name] = col_num
+                                #                        break
+                                #    col_num += 1
 
                                 # Make sure we at least have [ftext]
                                 if col_number['ftext'] >= 1:
@@ -374,10 +348,12 @@ class ManuscriptUploadCanwits(ReaderImport):
                                         bStop = (value is None or value == "")
                                         if not bStop:
                                             # Read the values for this row
-                                            oValue = {}
-                                            for field_name, col_num in col_number.items():
-                                                if col_num > 0:
-                                                    oValue[field_name] = ws.cell(row=row_num, column=col_num).value
+                                            oValue = self.get_row_excel(ws, row_num, col_number)
+                                            #oValue = {}
+                                            #for field_name, col_num in col_number.items():
+                                            #    if col_num > 0:
+                                            #        oValue[field_name] = ws.cell(row=row_num, column=col_num).value
+
                                             # We have all the values, process the essentials to create a CanWit (if it doesn't exist already)
                                             val_ftext = oValue['ftext']
                                             canwit = Canwit.objects.filter(msitem__codico__manuscript=manu, ftext__iexact=val_ftext).first()
@@ -642,24 +618,25 @@ class AustatUploadExcel(ReaderImport):
                             # Do we have a worksheet with Austat items?
                             if not ws_austat is None:
                                 # Get a list of the Austat excel columns
-                                row_num = 1
-                                col_num = 1
-                                bStop = False
-                                while not bStop:
-                                    k = ws_austat.cell(row=row_num, column=col_num).value
-                                    if k is None or k == "":
-                                        bStop = True
-                                    else:
-                                        col_name = k.lower()
-                                        for oDef in col_defs:
-                                            name = oDef['name']
-                                            if col_number[name] < 0:
-                                                for str_def in oDef['def']:
-                                                    if str_def in col_name:
-                                                        # Found it!
-                                                        col_number[name] = col_num
-                                                        break
-                                    col_num += 1
+                                self.get_columns_excel(ws_austat, col_defs, col_number)
+                                #row_num = 1
+                                #col_num = 1
+                                #bStop = False
+                                #while not bStop:
+                                #    k = ws_austat.cell(row=row_num, column=col_num).value
+                                #    if k is None or k == "":
+                                #        bStop = True
+                                #    else:
+                                #        col_name = k.lower()
+                                #        for oDef in col_defs:
+                                #            name = oDef['name']
+                                #            if col_number[name] < 0:
+                                #                for str_def in oDef['def']:
+                                #                    if str_def in col_name:
+                                #                        # Found it!
+                                #                        col_number[name] = col_num
+                                #                        break
+                                #    col_num += 1
 
                                 # Make sure we at least have [ftext]
                                 if col_number['ftext'] >= 1:
@@ -672,10 +649,11 @@ class AustatUploadExcel(ReaderImport):
                                         bStop = (value is None or value == "")
                                         if not bStop:
                                             # Read the values for this row into dictionary [oValue]
-                                            oValue = {}
-                                            for field_name, col_num in col_number.items():
-                                                if col_num > 0:
-                                                    oValue[field_name] = ws_austat.cell(row=row_num, column=col_num).value
+                                            oValue = self.get_row_excel(ws_austat, row_num, col_number)
+                                            #oValue = {}
+                                            #for field_name, col_num in col_number.items():
+                                            #    if col_num > 0:
+                                            #        oValue[field_name] = ws_austat.cell(row=row_num, column=col_num).value
 
                                             # We have all the values, process the essentials to create a CanWit (if it doesn't exist already)
                                             val_key = oValue['key']

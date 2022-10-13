@@ -296,6 +296,55 @@ class ReaderImport(View):
             lst_read.append(oInfo)
         return True
 
+    def get_columns_excel(self, ws, col_defs, col_number):
+        """Get a dict of all columns as defined in Excel row 1"""
+
+        oErr = ErrHandle()
+        bResult = True
+        try:
+            # Get a list of all columns (in lower case)
+            row_num = 1
+            col_num = 1
+            bStop = False
+            while not bStop:
+                k = ws.cell(row=row_num, column=col_num).value
+                if k is None or k == "":
+                    bStop = True
+                else:
+                    col_name = k.lower()
+                    for oDef in col_defs:
+                        name = oDef['name']
+                        if col_number[name] < 0:
+                            for str_def in oDef['def']:
+                                if str_def in col_name:
+                                    # Found it!
+                                    col_number[name] = col_num
+                                    break
+                col_num += 1
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_columns_excel")
+            bResult = False
+
+        return bResult
+
+    def get_row_excel(self, ws, row_num, col_number):
+        """Read one row of data from an excel"""
+
+        oValue = {}
+        try:
+            # Collect the data from this row
+            for field_name, col_num in col_number.items():
+                if col_num > 0:
+                    oValue[field_name] = ws.cell(row=row_num, column=col_num).value
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_columns_excel")
+            bResult = False
+        return oValue
+
+
+
     def process_files(self, request, source, lResults, lHeader):
         bOkay = True
         code = ""

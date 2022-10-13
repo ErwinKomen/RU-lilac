@@ -3002,10 +3002,10 @@ class Manuscript(models.Model):
     library = models.ForeignKey(Library, null=True, blank=True, on_delete = models.SET_NULL, related_name="library_manuscripts")
     # [1] Each manuscript has an identification number: Shelf Mark
     idno = models.CharField("Identifier", max_length=LONG_STRING, null=True, blank=True)
-    # [0-1] The LiLaC code for this particular Canwit
+    # [0-1] The LiLaC code for this particular Manuscript
     lilacode = models.CharField("LiLaC code", null=True, blank=True, max_length=LONG_STRING)
-    # [0-1] If possible we need to know the original location of the manuscript
-    origin = models.ForeignKey(Origin, null=True, blank=True, on_delete = models.SET_NULL, related_name="origin_manuscripts")
+    ## [0-1] If possible we need to know the original location of the manuscript
+    #origin = models.ForeignKey(Origin, null=True, blank=True, on_delete = models.SET_NULL, related_name="origin_manuscripts")
     # [0-1] Optional filename to indicate where we got this from
     filename = models.CharField("Filename", max_length=LONG_STRING, null=True, blank=True)
     # [0-1] Optional link to a website with (more) information on this manuscript
@@ -3847,28 +3847,34 @@ class Manuscript(models.Model):
             sBack = markdown(self.notes, extensions=['nl2br'])
         return sBack
 
-    def get_origin(self):
-        sBack = "-"
-        if self.origin:
-            # Just take the bare name of the origin
-            sBack = self.origin.name
-            if self.origin.location:
-                # Add the actual location if it is known
-                sBack = "{}: {}".format(sBack, self.origin.location.get_loc_name())
-        return sBack
+    #def get_origin(self):
+    #    sBack = "-"
+    #    if self.origin:
+    #        # Just take the bare name of the origin
+    #        sBack = self.origin.name
+    #        if self.origin.location:
+    #            # Add the actual location if it is known
+    #            sBack = "{}: {}".format(sBack, self.origin.location.get_loc_name())
+    #    return sBack
 
-    def get_origin_markdown(self):
+    #def get_origin_markdown(self):
+    #    sBack = "-"
+    #    if self.origin:
+    #        # Just take the bare name of the origin
+    #        sBack = self.origin.name
+    #        if self.origin.location:
+    #            # Add the actual location if it is known
+    #            sBack = "{}: {}".format(sBack, self.origin.location.get_loc_name())
+    #        # Get the url to it
+    #        url = reverse('origin_details', kwargs={'pk': self.origin.id})
+    #        # Adapt what we return
+    #        sBack = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(url, sBack)
+    #    return sBack
+
+    def get_origins(self):
         sBack = "-"
-        if self.origin:
-            # Just take the bare name of the origin
-            sBack = self.origin.name
-            if self.origin.location:
-                # Add the actual location if it is known
-                sBack = "{}: {}".format(sBack, self.origin.location.get_loc_name())
-            # Get the url to it
-            url = reverse('origin_details', kwargs={'pk': self.origin.id})
-            # Adapt what we return
-            sBack = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(url, sBack)
+        if not self.origins is None:
+            sBack = self.origins
         return sBack
 
     def get_projects(self):

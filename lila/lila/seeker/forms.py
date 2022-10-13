@@ -3723,10 +3723,10 @@ class ManuscriptForm(lilaModelForm):
                 widget=forms.TextInput(attrs={'class': 'typeahead searching cities input-sm', 'placeholder': 'City...',  'style': 'width: 100%;'}))
     libname_ta  = forms.CharField(label=_("Library"), required=False, 
                 widget=forms.TextInput(attrs={'class': 'typeahead searching libraries input-sm', 'placeholder': 'Name of library...',  'style': 'width: 100%;'}))
-    origname_ta = forms.CharField(label=_("Origin"), required=False, 
-                widget=forms.TextInput(attrs={'class': 'typeahead searching origins input-sm', 'placeholder': 'Origin...',  'style': 'width: 100%;'}))
-    origone     = ModelChoiceField(queryset=None, required=False,
-                widget=OriginOneWidget(attrs={'data-placeholder': 'Select an origin...', 'style': 'width: 100%;', 'class': 'searching'}))
+    #origname_ta = forms.CharField(label=_("Origin"), required=False, 
+    #            widget=forms.TextInput(attrs={'class': 'typeahead searching origins input-sm', 'placeholder': 'Origin...',  'style': 'width: 100%;'}))
+    #origone     = ModelChoiceField(queryset=None, required=False,
+    #            widget=OriginOneWidget(attrs={'data-placeholder': 'Select an origin...', 'style': 'width: 100%;', 'class': 'searching'}))
     collection  = forms.CharField(label=_("Collection"), required=False,
                 widget=forms.TextInput(attrs={'class': 'searching input-sm', 'placeholder': 'Collection(s)...', 'style': 'width: 100%;'}))
     collist     = ModelMultipleChoiceField(queryset=None, required=False, 
@@ -3751,8 +3751,8 @@ class ManuscriptForm(lilaModelForm):
                 widget=CodheadOneWidget(attrs={'data-placeholder': 'Optional: select a section in which to put the canon witnesses...', 
                                                'style': 'width: 100%;', 'class': 'searching'}))
     typeaheads = ["countries", "cities", "libraries", "origins", "manuidnos"]
-    action_log = ['name', 'library', 'lcity', 'lcountry', 'idno', 
-                  'origin', 'url', 'support', 'extent', 'format', 'stype', 'project',
+    action_log = ['name', 'library', 'lcity', 'lcountry', 'idno', # 'origin',
+                  'url', 'support', 'extent', 'format', 'stype', 'project',
                   'ukwlist', 'kwlist', 'litlist', 'collist', 'mprovlist', 'extlist', 'datelist', 'projlist'] 
     exclude = ['country_ta', 'city_ta', 'libname_ta', 'origname_ta']
 
@@ -3761,8 +3761,8 @@ class ManuscriptForm(lilaModelForm):
 
         model = Manuscript
         fields = ['name', 'library', 'lcity', 'lcountry', 'idno', 'lilacode', 'notes', # 'yearstart', 'yearfinish', 'project' 
-                  'origins', 'dates', 'script', 'size',
-                  'origin', 'url', 'support', 'extent', 'format', 'stype']
+                  'origins', 'dates', 'script', 'size',                                # 'origin',
+                  'url', 'support', 'extent', 'format', 'stype']
         widgets={'library':     LibraryOneWidget(attrs={'data-placeholder': 'Select a library...', 'style': 'width: 100%;', 'class': 'searching'}),
                  'lcity':       CityMonasteryOneWidget(attrs={'data-placeholder': 'Select a city, village or abbey...', 'style': 'width: 100%;', 'class': 'searching'}),
                  'lcountry':    CountryOneWidget(attrs={'data-placeholder': 'Select a country...', 'style': 'width: 100%;', 'class': 'searching'}),
@@ -3770,7 +3770,7 @@ class ManuscriptForm(lilaModelForm):
                  #'yearstart':   forms.TextInput(attrs={'style': 'width: 40%;'}),
                  #'yearfinish':  forms.TextInput(attrs={'style': 'width: 40%;'}),
                  'idno':        forms.TextInput(attrs={'class': 'typeahead searching manuidnos input-sm', 'placeholder': 'Identifier...',  'style': 'width: 100%;'}),
-                 'origin':      OriginOneWidget(attrs={'data-placeholder': 'Select an origin...', 'style': 'width: 100%;', 'class': 'searching'}),
+                 # 'origin':      OriginOneWidget(attrs={'data-placeholder': 'Select an origin...', 'style': 'width: 100%;', 'class': 'searching'}),
                  'url':         forms.TextInput(attrs={'data-placeholder': 'Provide a URL...', 'style': 'width: 100%;'}),
                  'format':      forms.TextInput(attrs={'data-placeholder': 'Provide a format...', 'style': 'width: 100%;'}),
                  'lilacode':    forms.TextInput(attrs={'data-placeholder': 'Provide the (short) LiLaC code for the manuscript only...', 'style': 'width: 100%;'}),
@@ -3826,7 +3826,7 @@ class ManuscriptForm(lilaModelForm):
             # Note: the collection filters must use the SCOPE of the collection
             self.fields['collist'].queryset = Collection.get_scoped_queryset('manu', username, team_group)
 
-            self.fields['origone'].queryset = Origin.objects.all().order_by('name')
+            #self.fields['origone'].queryset = Origin.objects.all().order_by('name')
 
             self.fields['headlist'].queryset = Codhead.objects.all().order_by('locus')
 
@@ -3866,10 +3866,13 @@ class ManuscriptForm(lilaModelForm):
 
                     # New method
                     # self.fields['library'].initial = 
+
                 # Look after origin
-                origin = instance.origin
-                self.fields['origname_ta'].initial = "" if origin == None else origin.name
-                self.fields['origone'].initial = None if origin == None else origin.id
+                #origin = instance.origin
+                #self.fields['origname_ta'].initial = "" if origin == None else origin.name
+                #self.fields['origone'].initial = None if origin == None else origin.id
+
+                # Initialize other stuff
                 self.fields['collist'].initial = [x.pk for x in instance.collections.all().order_by('name')]
                 self.fields['litlist'].initial = [x.pk for x in instance.manuscript_litrefs.all().order_by('reference__full', 'pages')]
                 self.fields['kwlist'].initial = [x.pk for x in instance.keywords.all().order_by('name')]
