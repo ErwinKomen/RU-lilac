@@ -1551,7 +1551,8 @@ class LitrefListView(BasicList):
         qAlternative = None
 
         # Make sure empty references are not shown
-        lstExclude = [ Q(short__isnull=True) | Q(short="") ]             
+        lstExclude = [ Q(short__isnull=True) | Q(short="") ]      
+       
         return fields, lstExclude, qAlternative
 
 

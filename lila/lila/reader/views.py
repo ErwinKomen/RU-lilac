@@ -332,6 +332,7 @@ class ReaderImport(View):
         """Read one row of data from an excel"""
 
         oValue = {}
+        oErr = ErrHandle()
         try:
             # Collect the data from this row
             for field_name, col_num in col_number.items():
@@ -342,9 +343,7 @@ class ReaderImport(View):
             oErr.DoError("get_columns_excel")
             bResult = False
         return oValue
-
-
-
+    
     def process_files(self, request, source, lResults, lHeader):
         bOkay = True
         code = ""

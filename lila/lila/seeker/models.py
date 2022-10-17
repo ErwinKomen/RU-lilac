@@ -3101,7 +3101,12 @@ class Manuscript(models.Model):
         {'name': 'Editor Notes',        'type': 'field', 'path': 'notes_editor_in_dutch', 'target': 'editornotes'},
         {'name': 'Url',                 'type': 'field', 'path': 'url'},
         {'name': 'External id',         'type': 'field', 'path': 'external'},
-        {'name': 'Shelf mark',          'type': 'field', 'path': 'idno'},                            # WAS: ,      'readonly': True},
+        {'name': 'Shelf mark',          'type': 'field', 'path': 'idno'},
+        {'name': 'Lilac code',          'type': 'field', 'path': 'lilacode'},
+        {'name': 'Origin(s)',           'type': 'field', 'path': 'origins'},
+        {'name': 'Date',                'type': 'field', 'path': 'dates'},
+        {'name': 'Script',              'type': 'field', 'path': 'script'},
+        {'name': 'Size',                'type': 'field', 'path': 'size'},
         {'name': 'Title',               'type': 'field', 'path': 'name'},
         {'name': 'Country',             'type': 'fk',    'path': 'lcountry',  'fkfield': 'name', 'model': 'Location'},
         {'name': 'Country id',          'type': 'fk_id', 'path': 'lcountry',  'fkfield': 'name', 'model': 'Location'},
@@ -3272,6 +3277,13 @@ class Manuscript(models.Model):
             else:
                 # Get the standard project TH: hier naar kijken voor punt 4
                 # OLD: project = Project.get_default(username)
+
+                # Make sure 'name' is set correctly
+                lilacode = oManu.get("lilacode")
+                title = oManu.get("name")
+                # Supply alternative title
+                if title is None and not lilacode is None:
+                    oManu['name'] = lilacode
 
                 # Retrieve or create a new manuscript with default values
                 if source == None:
@@ -4643,13 +4655,15 @@ class Codico(models.Model):
                         # Doesn't exist, so create it
                         obj = Daterange.objects.create(codico=self, yearstart=yearstart, yearfinish=yearfinish)
                 # Ready
-            elif path == "origin":
+            elif path == "origins":
                 if value != "" and value != "-":
                     # THere is an origin specified
                     origin = Origin.objects.filter(name__iexact=value).first()
                     if origin == None:
                         # Try find it through location
                         origin = Origin.objects.filter(location__name__iexact=value).first()
+
+                    # We now have an origin - tie it to Codico or not
                     if origin == None:
                         # Indicate that we didn't find it in the notes
                         intro = ""
@@ -4660,7 +4674,9 @@ class Codico(models.Model):
                         # The origin can be tied to me
                         self.origin = origin
                         self.save()
-                sBack = self.get_origin()
+                        # Also make a link between Origin and Codico
+                        OriginCodico.objects.create(codico=self, origin=origin, note="Automatically added Codico/custom_getkv")
+
             elif path == "provenances":
                 provenance_names = value_lst #  json.loads(value)
                 for pname in provenance_names:
@@ -8871,7 +8887,7 @@ class Canwit(models.Model):
         return sBack
 
     def get_litrefs_markdown(self, plain=False):
-        # Pass on all the literature from Manuscript to each of the Sermons of that Manuscript
+        # Pass on all the literature from Manuscript to each of the Canwits of that Manuscript
                
         lHtml = []
         # (1) First the litrefs from the manuscript: 

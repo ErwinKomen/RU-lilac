@@ -74,6 +74,7 @@ class ManuscriptUploadExcel(ReaderImport):
             {"name": "notes",       "def": ['notes']                    },
             ]
         oStatus = self.oStatus
+        lMyHeader = ["status", "msg", "manu_id", "shelfmark", "lilacode", "filename"]
 
         try:
             # Make sure we have the username
@@ -107,6 +108,10 @@ class ManuscriptUploadExcel(ReaderImport):
 
                         lst_manual = []
                         lst_read = []
+
+                        # Adapt the [lHeader] to contain the correct headers for Report
+                        lHeader.clear()
+                        for x in lMyHeader: lHeader.append(x)
 
                         # Further processing depends on the extension
                         oResult = {'status': 'ok', 'count': 0, 'sermons': 0, 'msg': "", 'user': username}
@@ -163,6 +168,14 @@ class ManuscriptUploadExcel(ReaderImport):
                                         codico = manu.manuscriptcodicounits.first()
                                         if codico != None:
                                             oManu['manuscript'] = manu
+
+                                            # The manuscript's 'size' could serve as 'format' for the codico
+                                            if oManu.get("format") is None:
+                                                oManu['format'] = oManu.get("size")
+                                            # The manuscript's 'title' could serve as 'name' for the codico
+                                            if oManu.get("name") is None:
+                                                oManu['name'] = oManu.get("title")
+
                                             codico = Codico.custom_add(oManu, **kwargs)
 
                                         oResult['count'] += 1
@@ -173,6 +186,11 @@ class ManuscriptUploadExcel(ReaderImport):
                                         # Add the result to the list of results
                                         lResults.append(oResult)
 
+                                        # Create the [Report] results for this one
+                                        oRead = dict(status="ok", msg="read", manu_id=manu.id,
+                                                filename=filename, shelfmark=manu.idno, lilacode=manu.lilacode)
+                                        lst_read.append(oRead)
+
                                     # Go to the next row
                                     row_num += 1
                                     # Get the values from there
@@ -180,17 +198,10 @@ class ManuscriptUploadExcel(ReaderImport):
 
 
 
-                        ## Create a report and add it to what we return
-                        #oContents = {'headers': lHeader, 'list': lst_manual, 'read': lst_read}
-                        #oReport = Report.make(username, "ixlsx", json.dumps(oContents))
+                        # Create a report and add it to what we return
+                        oContents = {'headers': lHeader, 'list': lst_read}
+                        oReport = Report.make(username, "ixlsx", json.dumps(oContents))
                                 
-                        ## Determine a status code
-                        #statuscode = "error" if oResult == None or oResult['status'] == "error" else "completed"
-                        #if oResult == None:
-                        #    self.arErr.append("There was an error. No manuscripts have been added")
-                        #else:
-                        #    lResults.append(oResult)
-
                     # Set the status
                     oStatus.set("finishing", msg="file={}".format(filename))
             code = "Imported using the [import_excel] function on this filew: {}".format(", ".join(file_list))
