@@ -171,18 +171,6 @@ class CityWidget(ModelSelect2MultipleWidget):
         return qs
 
 
-class CodeWidget(ModelSelect2MultipleWidget):
-    # lila codes defined in Austat instances
-    model = Austat
-    search_fields = [ 'code__icontains' ]
-
-    def label_from_instance(self, obj):
-        return obj.get_code()
-
-    def get_queryset(self):
-        return Austat.objects.filter(moved__isnull=True, atype='acc').order_by('code').distinct()
-
-
 class CodicoOneWidget(ModelSelect2Widget):
     """Select one Codico"""
 
@@ -449,16 +437,17 @@ class AustatLinkAddOnlyWidget(AustatMultiWidget):
 
 class AustatWidget(ModelSelect2Widget):
     model = Austat
-    search_fields = [ 'code__icontains', 'author__name__icontains', 'srchftext__icontains', 'srchftrans__icontains' ]
+    search_fields = [ 'keycodefull__icontains', 'author__name__icontains', 'srchftext__icontains', 'srchftrans__icontains' ]
     addonly = False
-    order = [F('code').asc(nulls_last=True), 'firstsig']
+    order = [F('keycodefull').asc(nulls_last=True), 'firstsig']
     exclude = None
 
     def label_from_instance(self, obj):
-        # Determine the full text
-        full = obj.get_text()
+        # Determine what to return as label
+        # sBack = obj.get_text()
+        sBack = obj.keycodefull
         # Determine here what to return...
-        return full
+        return sBack
 
     def get_queryset(self):
         if self.addonly:
@@ -470,6 +459,37 @@ class AustatWidget(ModelSelect2Widget):
             else:
                 qs = Austat.objects.filter(moved__isnull=True, atype='acc').exclude(id=self.exclude).order_by(*self.order).distinct()
         return qs
+
+
+class AustatOneWidget(ModelSelect2Widget):
+    model = Austat
+    search_fields = ['keycodefull__icontains', 'id__icontains', 'author__name__icontains', 
+                     'srchftext__icontains', 'srchftrans__icontains']
+    MAX_LABEL_LENGTH = 80
+
+    def label_from_instance(self, obj):
+        sLabel = obj.get_label(do_incexpl = True)
+        if len(sLabel) > self.MAX_LABEL_LENGTH:
+            sLabel = "{}...".format(sLabel[:self.MAX_LABEL_LENGTH])
+        return sLabel
+
+    def get_queryset(self):
+        return Austat.objects.filter(moved__isnull=True, atype = 'acc').order_by('keycodefull', 'id').distinct()
+
+    def filter_queryset(self, term, queryset = None, **dependent_fields):
+        qs = super(AustatOneWidget, self).filter_queryset(term, queryset, **dependent_fields)
+        # Adapt
+        condition = Q(keycodefull__icontains=term) | Q(author__name__icontains=term) | \
+                    Q(srchftext__icontains=term) | Q(srchftrans__icontains=term) 
+        qs = qs.annotate(
+            full_string_order=Case(
+                When(condition, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField()
+            ),
+        )
+        # Return result
+        return qs.order_by("-full_string_order", "keycodefull", "id")
 
 
 class AuworkWidget(ModelSelect2MultipleWidget):
@@ -1112,34 +1132,6 @@ class SuperDistWidget(ModelSelect2Widget):
                 qs = self.sermon.canwitsuperdist.all().order_by(
                     'distance', 'austat__code', 'austat__author__name')
         return qs
-
-
-class SuperOneWidget(ModelSelect2Widget):
-    model = Austat
-    search_fields = ['code__icontains', 'id__icontains', 'author__name__icontains', 
-                     'srchftext__icontains', 'srchftrans__icontains']
-
-    def label_from_instance(self, obj):
-        sLabel = obj.get_label(do_incexpl = True)
-        return sLabel
-
-    def get_queryset(self):
-        return Austat.objects.filter(moved__isnull=True, atype = 'acc').order_by('code', 'id').distinct()
-
-    def filter_queryset(self, term, queryset = None, **dependent_fields):
-        qs = super(SuperOneWidget, self).filter_queryset(term, queryset, **dependent_fields)
-        # Adapt
-        condition = Q(code__icontains=term) | Q(author__name__icontains=term) | \
-                    Q(srchftext__icontains=term) | Q(srchftrans__icontains=term) 
-        qs = qs.annotate(
-            full_string_order=Case(
-                When(condition, then=Value(1)),
-                default=Value(0),
-                output_field=IntegerField()
-            ),
-        )
-        # Return result
-        return qs.order_by("-full_string_order", "code", "id")
 
 
 class TemplateOneWidget(ModelSelect2Widget):
@@ -2655,8 +2647,10 @@ class CanwitSuperForm(forms.ModelForm):
                widget=forms.Select(attrs={'class': 'input-sm', 'placeholder': 'Type of link...',  'style': 'width: 100%;', 'tdstyle': 'width: 100px;'}))
     # For the method "nodistance"
     newsuper    = forms.CharField(label=_("Canon witness"), required=False, help_text="editable", 
-                widget=SuperOneWidget(attrs={'data-placeholder': 'Select links...', 
-                                                  'placeholder': 'Select an Authoritative statement...', 'style': 'width: 100%;', 'class': 'searching'}))
+                widget=AustatOneWidget(attrs={'data-placeholder': 'Select links...', 
+                'placeholder': 'Select an Authoritative statement...', 'style': 'width: 100%;', 'class': 'searching'}))
+    newnote     = forms.CharField(label=_("Note"), required=False, help_text="editable", 
+               widget=forms.TextInput(attrs={'class': 'input-sm', 'placeholder': 'Note...',  'style': 'width: 100%;'}))
 
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
@@ -2718,6 +2712,10 @@ class CanwitSuperForm(forms.ModelForm):
                 else:
                     # Make sure we exclude the instance from the queryset
                     self.fields['newsuper'].queryset = self.fields['newsuper'].queryset.exclude(id=instance.id).order_by('code', 'author__name', 'id')
+
+                    # Set the note value
+                    if not instance.note is None:
+                        self.fields['newnote'].initial = instance.note
 
         return None
 

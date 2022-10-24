@@ -4085,9 +4085,9 @@ class Manuscript(models.Model):
         html = []
         for ssg in ssg_list:
             url = reverse('austat_details', kwargs={'pk': ssg.id})
-            code = ssg.get_code() # ssg.code if ssg.code else "(ssg_{})".format(ssg.id)
+            keycode = ssg.get_keycode()
             # Add a link to this SSG in the list
-            html.append("<span class='lilalink'><a href='{}'>{}</a></span>".format(url, code))
+            html.append("<span class='lilalink'><a href='{}'>{}</a></span>".format(url, keycode))
         sBack = ", ".join(html)
         # Return the combined information
         return sBack
@@ -5711,7 +5711,7 @@ class Austat(models.Model):
     # [0-1] We would like to know the FULL TEXT TRANSLATION
     ftrans = models.TextField("Translation", null=True, blank=True)
     srchftrans = models.TextField("Translation (searchable)", null=True, blank=True)
-    # [0-1] The 'lila-code' for a sermon - see PASSIM instructions (16-01-2020 4): [lila aaa.nnnn]
+    # [0-1] The 'lila-code' for a sermon - see PASSIM instructions (16-01-2020 4): [lilac aaa.nnnn]
     #       NO! The user has a completely different expectation here...
     code = models.CharField("Lilac code", blank=True, null=True, max_length=LILAC_CODE_LENGTH, default="ZZZ_DETERMINE")
     # [0-1] Short string date (can be approximate using 'x')
@@ -6458,20 +6458,15 @@ class Austat(models.Model):
 
         lHtml = []
 
-        # Treat lila code
-        sLabel = self.code
-        if sLabel == None: 
-            sLabel = "(Undecided {})".format(self.id)
-        lHtml.append("{} ".format(sLabel))
+        ## Treat lila code
+        #sLabel = self.code
+        #if sLabel == None: 
+        #    sLabel = "(Undecided {})".format(self.id)
+        #lHtml.append("{} ".format(sLabel))
 
         # Add the keycode
-        sKeycode = "-" if self.keycode is None else self.keycode
+        sKeycode = "(Undecided {})".format(self.id) if self.keycodefull is None else self.keycodefull
         lHtml.append("{} ".format(sKeycode))
-
-        ## Treat signatures
-        #equal_set = self.equal_goldsermons.all()
-        #siglist = [x.short() for x in Signature.objects.filter(gold__in=equal_set).order_by('-editype', 'code').distinct()]
-        #lHtml.append(" | ".join(siglist))
 
         # Treat the author
         if self.author:
@@ -6515,14 +6510,6 @@ class Austat(models.Model):
             msg = oErr.get_error_message()
             oErr.DoError("Austat/get_litrefs_markdown")
         return sBack
-
-    #def get_litrefs_markdown(self):
-    #    """Get all the literature references associated with the CanWits (?) in this equality set (?)"""
-
-    #    lHtml = []
-    #    # Visit all editions
-    #    sBack = ", ".join(lHtml)
-    #    return sBack
 
     def get_moved_code(self):
         """Get the lila code of the one this is replaced by"""
@@ -6680,21 +6667,31 @@ class Austat(models.Model):
         """Get a HTML valid view of myself"""
 
         lHtml = []
-        # Add the lila code
-        code = self.code if self.code else "(no lila code)"
-        lHtml.append("<span class='lilacode'>{}</span> ".format(code))
+        oErr = ErrHandle()
+        try:
+            # Add the lila code
+            code = self.keycodefull if self.keycodefull else "(no lilacode)"
+            lHtml.append("<span class='lilacode'>{}</span> ".format(code))
 
-        # Treat the author
-        if self.author:
-            lHtml.append("(by <span class='sermon-author'>{}</span>) ".format(self.author.name))
-        else:
-            lHtml.append("(by <i>Unknown Author</i>) ")
-        # Treat ftext
-        if self.ftext: lHtml.append("{}".format(self.get_ftext_markdown()))
-        # Treat intermediate dots
-        if self.ftext and self.ftrans: lHtml.append(" (")
-        # Treat ftrans
-        if self.ftrans: lHtml.append("{})".format(self.get_ftrans_markdown()))
+            # Treat the work
+            if not self.auwork is None:
+                work = self.auwork.key
+                lHtml.append("[<span class='austat-work'>{}</span>] ".format(work))
+            # Treat the author
+            if self.author:
+                lHtml.append("(by <span class='sermon-author'>{}</span>) ".format(self.author.name))
+            else:
+                lHtml.append("(by <i>Unknown Author</i>) ")
+            # Treat ftext
+            if self.ftext: lHtml.append("{}".format(self.get_ftext_markdown()))
+            # Treat intermediate dots
+            if self.ftext and self.ftrans: lHtml.append(" (")
+            # Treat ftrans
+            if self.ftrans: lHtml.append("{})".format(self.get_ftrans_markdown()))
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Austat/get_view")
+
         # Return the results
         return "".join(lHtml)
 
@@ -6797,11 +6794,11 @@ class AustatLink(models.Model):
 
     def __str__(self):
         src_code = ""
-        if self.src.code == None:
+        if self.src.keycodefull is None:
           src_code = "ssg_{}".format(self.src.id)
         else:
-          src_code = self.src.code
-        combi = "{} is {} of {}".format(src_code, self.linktype, self.dst.code)
+          src_code = self.src.keycodefull
+        combi = "{} is {} of {}".format(src_code, self.linktype, self.dst.keycodefull)
         return combi
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
@@ -7313,13 +7310,13 @@ class Collection(models.Model):
                 # Add it to the list
                 msitems.append(msitem)
                 # Create a S based on this SSG
-                sermon = Canwit.objects.create(
+                canwit = Canwit.objects.create(
                     msitem=msitem, author=ssg.author, 
                     ftext=ssg.ftext, srchftext=ssg.srchftext,
                     ftrans=ssg.ftrans, srchftrans=ssg.srchftrans,
                     stype="imp", mtype=mtype)
                 # Create a link from the S to this SSG
-                ssg_link = CanwitAustat.objects.create(canwit=sermon, austat=ssg, manu=manu, linktype=LINK_UNSPECIFIED)
+                ssg_link = CanwitAustat.objects.create(canwit=canwit, austat=ssg, manu=manu, linktype=LINK_UNSPECIFIED)
 
         # Now walk and repair the links
         with transaction.atomic():
@@ -8954,15 +8951,15 @@ class Canwit(models.Model):
         sBack = ", ".join(lHtml)
         return sBack
 
-    def get_lilacode_markdown(self):
+    def get_austat_lilacode_markdown(self):
         """Get the lila code (and a link to it)"""
 
         sBack = ""
         # Get the first austat
         equal = self.austats.all().order_by('code', 'author__name', 'number').first()
-        if equal != None and equal.code != "":
+        if equal != None and equal.keycodefull != "":
             url = reverse('austat_details', kwargs={'pk': equal.id})
-            sBack = "<span  class='badge jumbo-1'><a href='{}'  title='Go to the Authoritative statement'>{}</a></span>".format(url, equal.code)
+            sBack = "<span  class='badge jumbo-1'><a href='{}'  title='Go to the Authoritative statement'>{}</a></span>".format(url, equal.keycodefull)
         return sBack
 
     def get_postscriptum_markdown(self):
@@ -9879,11 +9876,62 @@ class CanwitAustat(models.Model):
         # Return the proper response
         return response
 
+    def get_austat_html(self):
+        """Get the HTML display of the austat[s] to which I am attached"""
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            austat = self.austat
+            url = reverse('austat_details', kwargs={'pk': austat.id})
+            sBack = "<span class='signature gr'><a href='{}'>{}</a></span>".format(
+                url, austat.get_label())
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_austat_html")
+        return sBack
+
+    def get_canwit_html(self):
+        """Get the HTML display of the canwit[s] to which I am attached"""
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            canwit = self.canwit
+            url = reverse('canwit_details', kwargs={'pk': canwit.id})
+            sBack = "<span class='signature cl'><a href='{}'>{}</a></span>".format(
+                url, canwit.get_lilacode())
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_canwit_html")
+        return sBack
+
     def get_label(self, do_incexpl=False, show_linktype=False):
-        if show_linktype:
-            sBack = "{}: {}".format(self.get_linktype_display(), self.austat.get_label(do_incexpl))
-        else:
-            sBack = self.austat.get_label(do_incexpl)
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            if show_linktype:
+                sBack = "{}: {}".format(self.get_linktype_display(), self.austat.get_label(do_incexpl))
+            else:
+                sBack = self.austat.get_label(do_incexpl)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_label")
+        return sBack
+
+    def get_manu_html(self):
+        """Get the HTML display of the manuscript[s] to which I am attached"""
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            manu = self.manu
+            url = reverse('manuscript_details', kwargs={'pk': manu.id})
+            sBack = "<span class='signature ot'><a href='{}'>{}</a></span>".format(
+                url, manu.get_full_name())
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_manu_html")
         return sBack
 
     def unique_list():

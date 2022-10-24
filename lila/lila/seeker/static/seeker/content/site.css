@@ -1244,6 +1244,24 @@ table.compact-table td:hover {
 .sermon-author {
   color: darkblue;
 }
+.austat-work {
+    font-size: smaller;
+    color: blue;
+    background-color: lightgray;
+}
+.austat-work:hover {
+    color: white;
+    background-color: darkblue;
+}
+.austat-note {
+    font-size: smaller;
+    color: darkblue;
+    background-color: lightgray;
+}
+.austat-note:hover {
+    color: white;
+    background-color: darkblue;
+}
 
 div.selected {
   background-color: lightcyan;

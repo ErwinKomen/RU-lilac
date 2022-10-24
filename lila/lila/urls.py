@@ -88,6 +88,9 @@ urlpatterns = [
     url(r'^canwit/details(?:/(?P<pk>\d+))?/$', CanwitDetails.as_view(), name='canwit_details'),
     url(r'^canwit/edit(?:/(?P<pk>\d+))?/$', CanwitEdit.as_view(), name='canwit_edit'),
     url(r'^canwit/list', CanwitListView.as_view(), name='canwit_list'),
+
+    url(r'^canwitau/details(?:/(?P<pk>\d+))?/$', CanwitAustatDetails.as_view(), name='canwitaustat_details'),
+    url(r'^canwitau/edit(?:/(?P<pk>\d+))?/$', CanwitAustatEdit.as_view(), name='canwitaustat_edit'),
     
     url(r'^caned/details(?:/(?P<pk>\d+))?/$', CanedDetails.as_view(), name='caned_details'),
     url(r'^caned/edit(?:/(?P<pk>\d+))?/$', CanedEdit.as_view(), name='caned_edit'),

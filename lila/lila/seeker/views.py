@@ -4416,5 +4416,78 @@ class LitRefListView(ListView):
         return qs
 
 
+# =================== CANWITHAUSTAT combinations ========================
+
+class CanwitAustatEdit(BasicDetails):
+    """Details view of the combination CanwitAustat"""
+
+    model = CanwitAustat
+    mForm = CanwitSuperForm
+    prefix = 'cwau'
+    prefix_type = 'simple'
+    basic_name = 'canwitaustat'
+    title = "Austat link"
+    listform = None
+    mainitems = []
+
+    def add_to_context(self, context, instance):
+        """Add to the existing context"""
+
+        oErr = ErrHandle()
+        try:
+            # Define the main items to show and edit
+            context['mainitems'] = [
+                {'type': 'safe',  'label': "Canon witness:",            'value': instance.get_canwit_html(),        'field_view': 'canwit'  },
+                {'type': 'safe',  'label': "Manuscript:",               'value': instance.get_manu_html()},
+                {'type': 'safe',  'label': "Authoritative statement:",  'value': instance.get_austat_html(),        'field_view': 'austat'  },
+                {'type': 'plain', 'label': "FONS type:",                'value': instance.get_fonstype_display()                            },
+                {'type': 'plain', 'label': "Note:",                     'value': instance.note,                     'field_key': 'newnote'  }
+                ]
+
+            # Signal that we do have select2
+            context['has_select2'] = True
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CanwitAustatEdit/add_to_context")
+
+        # Return the context we have made
+        return context
+
+    def after_save(self, form, instance):
+        # Process a change from [newnote] to [note]
+
+        oErr = ErrHandle()
+        try:
+            cleaned = form.cleaned_data
+            newnote = cleaned.get("newnote")
+            if not newnote is None:
+                # Compare with existing note
+                if instance.note != newnote:
+                    instance.note = newnote
+                    instance.save()
+        except:
+            msg = oErr.get_error_message()
+            pass
+
+        return True, ""
+
+
+class CanwitAustatDetails(CanwitAustatEdit):
+    """The HTML variant of [CanwitAustatEdit]"""
+
+    rtype = "html"
+
+
+
+
+
+
+
+
+
+# =========================================================================
+
+
+
 
 
