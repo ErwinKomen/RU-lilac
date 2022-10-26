@@ -1261,6 +1261,7 @@ table.compact-table td:hover {
 .austat-note:hover {
     color: white;
     background-color: darkblue;
+    cursor: pointer;
 }
 
 div.selected {

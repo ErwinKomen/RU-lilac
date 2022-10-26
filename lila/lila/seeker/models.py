@@ -6667,19 +6667,23 @@ class Austat(models.Model):
         """Get a HTML valid view of myself"""
 
         lHtml = []
+        sBack = ""
         oErr = ErrHandle()
         try:
             # Add the lila code
             code = self.keycodefull if self.keycodefull else "(no lilacode)"
-            lHtml.append("<span class='lilacode'>{}</span> ".format(code))
+            url_austat = reverse('austat_details', kwargs={'pk': self.id})
+            lHtml.append("<span class='lilacode'><a href='{}' >{}</a></span> ".format(url_austat, code))
 
             # Treat the work
             if not self.auwork is None:
                 work = self.auwork.key
-                lHtml.append("[<span class='austat-work'>{}</span>] ".format(work))
+                url_auwork = reverse('auwork_details', kwargs={'pk': self.auwork.id})
+                lHtml.append("[<span class='austat-work'><a href='{}'>{}</a></span>] ".format(url_auwork, work))
             # Treat the author
             if self.author:
-                lHtml.append("(by <span class='sermon-author'>{}</span>) ".format(self.author.name))
+                url_author = reverse('author_details', kwargs={'pk': self.author.id})
+                lHtml.append("(by <span class='sermon-author'><a href='{}'>{}</a></span>) ".format(url_author, self.author.name))
             else:
                 lHtml.append("(by <i>Unknown Author</i>) ")
             # Treat ftext
@@ -6693,7 +6697,8 @@ class Austat(models.Model):
             oErr.DoError("Austat/get_view")
 
         # Return the results
-        return "".join(lHtml)
+        sBack = "".join(lHtml).strip()
+        return sBack
 
     def get_work(self, as_html=False):
         oErr = ErrHandle()
@@ -9884,7 +9889,7 @@ class CanwitAustat(models.Model):
         try:
             austat = self.austat
             url = reverse('austat_details', kwargs={'pk': austat.id})
-            sBack = "<span class='signature gr'><a href='{}'>{}</a></span>".format(
+            sBack = "<span class='badge signature gr'><a href='{}'>{}</a></span>".format(
                 url, austat.get_label())
         except:
             msg = oErr.get_error_message()
@@ -9899,7 +9904,7 @@ class CanwitAustat(models.Model):
         try:
             canwit = self.canwit
             url = reverse('canwit_details', kwargs={'pk': canwit.id})
-            sBack = "<span class='signature cl'><a href='{}'>{}</a></span>".format(
+            sBack = "<span class='badge signature cl'><a href='{}'>{}</a></span>".format(
                 url, canwit.get_lilacode())
         except:
             msg = oErr.get_error_message()
@@ -9927,7 +9932,7 @@ class CanwitAustat(models.Model):
         try:
             manu = self.manu
             url = reverse('manuscript_details', kwargs={'pk': manu.id})
-            sBack = "<span class='signature ot'><a href='{}'>{}</a></span>".format(
+            sBack = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(
                 url, manu.get_full_name())
         except:
             msg = oErr.get_error_message()

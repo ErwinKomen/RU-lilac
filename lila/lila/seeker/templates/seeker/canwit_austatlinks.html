@@ -25,14 +25,20 @@
                   </span>
                 {% endif %}
                 <!-- The standard details of the SSG -->
-                <span>
-                  <a href="{% url 'austat_details' instance.austat.id %}">{{instance.austat.get_view|safe}}</a>
-                </span>
+                <span>{{instance.austat.get_view|safe}}</span>
+                <span>&nbsp;</span>
                 <!-- Possibly a note -->
                 {% if instance.note %}
                   <span class="austat-note"><a href="{% url 'canwitaustat_details' instance.id %}" class="nostyle">{{instance.note}}</a>
                   </span>
+                {% else %}
+                  <span>
+                    <a class="btn btn-xs jumbo-1"
+                        href="{% url 'canwitaustat_details' instance.id %}"
+                        title="View and edit the Canwit-Austat link">View</a>
+                  </span>
                 {% endif %}
+                  
               </div>
 
               <!-- Confirmation of COPY -->

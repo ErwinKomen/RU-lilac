@@ -1565,7 +1565,7 @@ class AuworkEdit(BasicDetails):
     model = Auwork
     mForm = AuworkForm
     prefix = 'wrk'
-    title = "WorkEdit"
+    title = "Auth. Work"
     rtype = "json"
     prefix_type = "simple"
     history_button = True
@@ -4428,7 +4428,13 @@ class CanwitAustatEdit(BasicDetails):
     basic_name = 'canwitaustat'
     title = "Austat link"
     listform = None
+    listviewtitle = "Canon Witness"
     mainitems = []
+
+    def custom_init(self, instance):
+        if not instance is None and not instance.canwit is None:
+            self.listview = reverse("canwit_details", kwargs={'pk': instance.canwit.id})
+        return None
 
     def add_to_context(self, context, instance):
         """Add to the existing context"""
@@ -4443,6 +4449,8 @@ class CanwitAustatEdit(BasicDetails):
                 {'type': 'plain', 'label': "FONS type:",                'value': instance.get_fonstype_display()                            },
                 {'type': 'plain', 'label': "Note:",                     'value': instance.note,                     'field_key': 'newnote'  }
                 ]
+
+            context['listview'] = self.listview
 
             # Signal that we do have select2
             context['has_select2'] = True

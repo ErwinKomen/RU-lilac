@@ -1905,7 +1905,10 @@ class BasicDetails(DetailView):
                 else:
                     # This is DetailsView
                     # Process this visit and get the new breadcrumbs object
-                    prevpage = context['listview']
+                    if self.listview is None:
+                        prevpage = context['listview']
+                    else:
+                        prevpage = self.listview
                     context['prevpage'] = prevpage
                     crumbs = []
                     if self.listviewtitle == None:
