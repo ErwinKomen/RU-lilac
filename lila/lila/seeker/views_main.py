@@ -4129,9 +4129,12 @@ class AustatEdit(BasicDetails):
                  'field_key': 'newftext',  'key_ta': 'gldftext-key', 'title': instance.get_ftext_markdown("actual")}, 
                 {'type': 'safe',  'label': "Translation:",  'value': instance.get_ftrans_markdown("search"),
                  'field_key': 'newftrans', 'key_ta': 'gldftrans-key', 'title': instance.get_ftrans_markdown("actual")}, 
-                {'type': 'plain', 'label': "Date:",         'value': instance.date,         'field_key': 'date'},
 
-                {'type': 'line',  'label': "Genre(s):",      'value': instance.get_genres_markdown(), 'field_list': 'genrelist'},
+                # These three are taken over from Auwork (read only, non edit)
+                {'type': 'plain', 'label': "Date:",             'value': instance.get_date()            }, 
+                {'type': 'line',  'label': "Opus:",             'value': instance.get_opus()            }, 
+                {'type': 'line',  'label': "Genre(s):",         'value': instance.get_genres_markdown() }, 
+
                 {'type': 'line',  'label': "Keywords:",      'value': instance.get_keywords_markdown(), 'field_list': 'kwlist'},
                 {'type': 'plain', 'label': "Keywords (user):", 'value': instance.get_keywords_user_markdown(profile),   'field_list': 'ukwlist',
                  'title': 'User-specific keywords. If the moderator accepts these, they move to regular keywords.'},

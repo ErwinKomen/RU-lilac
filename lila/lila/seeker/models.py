@@ -6301,6 +6301,15 @@ class Austat(models.Model):
         sBack = self.code
       return sBack
 
+    def get_date(self):
+        """Get the date as defined by Auwork"""
+
+        sBack = "-"
+        auwork = self.auwork
+        if not auwork is None and not auwork.date is None:
+            sBack = auwork.date
+        return sBack
+
     def get_collections_markdown(self, username, team_group, settype = None):
 
         lHtml = []
@@ -6388,12 +6397,14 @@ class Austat(models.Model):
         lHtml = []
         oErr = ErrHandle()
         try:
-            # Visit all genres
-            for genre in self.genres.all().order_by('name'):
-                # Determine where clicking should lead to
-                url = "{}?as-genrelist={}".format(reverse('austat_list'), genre.id)
-                # Create a display for this topic
-                lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,genre.name))
+            # Visit all genres - but only if there is an auwork
+            auwork = self.auwork
+            if not auwork is None:
+                for genre in auwork.genres.all().order_by('name'):
+                    # Determine where clicking should lead to
+                    url = "{}?as-genrelist={}".format(reverse('austat_list'), genre.id)
+                    # Create a display for this topic
+                    lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,genre.name))
         except:
             msg = oErr.get_error_message()
             oErr.DoError("get_genres_markdown")
@@ -6528,6 +6539,16 @@ class Austat(models.Model):
         if self.moved:
             url = reverse('austat_details', kwargs={'pk': self.moved.id})
         return url
+
+    def get_opus(self):
+        sBack = "-"
+        auwork = self.auwork
+        if not auwork is None:
+            # Get the opus specification
+            opus = auwork.opus
+            if not opus is None and opus != "":
+                sBack = opus
+        return sBack
 
     def get_previous_code(self):
         """Get information on the AuStat from which I derive"""

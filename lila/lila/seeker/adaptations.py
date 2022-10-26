@@ -11,7 +11,7 @@ from lila.utils import ErrHandle
 from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_entries, get_searchable, get_now_time, \
     add_gold2equal, add_equal2equal, add_ssg_equal2equal, get_helptext, Information, Country, City, Author, Manuscript, \
     User, Group, Origin, Canwit, MsItem, Codhead, CanwitKeyword, CanwitAustat, NewsItem, \
-    SourceInfo, AustatKeyword, ManuscriptExt, \
+    SourceInfo, AustatKeyword, ManuscriptExt, AuworkGenre, \
     ManuscriptKeyword, Action, Austat, AustatLink, Location, LocationName, LocationIdentifier, LocationRelation, LocationType, \
     ProvenanceMan, Provenance, Daterange, CollOverlap, BibRange, Feast, Comment, AustatDist, \
     Basket, BasketMan, BasketAustat, Litref, LitrefMan, LitrefCol, Report,  \
@@ -27,7 +27,7 @@ adaptation_list = {
     "manuscript_list": [],
     'codico_list': [],
     'canwit_list': ['lilacodefull'],
-    'austat_list': ['keycodefull'],
+    'austat_list': ['keycodefull', 'dategenre'],
     'caned_list': ['canedftext'],
     "collection_list": [] 
     }
@@ -288,6 +288,50 @@ def adapt_keycodefull(oStatus=None):
                 if obj.keycodefull != keycodefull:
                     obj.keycodefull = keycodefull
                     obj.save()
+
+        # Note that we are indeed ready
+        bResult = True
+    except:
+        msg = oErr.get_error_message()
+        bResult = False
+    return bResult, msg
+
+def adapt_dategenre(oStatus=None):
+    """Copy the 'date' field and the 'genres' from Austat to Auwork"""
+
+    oErr = ErrHandle()
+    bResult = True
+    msg = ""
+    oBack = dict(status="ok", msg="")
+
+    try:
+        # Start out with 'false', until everything has been done successfully
+        bResult = False
+
+        # Walk all the existing Austat items
+        for austat in Austat.objects.all():
+            # Get the Auwork of this one
+            auwork = austat.auwork
+            # Only proceed if there is a valid auwork
+            if auwork is None:
+                continue
+
+            # (1) Evaluate the 'date' field
+            date_austat = austat.date
+            date_auwork = auwork.date
+            if not date_austat is None and date_auwork is None:
+                # Copy from austat to auwork
+                auwork.date = austat.date
+                auwork.save()
+
+            # (2) Evaluate the genres
+            genres_austat_id = [x['id'] for x in austat.genres.all().values("id")]
+            genres_auwork_id = [x['id'] for x in auwork.genres.all().values("id")]
+            for genreid in genres_austat_id:
+                if not genreid in genres_auwork_id:
+                    # Add it to the Auwork genres
+                    AuworkGenre.objects.create(auwork=auwork, genre_id=genreid)
+
 
         # Note that we are indeed ready
         bResult = True

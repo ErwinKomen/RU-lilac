@@ -1758,13 +1758,14 @@ class AuworkListView(BasicList):
     prefix = "wrk"
     has_select2 = True
     in_team = False
-    order_cols = ['key', 'work', 'opus', 'date', '']
+    order_cols = ['key', 'work', 'opus', '', 'date', '']
     order_default = order_cols
     order_heads = [
         {'name': 'Key code',  'order': 'o=1', 'type': 'str', 'field': 'key',  'linkdetails': True},
         {'name': 'Work',      'order': 'o=2', 'type': 'str', 'field': 'work', 'linkdetails': True, 'main': True},
         {'name': 'Opus',      'order': 'o=3', 'type': 'str', 'field': 'opus', 'linkdetails': True},
-        {'name': 'Date',      'order': 'o=4', 'type': 'str', 'field': 'date', 'linkdetails': True},
+        {'name': 'Genre(s)',  'order': '',    'type': 'str', 'custom': 'genres', 'linkdetails': True},
+        {'name': 'Date',      'order': 'o=5', 'type': 'str', 'field': 'date', 'linkdetails': True},
         {'name': 'Frequency', 'order': '',    'type': 'str', 'custom': 'links'},
         ]
     filters = [ 
@@ -1774,9 +1775,6 @@ class AuworkListView(BasicList):
         ]
     searches = [
         {'section': '', 'filterlist': [
-            #{'filter': 'keycode',   'dbfield': 'key',   'keyS': 'keycode_ta', 'keyList': 'keylist',  'infield': 'name' },
-            #{'filter': 'work',      'dbfield': 'work',  'keyS': 'work_ta',    'keyList': 'worklist', 'infield': 'name' },
-            #{'filter': 'opus',      'dbfield': 'opus',  'keyS': 'opus_ta',    'keyList': 'opuslist', 'infield': 'name' },
             {'filter': 'keycode',   'dbfield': 'key',   'keyS': 'key_ta'},
             {'filter': 'work',      'dbfield': 'work',  'keyS': 'work_ta' },
             {'filter': 'opus',      'dbfield': 'opus',  'keyS': 'opus_ta' },
@@ -1799,6 +1797,11 @@ class AuworkListView(BasicList):
                 html.append("<span class='badge jumbo-4 clickable' title='Frequency in Authoritative Statements'>{}</span></a>".format(number))
             # Combine the HTML code
             sBack = "\n".join(html)
+        elif custom == "genres":
+            html = []
+            for genre in instance.genres.all().order_by('name'):
+                html.append(genre.name)
+            sBack = ", ".join(html)
 
         return sBack, sTitle
 
