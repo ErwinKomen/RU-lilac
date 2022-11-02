@@ -2094,10 +2094,7 @@ class AuworkSignatureForm(forms.ModelForm):
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = AuworkSignature
-        fields = ['auwork'] #, 'signature']
-        # widgets={'editype': forms.Select(attrs={'style': 'width: 100%;'}),
-                 #'code':    forms.TextInput(attrs={'class': 'typeahead searching signaturetype input-sm', 'placeholder': 'Signature...', 'style': 'width: 100%;'})
-                 #}
+        fields = ['auwork', 'signature']
 
     def __init__(self, *args, **kwargs):
         # Start by executing the standard handling
@@ -2111,11 +2108,9 @@ class AuworkSignatureForm(forms.ModelForm):
 
             # Set the keyword to optional for best processing
             self.fields['auwork'].required = False
-            # self.fields['signature'].required = False
+            self.fields['signature'].required = False
             self.fields['newedi'].required = False
             self.fields['newsig'].required = False
-
-            # self.fields['newedi'].choices = EDI_TYPE
 
             # Get the instance
             if 'instance' in kwargs:

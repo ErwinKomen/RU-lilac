@@ -1613,6 +1613,10 @@ class AuworkEdit(BasicDetails):
             kwlist = form.cleaned_data['kwlist']
             adapt_m2m(AuworkKeyword, instance, "auwork", kwlist, "keyword")
 
+            # (3) 'keywords'
+            siglist = form.cleaned_data['siglist']
+            adapt_m2m(AuworkSignature, instance, "auwork", siglist, "signature")
+
         except:
             msg = oErr.get_error_message()
             bResult = False
@@ -1644,35 +1648,39 @@ class AuworkEdit(BasicDetails):
             if form.is_valid():
                 cleaned = form.cleaned_data
 
-                if prefix == "wedi":
-                    # Edition processing
-                    newpages = ""
-                    if 'newpages' in cleaned and cleaned['newpages'] != "":
-                        newpages = cleaned['newpages']
-                    # Also get the litref
-                    if 'oneref' in cleaned:
-                        litref = cleaned['oneref']
-                        # Check if all is in order
-                        if litref:
-                            form.instance.reference = litref
-                            if newpages:
-                                form.instance.pages = newpages
-                    # Note: it will get saved with form.save()
-                elif prefix == "wsig":
-                    # Processing of a signature
-                    newsig = cleaned.get("newsig")
-                    newedi = cleaned.get("newedi")
-                    if not newsig is None and not newedi is None:
-                        # We have a new signature and editype
-                        obj = Signature.objects.filter(editype=newedi, code=newsig).first()
-                        if obj is None:
-                            # Create it
-                            obj = Signature.objects.create(editype=newedi, code=newsig)
-                        # Make sure this is linked to the auwork
-                        obj = AuworkSignature.objects.filter(auwork=instance, signature=obj).first()
-                        if obj is None:
-                            # Create it
-                            obj = AuworkSignature.objects.create(auwork=instance, signature=obj)
+                oErr = ErrHandle()
+                try:
+
+                    if prefix == "wedi":
+                        # Edition processing
+                        newpages = ""
+                        if 'newpages' in cleaned and cleaned['newpages'] != "":
+                            newpages = cleaned['newpages']
+                        # Also get the litref
+                        if 'oneref' in cleaned:
+                            litref = cleaned['oneref']
+                            # Check if all is in order
+                            if litref:
+                                form.instance.reference = litref
+                                if newpages:
+                                    form.instance.pages = newpages
+                        # Note: it will get saved with form.save()
+                    elif prefix == "wsig":
+                        # Processing of a signature
+                        newsig = cleaned.get("newsig")
+                        newedi = cleaned.get("newedi")
+                        if not newsig is None and not newedi is None:
+                            # We have a new signature and editype
+                            sig = Signature.objects.filter(editype=newedi, code=newsig).first()
+                            if sig is None:
+                                # Create it
+                                sig = Signature.objects.create(editype=newedi, code=newsig)
+                            # Make sure the correct values are set in the AuworkSignatureForm
+                            form.instance.auwork = instance
+                            form.instance.signature = sig
+                except:
+                    msg = oErr.get_error_message()
+                    oErr.DoError("AuworkEdit/process_formset")
             else:
                 errors.append(form.errors)
                 bResult = False
