@@ -61,7 +61,7 @@ from lila.settings import APP_PREFIX, MEDIA_DIR, WRITABLE_DIR
 from lila.utils import ErrHandle
 from lila.seeker.forms import SearchCollectionForm, SearchManuscriptForm, SearchManuForm, SearchSermonForm, LibrarySearchForm, SignUpForm, \
     AuthorSearchForm, UploadFileForm, UploadFilesForm, ManuscriptForm, CanwitForm, CommentForm, \
-    AuthorEditForm, BibRangeForm, FeastForm, LitrefForm, \
+    AuthorEditForm, BibRangeForm, FeastForm, LitrefForm, AuworkSignatureForm, \
     CanwitSuperForm, SearchUrlForm, GenreForm, AuworkForm, \
     CanwitSignatureForm, AustatLinkForm, AuworkEditionForm, \
     ReportEditForm, SourceEditForm, ManuscriptProvForm, LocationForm, LocationRelForm, OriginForm, \
@@ -71,10 +71,10 @@ from lila.seeker.forms import SearchCollectionForm, SearchManuscriptForm, Search
     SuperSermonGoldCollectionForm, ProfileForm, UserKeywordForm, ProvenanceForm, ProvenanceManForm, \
     TemplateForm, TemplateImportForm, ManuReconForm,  ManuscriptProjectForm, \
     CodicoForm, CodicoProvForm, ProvenanceCodForm, OriginCodForm, CodicoOriginForm
-from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_entries, get_searchable, get_now_time, \
+from lila.seeker.models import AuworkSignature, get_crpp_date, get_current_datetime, process_lib_entries, get_searchable, get_now_time, \
     add_gold2equal, add_equal2equal, add_ssg_equal2equal, get_helptext, Information, Country, City, Author, Manuscript, \
     User, Group, Origin, Canwit, MsItem, Codhead, CanwitKeyword, CanwitAustat, NewsItem, \
-    SourceInfo, AustatKeyword, ManuscriptExt, AuworkGenre, AuworkKeyword,  \
+    SourceInfo, AustatKeyword, ManuscriptExt, AuworkGenre, AuworkKeyword, Signature,  \
     ManuscriptKeyword, Action, Austat, AustatLink, Location, LocationName, LocationIdentifier, LocationRelation, LocationType, \
     ProvenanceMan, Provenance, Daterange, CollOverlap, BibRange, Feast, Comment, AustatDist, \
     Basket, BasketMan, BasketAustat, Litref, LitrefMan, LitrefCol, Report, \
@@ -247,42 +247,6 @@ def adapt_m2o(cls, instance, field, qs, link_to_obj = None, **kwargs):
         # Remove links that are not in [qs]
         for obj in linked_qs:
             if obj not in qs:
-                # Remove this item
-                obj.delete()
-        # Return okay
-        return True
-    except:
-        msg = errHandle.get_error_message()
-        return False
-
-def adapt_m2o_sig(instance, qs):
-    """Adapt the instances of [CanwitSignature] pointing to [instance] to only include [qs] 
-    
-    Note: convert CanwitSignature into (Gold) Signature
-    """
-
-    errHandle = ErrHandle()
-    try:
-        # Get all the [CanwitSignature] items currently linking to [instance]
-        linked_qs = CanwitSignature.objects.filter(sermon=instance)
-        # make sure all items in [qs] are linked to [instance]
-        bRedo = False
-        for obj in qs:
-            # Get the CanwitSignature equivalent for Gold signature [obj]
-            sermsig = instance.get_sermonsig(obj)
-            if sermsig not in linked_qs:
-                # Indicate that we need to re-query
-                bRedo = True
-        # Do we need to re-query?
-        if bRedo: 
-            # Yes we do...
-            linked_qs = CanwitSignature.objects.filter(sermon=instance)
-        # Remove links that are not in [qs]
-        for obj in linked_qs:
-            # Get the gold-signature equivalent of this sermon signature
-            gsig = obj.get_goldsig()
-            # Check if the gold-sermon equivalent is in [qs]
-            if gsig not in qs:
                 # Remove this item
                 obj.delete()
         # Return okay
@@ -1575,8 +1539,15 @@ class AuworkEdit(BasicDetails):
                                          form = AuworkEditionForm, min_num=0,
                                          fk_name = "auwork",
                                          extra=0, can_delete=True, can_order=False)
+    WsigFormSet = inlineformset_factory(Auwork, AuworkSignature,
+                                         form = AuworkSignatureForm, min_num=0,
+                                         fk_name = "auwork",
+                                         extra=0, can_delete=True, can_order=False)
 
-    formset_objects = [{'formsetClass': WediFormSet,  'prefix': 'wedi',  'readonly': False, 'noinit': True, 'linkfield': 'auwork'}]
+    formset_objects = [
+        {'formsetClass': WediFormSet,  'prefix': 'wedi',  'readonly': False, 'noinit': True, 'linkfield': 'auwork'},
+        {'formsetClass': WsigFormSet,  'prefix': 'wsig',  'readonly': False, 'noinit': True, 'linkfield': 'auwork'}
+        ]
 
     stype_edi_fields = ['key', 'opus', 'work', 'date', 'full',
                         'EdirefWork', 'edilist']
@@ -1601,6 +1572,8 @@ class AuworkEdit(BasicDetails):
                 {'type': 'plain', 'label': "Work:",             'value': instance.work, 'field_key': 'work'},
                 {'type': 'plain', 'label': "Date:",             'value': instance.date, 'field_key': 'date'},
                 {'type': 'plain', 'label': "Full description:", 'value': instance.full, 'field_key': 'full'},
+                {'type': 'line',  'label': "Signatures (CPL):", 'value': instance.get_signatures(),
+                 'multiple': True, 'field_list': 'siglist', 'fso': self.formset_objects[1]  },
                 {'type': 'line',  'label': "Genre(s):",         'value': instance.get_genres_markdown(),   'field_list': 'genrelist'},
                 {'type': 'line',  'label': "Keywords:",         'value': instance.get_keywords_markdown(), 'field_list': 'kwlist'},
                 {'type': 'line',  'label': "Editions:",         'value': instance.get_edirefs_markdown(),
@@ -1645,6 +1618,20 @@ class AuworkEdit(BasicDetails):
             bResult = False
         return bResult, msg
 
+    def before_save(self, form, instance):
+        # Normal behaviour
+        response = super(AuworkEdit, self).before_save(form, instance)
+
+        oErr = ErrHandle()
+        try:
+            pass
+        except:
+            msg = oErr.get_error_message()
+            bResult = False
+
+        # Return result
+        return response
+
     def get_history(self, instance):
         return lila_get_history(instance)
 
@@ -1671,6 +1658,21 @@ class AuworkEdit(BasicDetails):
                             if newpages:
                                 form.instance.pages = newpages
                     # Note: it will get saved with form.save()
+                elif prefix == "wsig":
+                    # Processing of a signature
+                    newsig = cleaned.get("newsig")
+                    newedi = cleaned.get("newedi")
+                    if not newsig is None and not newedi is None:
+                        # We have a new signature and editype
+                        obj = Signature.objects.filter(editype=newedi, code=newsig).first()
+                        if obj is None:
+                            # Create it
+                            obj = Signature.objects.create(editype=newedi, code=newsig)
+                        # Make sure this is linked to the auwork
+                        obj = AuworkSignature.objects.filter(auwork=instance, signature=obj).first()
+                        if obj is None:
+                            # Create it
+                            obj = AuworkSignature.objects.create(auwork=instance, signature=obj)
             else:
                 errors.append(form.errors)
                 bResult = False
@@ -2738,7 +2740,7 @@ class FeastDetails(FeastEdit):
                          title="Locus within the manuscript (links to the sermon)")
 
             # Origin/provenance
-            or_prov = "{} ({})".format(manu.get_origin(), manu.get_provenance_markdown())
+            or_prov = "{} ({})".format(manu.get_origins(), manu.get_provenance_markdown())
             add_rel_item(rel_item, or_prov, False, main=True, 
                          title="Origin (if known), followed by provenances (between brackets)")
 

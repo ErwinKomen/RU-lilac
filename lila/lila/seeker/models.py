@@ -5532,6 +5532,20 @@ class Provenance(models.Model):
 # =========================== AUWORK RELATED ===================================
 
 
+class Signature(models.Model):
+    """Signature can be either Clavis or CPL"""
+
+    # [1] Obligatory key of the work
+    code = models.CharField("Key", max_length=LONG_STRING, default="SHORT.KEY")
+
+    # [1] Obligatorye editype
+    editype = models.CharField("EdiType", choices=build_abbr_list(EDI_TYPE), max_length=5, default="cpl")
+
+    def __str__(self) -> str:
+        sBack = "{} {}".format(self.code, self.editype)
+        return sBack
+
+
 class Auwork(models.Model):
     """Each canonical statement (=Austat) may be linked to a particular Auwork
     
@@ -5559,8 +5573,10 @@ class Auwork(models.Model):
     # ============== MANYTOMANY connections
     # [0-n] Many-to-many: keywords per Canwit
     keywords = models.ManyToManyField(Keyword, through="AuworkKeyword", related_name="keywords_auwork")
-    # [m] Many-to-many: one sermon can be a part of a series of collections 
+    # [m] Many-to-many: one auwork can be a part of a series of collections 
     genres = models.ManyToManyField(Genre, through="AuworkGenre", related_name="genres_auwork")
+    # [m] Many-to-many: one auwork can have a number of signatures
+    signatures = models.ManyToManyField(Signature, through="AuworkSignature", related_name="signatures_auwork")
 
     # SPecification for download/upload
     specification = [
@@ -5669,6 +5685,29 @@ class Auwork(models.Model):
         sBack = ", ".join(lHtml)
         return sBack
 
+    def get_signatures(self, bUseHtml=True):
+        """Get a list of all signatures tied to me"""
+
+        lHtml = []
+        sBack = ""
+        oEdiClass = dict(cpl="gr", cla="cl", oth="ot")
+        oEdiPrefix = dict(cpl="CPL ", cla="", oth = "")
+        oErr = ErrHandle()
+        try:
+            if bUseHtml:
+                for obj in self.signatures.all().order_by('editype', 'code'):
+                    editype = obj.editype
+                    code = obj.code
+                    prefix = oEdiPrefix[editype]
+                    ediclass = oEdiClass[editype]
+                    sCode = "<span class='badge signature {}'>{}{}</span>".format(ediclass, prefix, code)
+                    lHtml.append(sCode)
+                sBack = "\n".join(lHtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Auwork/get_signatures")
+        return sBack
+
 
 class AuworkKeyword(models.Model):
     """Relation between a Auwork and a Keyword"""
@@ -5694,6 +5733,22 @@ class AuworkGenre(models.Model):
     def __str__(self):
         # Just provide the idno
         sItem = "{}:{}".format(self.auwork.key, self.auwork.genre)
+        return sItem
+
+
+class AuworkSignature(models.Model):
+    """The link between a genre and an Auwork (authoritative work)"""
+
+    # [1] The Auwork to which the signature belongs
+    auwork = models.ForeignKey(Auwork, related_name = "auwork_signature", on_delete=models.CASCADE)
+    # [1] The signature itself
+    signature = models.ForeignKey(Signature, related_name= "auwork_signature", on_delete=models.CASCADE)
+    # [1] And a date: the date of saving this relation
+    created = models.DateTimeField(default=get_current_datetime)
+
+    def __str__(self):
+        # Just provide the idno
+        sItem = "{}:{}".format(self.auwork.key, self.signature.code)
         return sItem
 
 
@@ -7566,6 +7621,29 @@ class Codhead(models.Model):
         first, last = self.get_locus_range()
         return last
 
+    def get_signatures(self, bUseHtml=True):
+        """Get a list of all signatures tied to me"""
+
+        lHtml = []
+        sBack = ""
+        oEdiClass = dict(cpl="gr", cla="cl", oth="ot")
+        oEdiPrefix = dict(cpl="CPL ", cla="", oth = "")
+        oErr = ErrHandle()
+        try:
+            if bUseHtml:
+                for obj in self.signatures.all().order_by('editype', 'code'):
+                    editype = obj.editype
+                    code = obj.code
+                    prefix = oEdiPrefix[editype]
+                    ediclass = oEdiClass[editype]
+                    sCode = "<span class='badge signature {}'>{}{}</span>".format(ediclass, prefix, code)
+                    lHtml.append(sCode)
+                sBack = "\n".join(lHtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Colwit/get_signatures")
+        return sBack
+
 
 # =========================== COLWIT RELATED ===================================
 
@@ -7602,6 +7680,8 @@ class Colwit(models.Model):
     # ============== MANYTOMANY connections
      # [m] Many-to-many: keywords per Codico
     keywords = models.ManyToManyField(Keyword, through="ColwitKeyword", related_name="keywords_colwit")
+    # [m] Many-to-many: one colwit can have a number of signatures
+    signatures = models.ManyToManyField(Signature, through="ColwitSignature", related_name="signatures_colwit")
 
     # Scheme for downloading and uploading
     specification = [
@@ -7717,6 +7797,22 @@ class ColwitKeyword(models.Model):
     keyword = models.ForeignKey(Keyword, related_name="colwit_kw", on_delete=models.CASCADE)
     # [1] And a date: the date of saving this relation
     created = models.DateTimeField(default=get_current_datetime)
+
+
+class ColwitSignature(models.Model):
+    """The link between a genre and an Auwork (authoritative work)"""
+
+    # [1] The Colwit to which this signature belongs
+    colwit = models.ForeignKey(Colwit, related_name = "colwit_signature", on_delete=models.CASCADE)
+    # [1] The Signature itself
+    signature = models.ForeignKey(Signature, related_name= "colwit_signature", on_delete=models.CASCADE)
+    # [1] And a date: the date of saving this relation
+    created = models.DateTimeField(default=get_current_datetime)
+
+    def __str__(self):
+        # Just provide the idno
+        sItem = "{}:{}".format(self.colwit.get_lilacode(), self.signature.code)
+        return sItem
 
 
 # =========================== CANWIT RELATED ===================================
@@ -9969,7 +10065,7 @@ class CanwitAustat(models.Model):
 
 
 class CanwitSignature(models.Model):
-    """One Gryson, Clavis or other code as taken up in an edition"""
+    """One CPL, Clavis or other code as taken up in an edition"""
 
     # [1] It must have a code = gryson code or clavis number
     code = models.CharField("Code", max_length=LONG_STRING)
@@ -9998,26 +10094,6 @@ class CanwitSignature(models.Model):
         self.sermon.do_signatures()
         # Then return the super-response
         return response
-
-    def adapt_gsig():
-        """Make sure all the items in CanwitSignature point to a gsig, if possible"""
-
-        qs = CanwitSignature.objects.all()
-        iTotal = qs.count()
-        iCount = 0
-        oErr = ErrHandle()
-        bResult = False
-        try:
-            with transaction.atomic():
-                for obj in qs:
-                    obj.get_goldsig(bCleanUp=True)
-                    iCount += 1
-                    oErr.Status("adapt_gsig: id={} count={}/{}".format(obj.id, iCount, iTotal))
-            bResult = True
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("adapt_gsig")
-        return bResult
 
 
 class Basket(models.Model):

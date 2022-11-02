@@ -1602,7 +1602,7 @@ class ManuscriptDownload(BasicPart):
         elif path == "literature":
             sBack = instance.get_litrefs_markdown(plain=True)
         elif path == "origin":
-            sBack = instance.get_origin()
+            sBack = instance.get_origins()
         elif path == "provenances":
             sBack = instance.get_provenance_markdown(plain=True)
         elif path == "external":
@@ -6135,7 +6135,7 @@ class CollPrivDetails(CollAnyEdit):
             elif custom == "name":
                 sBack = instance.name
             elif custom == "origprov":
-                sBack = "{} ({})".format(instance.get_origin(), instance.get_provenance_markdown())
+                sBack = "{} ({})".format(instance.get_origins(), instance.get_provenance_markdown())
             elif custom == "daterange":
                 sBack = "{}-{}".format(instance.yearstart, instance.yearfinish)
             elif custom == "sermons":
@@ -6663,10 +6663,12 @@ class CollHistDetails(CollHistEdit):
             elif custom == "sermons":
                 sBack = instance.get_canwit_count()
         elif type == "manucodicos":
+            # Note that [instance] now is a list of Codico elements
             lCombi = []
             if custom == "origprov":
                 for obj in instance:
-                    lCombi.append( "origin: {} (provenance[s]: {})".format(obj.get_origin(), obj.get_provenance_markdown(table=False)))
+                    # Now [obj] is a Codico
+                    lCombi.append( "origin: {} (provenance[s]: {})".format(obj.get_origins(), obj.get_provenance_markdown(table=False)))
                 sBack = "; ".join(lCombi)
             elif custom == "daterange":
                 for obj in instance:

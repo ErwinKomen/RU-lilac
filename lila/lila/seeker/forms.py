@@ -1094,6 +1094,30 @@ class ManutypeWidget(ModelSelect2Widget):
         return FieldChoice.objects.filter(field=MANUSCRIPT_TYPE).exclude(abbr='tem').order_by("english_name")
 
 
+class SignatureWidget(ModelSelect2MultipleWidget):
+    model = Signature
+    search_fields = [ 'code__icontains' ]
+
+    def label_from_instance(self, obj):
+        return obj.code
+
+    def get_queryset(self):
+        qs = Signature.objects.all().order_by('editype', 'code').distinct()
+        return qs
+
+
+class SignatureOneWidget(ModelSelect2Widget):
+    model = Signature
+    search_fields = [ 'code__icontains' ]
+
+    def label_from_instance(self, obj):
+        return obj.code
+
+    def get_queryset(self):
+        qs = Signature.objects.all().order_by('editype', 'code').distinct()
+        return qs
+
+
 class StypeWidget(ModelSelect2MultipleWidget):
     model = FieldChoice
     search_fields = [ 'english_name__icontains']
@@ -1404,9 +1428,54 @@ class SearchManuForm(lilaModelForm):
         return None
 
 
+class ColwitSignatureForm(forms.ModelForm):
+    """Allow adding signatures belonging to an Colwit"""
+
+    newedi = forms.ChoiceField(label=_("Type"), required=False, help_text="editable",
+                widget=forms.Select(attrs={'class': 'input-sm',  'style': 'width: 100%;', 'tdstyle': 'width: 150px;'}))
+    newsig = forms.CharField(label=_("Signature"), required=False, help_text="editable",
+                widget = forms.TextInput(attrs={'class': 'input-sm', 'placeholder': 'Signature...',  'style': 'width: 100%;'}))
+
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = Signature
+        fields = ['code', 'editype']
+        widgets={'editype': forms.Select(attrs={'style': 'width: 100%;'}),
+                 'code':    forms.TextInput(attrs={'class': 'typeahead searching signaturetype input-sm', 'placeholder': 'Signature...', 'style': 'width: 100%;'})
+                 }
+
+    def __init__(self, *args, **kwargs):
+        # Start by executing the standard handling
+        super(ColwitSignatureForm, self).__init__(*args, **kwargs)
+
+        oErr = ErrHandle()
+        try:
+            # Initialize choices for editype
+            init_choices(self, 'editype', EDI_TYPE, bUseAbbr=True)
+
+            # Set the keyword to optional for best processing
+            self.fields['code'].required = False
+            self.fields['editype'].required = False
+            self.fields['newedi'].required = False
+            self.fields['newsig'].required = False
+
+            self.fields['newedi'].choices = EDI_TYPE
+
+            # Get the instance
+            if 'instance' in kwargs:
+                instance = kwargs['instance']
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ColwitSignatureForm/init")
+        return None   
+
+
 class ColwitForm(lilaModelForm):
 
     collone = ModelChoiceField(queryset=None, required=False)
+    siglist     = ModelMultipleChoiceField(queryset=None, required=False, 
+                widget=SignatureWidget(attrs={'data-placeholder': 'Add signatures via "+"...', 'style': 'width: 100%;', 'class': 'searching'}))
     
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
@@ -1434,6 +1503,7 @@ class ColwitForm(lilaModelForm):
             self.fields['notes'].required = False
             self.fields['collone'].required = False
 
+            self.fields['siglist'].queryset = Signature.objects.none()
             self.fields['collone'].widget = CollOneHistWidget( attrs={'username': username, 'team_group': team_group,
                         'data-placeholder': 'Select a collection...', 'style': 'width: 100%;', 'class': 'searching'})
 
@@ -1450,6 +1520,9 @@ class ColwitForm(lilaModelForm):
                 if not instance.collection is None:
                     self.fields['collone'].initial = instance.collection.id
                     self.fields['collone'].widget.initial = instance.collection.id
+
+                self.fields['siglist'].queryset = instance.signatures.all().order_by('editype', 'code')
+                self.fields['siglist'].initial = [x.pk for x in instance.signatures.all()]
 
             iStop = 1
         except:
@@ -2007,7 +2080,51 @@ class AuworkEditionForm(forms.ModelForm):
         if reference == None and (litref == None or litref == "") and (oneref == None or oneref == ""):
             # There is an error
             raise forms.ValidationError("Cannot find the reference. Make sure to select it. If it is not available, add it in Zotero and import it in LiLaC")
-   
+
+
+class AuworkSignatureForm(forms.ModelForm):
+    """Allow adding signatures belonging to an Auwork"""
+
+    newedi = forms.ChoiceField(label=_("Type"), required=False, help_text="editable",
+                widget = forms.Select(attrs={'class': 'input-sm',  'style': 'width: 100%;', 'tdstyle': 'width: 150px;'}))
+    newsig = forms.CharField(label=_("Signature"), required=False, help_text="editable",
+                widget = forms.TextInput(attrs={'class': 'input-sm', 'placeholder': 'Signature...',  'style': 'width: 100%;'}))
+
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = AuworkSignature
+        fields = ['auwork'] #, 'signature']
+        # widgets={'editype': forms.Select(attrs={'style': 'width: 100%;'}),
+                 #'code':    forms.TextInput(attrs={'class': 'typeahead searching signaturetype input-sm', 'placeholder': 'Signature...', 'style': 'width: 100%;'})
+                 #}
+
+    def __init__(self, *args, **kwargs):
+        # Start by executing the standard handling
+        super(AuworkSignatureForm, self).__init__(*args, **kwargs)
+
+        oErr = ErrHandle()
+        try:
+            # Initialize choices for editype
+            init_choices(self, 'newedi', EDI_TYPE, bUseAbbr=True)
+            self.fields['newedi'].help_text = "editable"
+
+            # Set the keyword to optional for best processing
+            self.fields['auwork'].required = False
+            # self.fields['signature'].required = False
+            self.fields['newedi'].required = False
+            self.fields['newsig'].required = False
+
+            # self.fields['newedi'].choices = EDI_TYPE
+
+            # Get the instance
+            if 'instance' in kwargs:
+                instance = kwargs['instance']
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("AuworkSignatureForm/init")
+        return None   
+
 
 class AuworkForm(lilaModelForm):
     """Auwork editing and searching"""
@@ -2022,6 +2139,8 @@ class AuworkForm(lilaModelForm):
                 widget=AuworkWidget(attrs={'data-placeholder': 'Select multiple works...', 'style': 'width: 100%;', 'class': 'searching'}))
     genrelist   = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=GenreWidget(attrs={'data-placeholder': 'Select multiple genres...', 'style': 'width: 100%;', 'class': 'searching'}))
+    siglist     = ModelMultipleChoiceField(queryset=None, required=False, 
+                widget=SignatureWidget(attrs={'data-placeholder': 'Select multiple signatures...', 'style': 'width: 100%;', 'class': 'searching'}))
     kwlist      = ModelMultipleChoiceField(queryset=None, required=False, 
                 widget=KeywordWidget(attrs={'data-placeholder': 'Select multiple keywords...', 'style': 'width: 100%;', 'class': 'searching'}))
     edilist     = ModelMultipleChoiceField(queryset=None, required=False, 
@@ -2059,6 +2178,7 @@ class AuworkForm(lilaModelForm):
             self.fields['date'].required = False
             self.fields['full'].required = False
 
+            self.fields['siglist'].queryset = Signature.objects.all().order_by('editype', 'code')
             self.fields['genrelist'].queryset = Genre.objects.all().order_by('name')
             self.fields['kwlist'].queryset = Keyword.get_scoped_queryset(username, team_group)
             self.fields['worklist'].queryset = Auwork.objects.all().order_by('key')
@@ -2069,6 +2189,7 @@ class AuworkForm(lilaModelForm):
                 instance = kwargs['instance']
 
                 self.fields['edilist'].initial = [x.pk for x in instance.auwork_edirefworks.all().order_by('reference__full', 'pages')]
+                self.fields['siglist'].initial = [x.pk for x in instance.signatures.all().order_by('editype', 'code')]
 
         except:
             msg = oErr.get_error_message()
@@ -3166,14 +3287,8 @@ class CanwitCollectionForm(forms.ModelForm):
 class ManuscriptProvForm(forms.ModelForm):
     prov_new = forms.ModelChoiceField(queryset=None, required=False, help_text="editable",
                 widget = ProvenanceOneWidget(attrs={'data-placeholder': 'Select a provenance...', 'style': 'width: 100%;', 'class': 'searching'}))
-    #name = forms.CharField(label=_("Name"), required=False, help_text="editable",
-    #                       widget=forms.TextInput(attrs={'placeholder': 'Name...',  'style': 'width: 100%;'}))
     note = forms.CharField(label=_("Note"), required=False, help_text="editable",
                            widget = forms.Textarea(attrs={'placeholder': 'Note (optional)...',  'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;'}))
-    #location = forms.ModelChoiceField(queryset=None, required=False, help_text="editable",
-    #                       widget = LocationOneWidget(attrs={'data-placeholder': 'Select a location...', 'style': 'width: 100%;', 'class': 'searching'}))
-    #location_ta = forms.CharField(label=_("Location"), required=False, 
-    #                       widget=forms.TextInput(attrs={'class': 'typeahead searching locations input-sm', 'placeholder': 'Location...',  'style': 'width: 100%;'}))
     typeaheads = ["locations"]
 
     class Meta:
@@ -3188,26 +3303,29 @@ class ManuscriptProvForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         # Start by executing the standard handling
         super(ManuscriptProvForm, self).__init__(*args, **kwargs)
-        # Set the keyword to optional for best processing
-        #self.fields['name'].required = False
-        self.fields['note'].required = False
-        self.fields['provenance'].required = False
-        #self.fields['location'].required = False
-        #self.fields['location_ta'].required = False
-        #self.fields['location'].queryset = Location.objects.all().order_by('name')
-        self.fields['prov_new'].queryset = Provenance.objects.all().order_by('name', 'location__name')
-        # Get the instance
-        if 'instance' in kwargs:
-            instance = kwargs['instance']
-            # Check if the initial name should be added
-            if instance.provenance != None:
-                self.fields['name'].initial = instance.provenance.name
-                self.fields['note'].initial = instance.provenance.note
-                if instance.provenance.location != None:
-                    self.fields['location_ta'].initial = instance.provenance.location.get_loc_name()
-                    # self.fields['location_ta'].initial = instance.provenance.location.name
-                    # Make sure the location is set to the correct number
-                    self.fields['location'].initial = instance.provenance.location.id
+
+        oErr = ErrHandle()
+        try:
+            # Set the keyword to optional for best processing
+            self.fields['note'].required = False
+            self.fields['provenance'].required = False
+            self.fields['prov_new'].queryset = Provenance.objects.all().order_by('name', 'location__name')
+            # Get the instance
+            if 'instance' in kwargs:
+                instance = kwargs['instance']
+                # Check if the initial name should be added
+                if instance.provenance != None:
+                    self.fields['name'].initial = instance.provenance.name
+                    self.fields['note'].initial = instance.provenance.note
+
+                    if instance.provenance.location != None:
+                        self.fields['location_ta'].initial = instance.provenance.location.get_loc_name()
+                        # Make sure the location is set to the correct number
+                        self.fields['location'].initial = instance.provenance.location.id
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ManuscriptProvForm/init")
+        return None
 
 
 class CodicoProvForm(forms.ModelForm):
