@@ -45,7 +45,8 @@ from lila.seeker.models import LitrefAustat, get_crpp_date, get_current_datetime
     ManuscriptKeyword, Action, Austat, AustatLink, Location, LocationName, LocationIdentifier, LocationRelation, LocationType, \
     ProvenanceMan, Provenance, Daterange, CollOverlap, BibRange, Feast, Comment, AustatDist, \
     Basket, BasketMan, BasketAustat, Litref, LitrefMan, LitrefCol, Report, \
-    Visit, Profile, Keyword, CanwitSignature, Status, Library, Collection, CollectionCanwit, \
+    Visit, Profile, Keyword, Signature, CanwitSignature, ColwitSignature, \
+    Status, Library, Collection, CollectionCanwit, \
     CollectionMan, Caned, UserKeyword, Template, \
     ManuscriptCorpus, ManuscriptCorpusLock, AustatCorpus, ProjectEditor, \
     Codico, ProvenanceCod, OriginCodico, CodicoKeyword, Reconstruction, \
@@ -55,7 +56,7 @@ from lila.seeker.forms import SearchCollectionForm, SearchManuscriptForm, Search
     AuthorSearchForm, UploadFileForm, UploadFilesForm, ManuscriptForm, CanwitForm, CommentForm, \
     AuthorEditForm, BibRangeForm, FeastForm, ColwitForm, \
     CanwitSuperForm, SearchUrlForm, CodheadForm, CanedForm, \
-    CanwitSignatureForm, AustatLinkForm, ColForm, LitrefAustatForm, \
+    CanwitSignatureForm, ColwitSignatureForm, AustatLinkForm, ColForm, LitrefAustatForm, \
     ReportEditForm, SourceEditForm, ManuscriptProvForm, LocationForm, LocationRelForm, OriginForm, \
     LibraryForm, ManuscriptExtForm, ManuscriptLitrefForm, CanwitKeywordForm, KeywordForm, \
     ManuscriptKeywordForm, DaterangeForm, ProjectForm, CanwitCollectionForm, CollectionForm, \
@@ -2240,6 +2241,15 @@ class ColwitEdit(BasicDetails):
     history_button = True
     prefix_type = "simple"
 
+    CsigFormSet = inlineformset_factory(Colwit, ColwitSignature,
+                                         form = ColwitSignatureForm, min_num=0,
+                                         fk_name = "colwit",
+                                         extra=0, can_delete=True, can_order=False)
+
+    formset_objects = [
+        {'formsetClass': CsigFormSet,  'prefix': 'csig',  'readonly': False, 'noinit': True, 'linkfield': 'colwit'}
+        ]
+
     stype_edi_fields = ['codhead', 'collection', 'descr', 'notes',
                         ]
 
@@ -2264,6 +2274,8 @@ class ColwitEdit(BasicDetails):
                 {'type': 'safe',  'label': "Collection:",           'value': instance.get_collection(), 'field_key': "collone"},
                 {'type': 'safe',  'label': "LiLaC code:",           'value': instance.get_lilacode()    },
                 {'type': 'plain', 'label': "Description:",          'value': instance.descr,    'field_key': "descr"}, 
+                {'type': 'line',  'label': "Signatures (Clavis):", 'value': instance.get_signatures(),
+                 'multiple': True, 'field_list': 'siglist', 'fso': self.formset_objects[0]  },
                 {'type': 'plain', 'label': "Notes:",                'value': instance.notes,    'field_key': 'notes'},
                 ]
 
@@ -2291,6 +2303,22 @@ class ColwitEdit(BasicDetails):
         """User can fill this in to his/her liking"""
         lila_action_add(self, instance, details, actiontype)
 
+    def after_save(self, form, instance):
+        msg = ""
+        bResult = True
+        oErr = ErrHandle()
+                
+        try:
+            # Process many-to-many changes: Add and remove relations in accordance with the new set passed on by the user
+            # (1) 'signatures'
+            siglist = form.cleaned_data['siglist']
+            adapt_m2m(ColwitSignature, instance, "colwit", siglist, "signature")
+
+        except:
+            msg = oErr.get_error_message()
+            bResult = False
+        return bResult, msg
+
     def before_save(self, form, instance):
         oErr = ErrHandle()
         bBack = True
@@ -2315,6 +2343,39 @@ class ColwitEdit(BasicDetails):
 
     def get_history(self, instance):
         return lila_get_history(instance)
+
+    def process_formset(self, prefix, request, formset):
+
+        errors = []
+        bResult = True
+        instance = formset.instance
+        for form in formset:
+            if form.is_valid():
+                cleaned = form.cleaned_data
+
+                oErr = ErrHandle()
+                try:
+
+                    if prefix == "csig":
+                        # Processing of a signature
+                        newsig = cleaned.get("newsig")
+                        newedi = cleaned.get("newedi")
+                        if not newsig is None and not newedi is None:
+                            # We have a new signature and editype
+                            sig = Signature.objects.filter(editype=newedi, code=newsig).first()
+                            if sig is None:
+                                # Create it
+                                sig = Signature.objects.create(editype=newedi, code=newsig)
+                            # Make sure the correct values are set in the ColwitSignatureForm
+                            form.instance.auwork = instance
+                            form.instance.signature = sig
+                except:
+                    msg = oErr.get_error_message()
+                    oErr.DoError("ColwitEdit/process_formset")
+            else:
+                errors.append(form.errors)
+                bResult = False
+        return None
 
 
 class ColwitDetails(ColwitEdit):

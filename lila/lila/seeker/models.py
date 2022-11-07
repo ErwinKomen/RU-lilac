@@ -5690,8 +5690,12 @@ class Auwork(models.Model):
 
         lHtml = []
         sBack = ""
+        # the CSS classes for [editype]
+        # NOTE: the actual Field Choice values for editype are: cpl, cla, oth
         oEdiClass = dict(cpl="gr", cla="cl", oth="ot")
+        # Prefixes to the showing of signatures for [editype]
         oEdiPrefix = dict(cpl="CPL ", cla="", oth = "")
+
         oErr = ErrHandle()
         try:
             if bUseHtml:
@@ -7626,8 +7630,12 @@ class Codhead(models.Model):
 
         lHtml = []
         sBack = ""
+        # the CSS classes for [editype]
+        # NOTE: the actual Field Choice values for editype are: cpl, cla, oth
         oEdiClass = dict(cpl="gr", cla="cl", oth="ot")
+        # Prefixes to the showing of signatures for [editype]
         oEdiPrefix = dict(cpl="CPL ", cla="", oth = "")
+
         oErr = ErrHandle()
         try:
             if bUseHtml:
@@ -7778,6 +7786,29 @@ class Colwit(models.Model):
             oErr.DoError("Colwit/get_manuscript_obj")
 
         return manu
+
+    def get_signatures(self, bUseHtml=True):
+        """Get a list of all signatures tied to me"""
+
+        lHtml = []
+        sBack = ""
+        oEdiClass = dict(cpl="gr", cla="cl", oth="ot")
+        oEdiPrefix = dict(cpl="CPL ", cla="", oth = "")
+        oErr = ErrHandle()
+        try:
+            if bUseHtml:
+                for obj in self.signatures.all().order_by('editype', 'code'):
+                    editype = obj.editype
+                    code = obj.code
+                    prefix = oEdiPrefix[editype]
+                    ediclass = oEdiClass[editype]
+                    sCode = "<span class='badge signature {}'>{}{}</span>".format(ediclass, prefix, code)
+                    lHtml.append(sCode)
+                sBack = "\n".join(lHtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Colwit/get_signatures")
+        return sBack
 
     def get_stype_light(self, usercomment=False):
         count = 0

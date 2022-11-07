@@ -1613,7 +1613,7 @@ class AuworkEdit(BasicDetails):
             kwlist = form.cleaned_data['kwlist']
             adapt_m2m(AuworkKeyword, instance, "auwork", kwlist, "keyword")
 
-            # (3) 'keywords'
+            # (4) 'signatures'
             siglist = form.cleaned_data['siglist']
             adapt_m2m(AuworkSignature, instance, "auwork", siglist, "signature")
 

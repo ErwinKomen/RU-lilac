@@ -1439,11 +1439,8 @@ class ColwitSignatureForm(forms.ModelForm):
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
-        model = Signature
-        fields = ['code', 'editype']
-        widgets={'editype': forms.Select(attrs={'style': 'width: 100%;'}),
-                 'code':    forms.TextInput(attrs={'class': 'typeahead searching signaturetype input-sm', 'placeholder': 'Signature...', 'style': 'width: 100%;'})
-                 }
+        model = ColwitSignature
+        fields = ['colwit', 'signature']
 
     def __init__(self, *args, **kwargs):
         # Start by executing the standard handling
@@ -1452,15 +1449,14 @@ class ColwitSignatureForm(forms.ModelForm):
         oErr = ErrHandle()
         try:
             # Initialize choices for editype
-            init_choices(self, 'editype', EDI_TYPE, bUseAbbr=True)
+            init_choices(self, 'newedi', EDI_TYPE, bUseAbbr=True)
+            self.fields['newedi'].help_text = "editable"
 
             # Set the keyword to optional for best processing
-            self.fields['code'].required = False
-            self.fields['editype'].required = False
+            self.fields['colwit'].required = False
+            self.fields['signature'].required = False
             self.fields['newedi'].required = False
             self.fields['newsig'].required = False
-
-            self.fields['newedi'].choices = EDI_TYPE
 
             # Get the instance
             if 'instance' in kwargs:
@@ -1475,7 +1471,7 @@ class ColwitForm(lilaModelForm):
 
     collone = ModelChoiceField(queryset=None, required=False)
     siglist     = ModelMultipleChoiceField(queryset=None, required=False, 
-                widget=SignatureWidget(attrs={'data-placeholder': 'Add signatures via "+"...', 'style': 'width: 100%;', 'class': 'searching'}))
+                widget=SignatureWidget(attrs={'data-placeholder': 'Select multiple signatures...', 'style': 'width: 100%;', 'class': 'searching'}))
     
     class Meta:
         ATTRS_FOR_FORMS = {'class': 'form-control'};
@@ -1503,7 +1499,7 @@ class ColwitForm(lilaModelForm):
             self.fields['notes'].required = False
             self.fields['collone'].required = False
 
-            self.fields['siglist'].queryset = Signature.objects.none()
+            self.fields['siglist'].queryset = Signature.objects.all().order_by('editype', 'code')
             self.fields['collone'].widget = CollOneHistWidget( attrs={'username': username, 'team_group': team_group,
                         'data-placeholder': 'Select a collection...', 'style': 'width: 100%;', 'class': 'searching'})
 
@@ -1521,8 +1517,7 @@ class ColwitForm(lilaModelForm):
                     self.fields['collone'].initial = instance.collection.id
                     self.fields['collone'].widget.initial = instance.collection.id
 
-                self.fields['siglist'].queryset = instance.signatures.all().order_by('editype', 'code')
-                self.fields['siglist'].initial = [x.pk for x in instance.signatures.all()]
+                self.fields['siglist'].initial = [x.pk for x in instance.signatures.all().order_by('editype', 'code')]
 
             iStop = 1
         except:
