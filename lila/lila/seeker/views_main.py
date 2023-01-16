@@ -2424,14 +2424,15 @@ class ColwitListView(BasicList):
     basic_name = "colwit"
     template_help = "seeker/filter_help.html"
 
-    order_cols = ['collection__name', 'codhead__msitem__manu__idno', '','', 'stype']
+    order_cols = ['collection__name', 'codhead__msitem__manu__idno', 'siglist', '','', 'stype']
     order_default = order_cols
     order_heads = [
         {'name': 'Collection',  'order': 'o=1', 'type': 'str', 'custom': 'collection', 'linkdetails': True}, 
         {'name': 'Manuscript',  'order': 'o=2', 'type': 'str', 'custom': 'manuscript'},
-        {'name': 'Locus',       'order': '',    'type': 'str', 'custom':  'locus' },
+        {'name': 'Clavis',      'order': 'o=3', 'type': 'str', 'custom': 'clavis'},
+        {'name': 'Locus',       'order': '',    'type': 'str', 'custom': 'locus' },
         {'name': 'Links',       'order': '',    'type': 'str', 'custom': 'links'},
-        {'name': 'Status',      'order': 'o=5', 'type': 'str', 'custom': 'status'}]
+        {'name': 'Status',      'order': 'o=6', 'type': 'str', 'custom': 'status'}]
 
     filters = [ ]
     
@@ -2491,6 +2492,16 @@ class ColwitListView(BasicList):
         elif custom == "manuscript":
             manu = instance.codhead.msitem.manu
             html.append(manu.idno)
+        elif custom == "clavis":
+            qs = instance.signatures.all().order_by('-editype', 'code')
+            for obj in qs:
+                editype = obj.editype
+                full = obj.code
+                short = full
+                if len(short) > 20:
+                    short = "{}...".format(full[:20])
+                html.append("<span class='badge signature {}' title='{}'>{}</span>".format(
+                    editype, full, short[:20]))
         elif custom == "locus":
             locus = instance.codhead.locus
             html.append(locus)
@@ -3031,7 +3042,11 @@ class CanwitEdit(BasicDetails):
                 context['mainitems'].append(mainitems_CodNotes)
 
             mainitems_more =[
-                {'type': 'plain', 'label': "Note:",                 'value': instance.get_note_markdown(),             'field_key': 'note'}
+                {'type': 'plain', 'label': "Note:",        'value': instance.get_note_markdown(),             'field_key': 'note'},
+                {'type': 'line',  'label': "Signatures:",  'value': instance.get_colwit_signatures(),
+                 'title': 'These are signatures connected via the Collection Witness'},
+                {'type': 'line',  'label': "Collection witness:", 'value': instance.get_colwit(),
+                 'title': "Optional collection witness that I am under"},
                 ]
             for item in mainitems_more: context['mainitems'].append(item)
 

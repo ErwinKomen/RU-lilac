@@ -1224,6 +1224,23 @@ table.compact-table td:hover {
     background-color: gray;
 }
 
+.colwit {
+    color: darkmagenta;
+    font-family: monospace;
+    background-color: lightgray;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 90%;
+    padding: 0px 4px;
+}
+
+.colwit:hover {
+    color: whitesmoke;
+    background-color: darkmagenta;
+    cursor: pointer;
+}
+
+
 .project {
     color: black;
     font-family: monospace;

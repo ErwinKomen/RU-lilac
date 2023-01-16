@@ -8,7 +8,7 @@ import json
 
 # ======= imports from my own application ======
 from lila.utils import ErrHandle
-from lila.seeker.models import get_crpp_date, get_current_datetime, process_lib_entries, get_searchable, get_now_time, \
+from lila.seeker.models import Colwit, get_crpp_date, get_current_datetime, process_lib_entries, get_searchable, get_now_time, \
     add_gold2equal, add_equal2equal, add_ssg_equal2equal, get_helptext, Information, Country, City, Author, Manuscript, \
     User, Group, Origin, Canwit, MsItem, Codhead, CanwitKeyword, CanwitAustat, NewsItem, \
     SourceInfo, AustatKeyword, ManuscriptExt, AuworkGenre, \
@@ -29,6 +29,7 @@ adaptation_list = {
     'canwit_list': ['lilacodefull'],
     'austat_list': ['keycodefull', 'dategenre'],
     'caned_list': ['canedftext'],
+    'colwit_list': ['signatures'],
     "collection_list": [] 
     }
 
@@ -378,3 +379,25 @@ def adapt_canedftext(oStatus=None):
 # =========== Part of collection_list ==================
 
 
+# =========== Part of colwit_list ======================
+
+def adapt_signatures(oStatus=None):
+    """Adapt all signatures for colwit items"""
+
+    oErr = ErrHandle()
+    bResult = True
+    msg = ""
+    oBack = dict(status="ok", msg="")
+
+    try:
+        # TODO: add code here and change to True
+        bResult = False
+        with transaction.atomic():
+            for obj in Colwit.objects.all():
+                obj.do_siglist()
+        # Note that we are indeed ready
+        bResult = True
+    except:
+        msg = oErr.get_error_message()
+        bResult = False
+    return bResult, msg

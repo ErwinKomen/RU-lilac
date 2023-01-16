@@ -32,6 +32,8 @@ from pyzotero import zotero
 
 from xml.dom import minidom
 
+from requests.api import delete
+
 # =============== Importing my own stuff ======================
 from lila.utils import *
 from lila.settings import APP_PREFIX, WRITABLE_DIR, TIME_ZONE
@@ -7540,6 +7542,29 @@ class MsItem(models.Model):
                     oBack = self.codico
         return oBack
 
+    def get_colwit(self):
+        """Try to see if there is a colwit above me
+        
+        This is done by looking for self.itemheads.count() and walking upwards
+        """
+
+        colwit = None
+        obj = self
+        oErr = ErrHandle()
+        try:
+            while not obj is None:
+                if obj.itemheads.count() > 0:
+                    # Found it!
+                    codhead = obj.itemheads.first()
+                    colwit = codhead.codheadcolwits.first()
+                    break
+                # Otherwise: go up one step if possible
+                obj = obj.parent
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("MsItem/get_colwit")
+        return colwit
+
     def get_children(self):
         """Get all my children in the correct order"""
 
@@ -7685,6 +7710,9 @@ class Colwit(models.Model):
     # [1] Every Canwit may be a manifestation (default) or a template (optional)
     mtype = models.CharField("Manifestation type", choices=build_abbr_list(MANIFESTATION_TYPE), max_length=5, default="man")
 
+    # [0-1] Calculated list of signatures
+    siglist = models.TextField("List of signatures (calculated)", blank=True, null=True)
+
     # ============== MANYTOMANY connections
      # [m] Many-to-many: keywords per Codico
     keywords = models.ManyToManyField(Keyword, through="ColwitKeyword", related_name="keywords_colwit")
@@ -7697,6 +7725,25 @@ class Colwit(models.Model):
         {'name': 'Description',         'type': 'field', 'path': 'descr'},
         {'name': 'Notes',               'type': 'field', 'path': 'notes'},
         ]
+
+    def do_siglist(self):
+        """(re-)calculate the contents for [siglist]"""
+
+        bBack = True
+        oErr = ErrHandle()
+        try:
+            sSiglist = self.siglist
+            html = []
+            for obj in self.signatures.all().order_by('-editype', 'code'):
+                html.append(obj.code)
+            sHtml = ", ".join(html)
+            if sSiglist != sHtml:
+                self.siglist = sHtml
+                self.save()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Colwit/do_siglist")
+        return bBack
 
     def get_codhead(self):
         """Link to the Codico Head"""
@@ -7844,6 +7891,20 @@ class ColwitSignature(models.Model):
         # Just provide the idno
         sItem = "{}:{}".format(self.colwit.get_lilacode(), self.signature.code)
         return sItem
+
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+        response = super(ColwitSignature, self).save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
+        # Process any changes in colwit's siglist
+        colwit.do_siglist()
+        # Return the best response
+        return response
+
+    def delete(self, using, keep_parents) :
+        response = super().delete(using=using, keep_parents=keep_parents)
+        # Process any changes in colwit's siglist
+        colwit.do_siglist()
+        # Return the best response
+        return response
 
 
 # =========================== CANWIT RELATED ===================================
@@ -8723,6 +8784,62 @@ class Canwit(models.Model):
             sBack = json.dumps(lHtml)
         else:
             sBack = ", ".join(lHtml)
+        return sBack
+
+    def get_colwit(self, plain=False):
+        """Possibly get a collection witness that I am 'part' of"""
+
+
+        sBack = "-"
+        oErr = ErrHandle()
+        try:
+            # First check if there is a colwit assigned to me
+            colwit = self.colwit
+            if self.colwit is None:
+                # Now we will try to see if we are 'under' a colwit somehow
+                colwit = self.msitem.get_colwit()
+                if not colwit is None:
+                    self.colwit = colwit
+                    self.save()
+            if not colwit is None:
+                # Get the URL
+                url = reverse('colwit_details', kwargs={'pk': colwit.id})
+                sName = colwit.get_lilacode()
+                # Combine this into a link
+                sBack = "<span class='colwit'><a href='{}'>{}</a></span>".format(url, sName)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Canwit/get_colwit")
+        return sBack
+
+    def get_colwit_signatures(self, plain=False):
+        """Get a list of signatures that are connected to me via a ColWit
+        
+        Note: a Colwit is the link between a Manuscript and a Canwit
+        """
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            # First check if there is a colwit assigned to me
+            colwit = self.colwit
+            if self.colwit is None:
+                # Now we will try to see if we are 'under' a colwit somehow
+                colwit = self.msitem.get_colwit()
+                if not colwit is None:
+                    self.colwit = colwit
+                    self.save()
+            if not colwit is None:
+                html = []
+                for obj in colwit.signatures.all().order_by('-editype', 'code'):
+                    code = obj.code
+                    editype = obj.editype
+                    sItem = "<span class='badge signature {}'>{}</span>".format(editype, code)
+                    html.append(sItem)
+                sBack = ", ".join(html)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Canwit/get_colwit_signatures")
         return sBack
 
     def get_editions_markdown(self):
