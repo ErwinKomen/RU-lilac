@@ -192,6 +192,14 @@ class LitrefAdmin(admin.ModelAdmin):
     list_filter = ['itemid']
 
 
+class SignatureAdmin(admin.ModelAdmin):
+    """Signatures (CPL, Clavis)"""
+
+    fields = ['editype', 'code']
+    list_display = ['editype', 'code']
+    list_filter = ['editype']
+
+
 class CanwitAdmin(admin.ModelAdmin):
     """Canwit"""
 
@@ -245,6 +253,7 @@ admin.site.register(Comment)
 admin.site.register(Canwit, CanwitAdmin)
 admin.site.register(Manuscript, ManuscriptAdmin)
 admin.site.register(Austat, AustatAdmin)
+admin.site.register(Signature, SignatureAdmin)
 
 admin.site.register(Report, ReportAdmin)
 
