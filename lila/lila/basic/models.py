@@ -102,3 +102,52 @@ class UserSearch(models.Model):
             oErr.DoError("UserSearch/load_parameters")
         # Return what we found
         return qd
+
+
+# =================== HELPER classes ==================================
+
+class Custom():
+    """Just adding some functions"""
+
+    specification = []
+
+    def custom_getkv(self, item, **kwargs):
+        """Get key and value from the manuitem entry"""
+
+        oErr = ErrHandle()
+        key = ""
+        value = ""
+        try:
+            keyfield = kwargs.get("keyfield", "name")
+            if keyfield == "path" and item['type'] == "fk_id":
+                key = "{}_id".format(key)
+            key = item[keyfield]
+            if self != None:
+                if item['type'] == 'field':
+                    value = getattr(self, item['path'])
+                elif item['type'] == "fk":
+                    fk_obj = getattr(self, item['path'])
+                    if fk_obj != None:
+                        value = getattr( fk_obj, item['fkfield'])
+                elif item['type'] == "fk_id":
+                    # On purpose: do not allow downloading the actual ID of a foreign ky - id's migh change
+                    pass
+                    #fk_obj = getattr(self, item['path'])
+                    #if fk_obj != None:
+                    #    value = getattr( fk_obj, "id")
+                elif item['type'] == 'func':
+                    value = self.custom_get(item['path'], kwargs=kwargs)
+                    # return either as string or as object
+                    if keyfield == "name":
+                        # Adaptation for empty lists
+                        if value == "[]": value = ""
+                    else:
+                        if value == "": 
+                            value = None
+                        elif value[0] == '[':
+                            value = json.loads(value)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Custom/custom_getkv")
+        return key, value
+

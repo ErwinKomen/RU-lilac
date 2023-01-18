@@ -2586,6 +2586,11 @@ var ru = (function ($, ru) {
             waitclass = "." + options.waitclass;
           }
 
+          // look for the correct downloadstatus
+          if ($(dstatus).length === 0) {
+            dstatus = "#exceldownloadstatus";
+          }
+
           // Gather the information
           frm = $(elStart).closest(".container-small").find("form");
           if (frm.length === 0) {
@@ -2749,7 +2754,12 @@ var ru = (function ($, ru) {
                   xhr.open("POST", ajaxurl);
                   // Set the response type to BLOB, since that's what we are expecting back
                   xhr.responseType = "blob";
+                  // Add parameter action=download to form
                   formData = new FormData(frm[0]);
+                  formData.append("action", "download");
+                  if (dtype !== undefined && dtype !== "") {
+                    formData.append("dtype", dtype);
+                  }
                   xhr.send(formData);
 
                   // Make sure we know how to handle this

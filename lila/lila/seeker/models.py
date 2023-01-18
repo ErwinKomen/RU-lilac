@@ -39,6 +39,7 @@ from lila.utils import *
 from lila.settings import APP_PREFIX, WRITABLE_DIR, TIME_ZONE
 from lila.seeker.excel import excel_to_list
 from lila.bible.models import Reference, Book, BKCHVS_LENGTH, BkChVs, BOOK_NAMES
+from lila.basic.models import Custom
 
 
 re_number = r'\d+'
@@ -929,6 +930,7 @@ def send_email(subject, profile, contents, add_team=False):
         msg = oErr.get_error_message()
         oErr.DoError("send_mail")
     return True
+
 
 
 # =================== HELPER models ===================================
@@ -2994,7 +2996,7 @@ class Comment(models.Model):
         return otypes[self.otype]
 
 
-class Manuscript(models.Model):
+class Manuscript(models.Model, Custom):
     """A manuscript can contain a number of sermons"""
 
     # [1] Name of the manuscript (that is the TITLE)
@@ -3100,7 +3102,7 @@ class Manuscript(models.Model):
     specification = [
         {'name': 'Status',              'type': 'field', 'path': 'stype',     'readonly': True},
         {'name': 'Notes',               'type': 'field', 'path': 'notes'},
-        {'name': 'Editor Notes',        'type': 'field', 'path': 'notes_editor_in_dutch', 'target': 'editornotes'},
+        # {'name': 'Editor Notes',        'type': 'field', 'path': 'notes_editor_in_dutch', 'target': 'editornotes'},
         {'name': 'Url',                 'type': 'field', 'path': 'url'},
         {'name': 'External id',         'type': 'field', 'path': 'external'},
         {'name': 'Shelf mark',          'type': 'field', 'path': 'idno'},
@@ -3117,7 +3119,7 @@ class Manuscript(models.Model):
         {'name': 'Library',             'type': 'fk',    'path': 'library',   'fkfield': 'name', 'model': 'Library'},
         {'name': 'Library id',          'type': 'fk_id', 'path': 'library',   'fkfield': 'name', 'model': 'Library'},
         # TODO: change FK project into m2m
-        {'name': 'Project',             'type': 'fk',    'path': 'project',   'fkfield': 'name', 'model': 'Project'},
+        {'name': 'Projects',            'type': 'func',  'path': 'projects'},
 
         {'name': 'Keywords',            'type': 'func',  'path': 'keywords',  'readonly': True},
         {'name': 'Keywords (user)',     'type': 'func',  'path': 'keywordsU'},
@@ -3390,6 +3392,8 @@ class Manuscript(models.Model):
                 sBack = self.get_keywords_markdown(plain=True)
             elif path == "keywordsU":
                 sBack =  self.get_keywords_user_markdown(profile, plain=True)
+            elif path == "projects":
+                sBack =  self.get_projects()
             elif path == "datasets":
                 sBack = self.get_collections_markdown(username, team_group, settype="pd", plain=True)
             elif path == "literature":
@@ -3408,46 +3412,6 @@ class Manuscript(models.Model):
             msg = oErr.get_error_message()
             oErr.DoError("Manuscript/custom_get")
         return sBack
-
-    def custom_getkv(self, item, **kwargs):
-        """Get key and value from the manuitem entry"""
-
-        oErr = ErrHandle()
-        key = ""
-        value = ""
-        try:
-            keyfield = kwargs.get("keyfield", "name")
-            key = item[keyfield]
-            if keyfield == "path" and item['type'] == "fk_id":
-                key = "{}_id".format(key)
-            if self != None:
-                if item['type'] == 'field':
-                    value = getattr(self, item['path'])
-                elif item['type'] == "fk":
-                    fk_obj = getattr(self, item['path'])
-                    if fk_obj != None:
-                        value = getattr( fk_obj, item['fkfield'])
-                elif item['type'] == "fk_id":
-                    # On purpose: do not allow downloading the actual ID of a foreign ky - id's migh change
-                    pass
-                    #fk_obj = getattr(self, item['path'])
-                    #if fk_obj != None:
-                    #    value = getattr( fk_obj, "id")
-                elif item['type'] == 'func':
-                    value = self.custom_get(item['path'], kwargs=kwargs)
-                    # return either as string or as object
-                    if keyfield == "name":
-                        # Adaptation for empty lists
-                        if value == "[]": value = ""
-                    else:
-                        if value == "": 
-                            value = None
-                        elif value[0] == '[':
-                            value = json.loads(value)
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("Manuscript/custom_getkv")
-        return key, value
 
     def custom_set(self, path, value, **kwargs):
         """Set related items"""
@@ -4365,7 +4329,7 @@ class Manuscript(models.Model):
         return bBack
         
 
-class Codico(models.Model):
+class Codico(models.Model, Custom):
     """A Manuscript can contain 1 or more codicological units (physical units)"""
 
     # [1] Name of the codicological unit (that is the TITLE)
@@ -4578,46 +4542,6 @@ class Codico(models.Model):
             msg = oErr.get_error_message()
             oErr.DoError("Codico/custom_get")
         return sBack
-
-    def custom_getkv(self, item, **kwargs):
-        """Get key and value from the manuitem entry"""
-
-        oErr = ErrHandle()
-        key = ""
-        value = ""
-        try:
-            keyfield = kwargs.get("keyfield", "name")
-            key = item[keyfield]
-            if keyfield == "path" and item['type'] == "fk_id":
-                key = "{}_id".format(key)
-            if self != None:
-                if item['type'] == 'field':
-                    value = getattr(self, item['path'])
-                elif item['type'] == "fk":
-                    fk_obj = getattr(self, item['path'])
-                    if fk_obj != None:
-                        value = getattr( fk_obj, item['fkfield'])
-                elif item['type'] == "fk_id":
-                    # On purpose: do not allow downloading the actual ID of a foreign ky - id's migh change
-                    pass
-                    #fk_obj = getattr(self, item['path'])
-                    #if fk_obj != None:
-                    #    value = getattr( fk_obj, "id")
-                elif item['type'] == 'func':
-                    value = self.custom_get(item['path'], kwargs=kwargs)
-                    # return either as string or as object
-                    if keyfield == "name":
-                        # Adaptation for empty lists
-                        if value == "[]": value = ""
-                    else:
-                        if value == "": 
-                            value = None
-                        elif value[0] == '[':
-                            value = json.loads(value)
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("Codico/custom_getkv")
-        return key, value
 
     def custom_set(self, path, value, **kwargs):
         """Set related items"""
@@ -5548,7 +5472,7 @@ class Signature(models.Model):
         return sBack
 
 
-class Auwork(models.Model):
+class Auwork(models.Model, Custom):
     """Each canonical statement (=Austat) may be linked to a particular Auwork
     
     An Auwork may be a Council, like the Council of Auxerre (561x605)
@@ -5582,39 +5506,13 @@ class Auwork(models.Model):
 
     # SPecification for download/upload
     specification = [
-        {'name': 'Key',                 'type': '',      'path': 'key'},
-        {'name': 'Opus',                'type': '',      'path': 'opus'},
-        {'name': 'Work',                'type': '',      'path': 'work'},
-        {'name': 'Date',                'type': '',      'path': 'date'},
+        {'name': 'Key',                 'type': 'field',    'path': 'key'},
+        {'name': 'Opus',                'type': 'field',    'path': 'opus'},
+        {'name': 'Work',                'type': 'field',    'path': 'work'},
+        {'name': 'Date',                'type': 'field',    'path': 'date'},
 
-        {'name': 'Genre(s)',            'type': 'func',  'path': 'genres'},
-        {'name': 'Keywords',            'type': 'func',  'path': 'keywords'},
-
-
-        #{'name': 'Next',                'type': '',      'path': 'next'},
-        #{'name': 'Type',                'type': '',      'path': 'type'},
-        #{'name': 'Status',              'type': 'field', 'path': 'stype'},
-        #{'name': 'Locus',               'type': 'field', 'path': 'locus'},
-        #{'name': 'Caput',               'type': 'field', 'path': 'caput'},
-        #{'name': 'LiLaC code',          'type': 'field', 'path': 'lilacode'},
-        #{'name': 'Attributed author',   'type': 'fk',    'path': 'author', 'fkfield': 'name'},
-        #{'name': 'Section title',       'type': 'field', 'path': 'sectiontitle'},
-        #{'name': 'Lectio',              'type': 'field', 'path': 'quote'},
-        #{'name': 'Title',               'type': 'field', 'path': 'title'},
-        #{'name': 'Full text',           'type': 'field', 'path': 'ftext'},
-        #{'name': 'Translation',         'type': 'field', 'path': 'ftrans'},
-        #{'name': 'Postscriptum',        'type': 'field', 'path': 'postscriptum'},
-        #{'name': 'Feast',               'type': 'fk',    'path': 'feast', 'fkfield': 'name'},
-        #{'name': 'Cod. notes',          'type': 'field', 'path': 'additional'},
-        #{'name': 'Note',                'type': 'field', 'path': 'note'},
-        #{'name': 'Keywords',            'type': 'func',  'path': 'keywords'},
-        #{'name': 'Keywords (user)',     'type': 'func',  'path': 'keywordsU'},
-        #{'name': 'Gryson/Clavis (manual)','type': 'func',  'path': 'signaturesM'},
-        #{'name': 'Gryson/Clavis (auto)','type': 'func',  'path': 'signaturesA'},
-        #{'name': 'Personal Datasets',   'type': 'func',  'path': 'datasets'},
-        #{'name': 'Literature',          'type': 'func',  'path': 'literature'},
-        #{'name': 'Austat links',        'type': 'func',  'path': 'austatlinks'},
-        #{'name': 'Austat one link',     'type': 'func',  'path': 'austat_one'},
+        {'name': 'Genre(s)',            'type': 'func',     'path': 'genres'},
+        {'name': 'Keywords',            'type': 'func',     'path': 'keywords'},
         ]
 
     def __str__(self):
@@ -5644,6 +5542,22 @@ class Auwork(models.Model):
             oErr.DoError("Auwork.save")
             return None
 
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            if path == "genres":
+                sBack = self.get_genres_markdown(plain=True)
+            elif path == "keywords":
+                sBack = self.get_keywords_markdown(plain=True)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Custom/custom_get")
+        return sBack
+
     def get_edirefs_markdown(self):
         lHtml = []
         # Visit all editions
@@ -5658,16 +5572,19 @@ class Auwork(models.Model):
         sBack = ", ".join(lHtml)
         return sBack
 
-    def get_genres_markdown(self):
+    def get_genres_markdown(self, plain=False):
         lHtml = []
         oErr = ErrHandle()
         try:
             # Visit all genres
             for genre in self.genres.all().order_by('name'):
-                # Determine where clicking should lead to
-                url = "{}?aw-genrelist={}".format(reverse('auwork_list'), genre.id)
-                # Create a display for this topic
-                lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,genre.name))
+                if plain:
+                    lHtml.append(genre.name)
+                else:
+                    # Determine where clicking should lead to
+                    url = "{}?aw-genrelist={}".format(reverse('auwork_list'), genre.id)
+                    # Create a display for this topic
+                    lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,genre.name))
         except:
             msg = oErr.get_error_message()
             oErr.DoError("get_genres_markdown")
@@ -5675,14 +5592,22 @@ class Auwork(models.Model):
         sBack = ", ".join(lHtml)
         return sBack
 
-    def get_keywords_markdown(self):
+    def get_keywords_markdown(self, plain=False):
         lHtml = []
-        # Visit all keywords
-        for keyword in self.keywords.all().order_by('name'):
-            # Determine where clicking should lead to
-            url = "{}?aw-kwlist={}".format(reverse('auwork_list'), keyword.id)
-            # Create a display for this topic
-            lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,keyword.name))
+        oErr = ErrHandle()
+        try:
+            # Visit all keywords
+            for keyword in self.keywords.all().order_by('name'):
+                if plain:
+                    lHtml.append(keyword.name)
+                else:
+                    # Determine where clicking should lead to
+                    url = "{}?aw-kwlist={}".format(reverse('auwork_list'), keyword.id)
+                    # Create a display for this topic
+                    lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,keyword.name))
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_keywords_markdown")
 
         sBack = ", ".join(lHtml)
         return sBack
@@ -5761,7 +5686,7 @@ class AuworkSignature(models.Model):
 # =========================== AUSTAT RELATED ===================================
 
 
-class Austat(models.Model):
+class Austat(models.Model, Custom):
     """This is an Authoritative Statement (AS)"""
 
     # [0-1] We would very much like to know the *REAL* author
@@ -5824,9 +5749,9 @@ class Austat(models.Model):
 
     # SPecification for download/upload
     specification = [
-        {'name': 'Key',                 'type': '',      'path': 'key'},
+        {'name': 'Key',                 'type': 'func',  'path': 'keycode'},
         {'name': 'Author',              'type': 'fk',    'path': 'author', 'fkfield': 'name', 'model': 'Author'},
-        {'name': 'Work',                'type': 'fk',    'path': 'auwork', 'fkfield': 'name'},
+        {'name': 'Work',                'type': 'fk',    'path': 'auwork', 'fkfield': 'key',  'model': 'Auwork'},
         {'name': 'Full text',           'type': 'field', 'path': 'ftext'},
         {'name': 'Translation',         'type': 'field', 'path': 'ftrans'},
 
@@ -5834,28 +5759,6 @@ class Austat(models.Model):
         {'name': 'Keywords',            'type': 'func',  'path': 'keywords'},
         {'name': 'Personal Datasets',   'type': 'func',  'path': 'datasets'},
 
-
-        #{'name': 'Next',                'type': '',      'path': 'next'},
-        #{'name': 'Type',                'type': '',      'path': 'type'},
-        #{'name': 'Status',              'type': 'field', 'path': 'stype'},
-        #{'name': 'Locus',               'type': 'field', 'path': 'locus'},
-        #{'name': 'Caput',               'type': 'field', 'path': 'caput'},
-        #{'name': 'LiLaC code',          'type': 'field', 'path': 'lilacode'},
-        #{'name': 'Attributed author',   'type': 'fk',    'path': 'author', 'fkfield': 'name'},
-        #{'name': 'Section title',       'type': 'field', 'path': 'sectiontitle'},
-        #{'name': 'Lectio',              'type': 'field', 'path': 'quote'},
-        #{'name': 'Title',               'type': 'field', 'path': 'title'},
-        #{'name': 'Postscriptum',        'type': 'field', 'path': 'postscriptum'},
-        #{'name': 'Feast',               'type': 'fk',    'path': 'feast', 'fkfield': 'name'},
-        #{'name': 'Cod. notes',          'type': 'field', 'path': 'additional'},
-        #{'name': 'Note',                'type': 'field', 'path': 'note'},
-        #{'name': 'Keywords',            'type': 'func',  'path': 'keywords'},
-        #{'name': 'Keywords (user)',     'type': 'func',  'path': 'keywordsU'},
-        #{'name': 'Gryson/Clavis (manual)','type': 'func',  'path': 'signaturesM'},
-        #{'name': 'Gryson/Clavis (auto)','type': 'func',  'path': 'signaturesA'},
-        #{'name': 'Literature',          'type': 'func',  'path': 'literature'},
-        #{'name': 'Austat links',        'type': 'func',  'path': 'austatlinks'},
-        #{'name': 'Austat one link',     'type': 'func',  'path': 'austat_one'},
         ]
     
     def __str__(self):
@@ -6112,50 +6015,12 @@ class Austat(models.Model):
                 sBack = self.get_bibleref(plain=True)
             elif path == "ssglinks":
                 sBack = self.get_eqset(plain=True)
+            elif path == "keycode":
+                sBack = self.get_keycode()
         except:
             msg = oErr.get_error_message()
             oErr.DoError("Austat/custom_get")
         return sBack
-
-    def custom_getkv(self, item, **kwargs):
-        """Get key and value from the manuitem entry"""
-
-        oErr = ErrHandle()
-        key = ""
-        value = ""
-        try:
-            keyfield = kwargs.get("keyfield", "name")
-            if keyfield == "path" and item['type'] == "fk_id":
-                key = "{}_id".format(key)
-            key = item[keyfield]
-            if self != None:
-                if item['type'] == 'field':
-                    value = getattr(self, item['path'])
-                elif item['type'] == "fk":
-                    fk_obj = getattr(self, item['path'])
-                    if fk_obj != None:
-                        value = getattr( fk_obj, item['fkfield'])
-                elif item['type'] == "fk_id":
-                    # On purpose: do not allow downloading the actual ID of a foreign ky - id's migh change
-                    pass
-                    #fk_obj = getattr(self, item['path'])
-                    #if fk_obj != None:
-                    #    value = getattr( fk_obj, "id")
-                elif item['type'] == 'func':
-                    value = self.custom_get(item['path'], kwargs=kwargs)
-                    # return either as string or as object
-                    if keyfield == "name":
-                        # Adaptation for empty lists
-                        if value == "[]": value = ""
-                    else:
-                        if value == "": 
-                            value = None
-                        elif value[0] == '[':
-                            value = json.loads(value)
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("Austat/custom_getkv")
-        return key, value
 
     def custom_set(self, path, value, **kwargs):
         """Set related items"""
@@ -6371,14 +6236,23 @@ class Austat(models.Model):
             sBack = auwork.date
         return sBack
 
-    def get_collections_markdown(self, username, team_group, settype = None):
+    def get_collections_markdown(self, username, team_group, settype = None, plain=False):
 
         lHtml = []
-        # Visit all collections that I have access to
-        mycoll__id = Collection.get_scoped_queryset('austat', username, team_group, settype = settype).values('id')
-        for col in self.collections.filter(id__in=mycoll__id).order_by('name'):
-            url = "{}?as-collist_ssg={}".format(reverse('austat_list'), col.id)
-            lHtml.append("<span class='collection'><a href='{}'>{}</a></span>".format(url, col.name))
+        oErr = ErrHandle()
+        try:
+            # Visit all collections that I have access to
+            mycoll__id = Collection.get_scoped_queryset('austat', username, team_group, settype = settype).values('id')
+            for col in self.collections.filter(id__in=mycoll__id).order_by('name'):
+                if plain:
+                    lHtml.append(col.name)
+                else:
+                    url = "{}?as-collist_ssg={}".format(reverse('austat_list'), col.id)
+                    lHtml.append("<span class='collection'><a href='{}'>{}</a></span>".format(url, col.name))
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_collections_markdown")
+
         sBack = ", ".join(lHtml)
         return sBack
 
@@ -6454,7 +6328,7 @@ class Austat(models.Model):
             sBack = adapt_markdown(self.srchftext)
         return sBack
 
-    def get_genres_markdown(self):
+    def get_genres_markdown(self, plain=False):
         lHtml = []
         oErr = ErrHandle()
         try:
@@ -6462,10 +6336,13 @@ class Austat(models.Model):
             auwork = self.auwork
             if not auwork is None:
                 for genre in auwork.genres.all().order_by('name'):
-                    # Determine where clicking should lead to
-                    url = "{}?as-genrelist={}".format(reverse('austat_list'), genre.id)
-                    # Create a display for this topic
-                    lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,genre.name))
+                    if plain:
+                        lHtml.append(genre.name)
+                    else:
+                        # Determine where clicking should lead to
+                        url = "{}?as-genrelist={}".format(reverse('austat_list'), genre.id)
+                        # Create a display for this topic
+                        lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,genre.name))
         except:
             msg = oErr.get_error_message()
             oErr.DoError("get_genres_markdown")
@@ -6500,14 +6377,22 @@ class Austat(models.Model):
         # Any processing...
         return sBack
 
-    def get_keywords_markdown(self):
+    def get_keywords_markdown(self, plain=False):
         lHtml = []
-        # Visit all keywords
-        for keyword in self.keywords.all().order_by('name'):
-            # Determine where clicking should lead to
-            url = "{}?as-kwlist={}".format(reverse('austat_list'), keyword.id)
-            # Create a display for this topic
-            lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,keyword.name))
+        oErr = ErrHandle()
+        try:
+            # Visit all keywords
+            for keyword in self.keywords.all().order_by('name'):
+                if plain:
+                    lHtml.append(keyword.name)
+                else:
+                    # Determine where clicking should lead to
+                    url = "{}?as-kwlist={}".format(reverse('austat_list'), keyword.id)
+                    # Create a display for this topic
+                    lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,keyword.name))
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_genres_markdown")
 
         sBack = ", ".join(lHtml)
         return sBack
@@ -7681,7 +7566,7 @@ class Codhead(models.Model):
 # =========================== COLWIT RELATED ===================================
 
 
-class Colwit(models.Model):
+class Colwit(models.Model, Custom):
     """A collection witness belongs to exactly one [Codhead] and several CanWits belong to the Colwit
     
     Some fields of a [Colwit] are already available via the Codhead > MsItem:
@@ -7721,10 +7606,36 @@ class Colwit(models.Model):
 
     # Scheme for downloading and uploading
     specification = [
-        {'name': 'Status',              'type': 'field', 'path': 'stype',     'readonly': True},
-        {'name': 'Description',         'type': 'field', 'path': 'descr'},
-        {'name': 'Notes',               'type': 'field', 'path': 'notes'},
+        {'name': 'Collection',      'type': 'func',  'path': 'collection'},
+        {'name': 'Manuscript',      'type': 'func',  'path': 'manuscript'},
+        {'name': 'Signatures',      'type': 'func',  'path': 'signatures'},
+        {'name': 'Locus',           'type': 'func',  'path': 'locus'},
+        {'name': 'Status',          'type': 'field', 'path': 'stype',     'readonly': True},
+        {'name': 'Description',     'type': 'field', 'path': 'descr'},
+        {'name': 'Notes',           'type': 'field', 'path': 'notes'},
         ]
+
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            if path == "collection":
+                sBack = self.get_collection(plain=True)
+            elif path == "manuscript":
+                sBack = self.get_manuscript(plain=True)
+            elif path == "signatures":
+                sBack = self.get_signatures(bUseHtml=False)
+            elif path == "locus":
+                sBack = self.codhead.locus
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Colwit/custom_get")
+        return sBack
 
     def do_siglist(self):
         """(re-)calculate the contents for [siglist]"""
@@ -7763,7 +7674,7 @@ class Colwit(models.Model):
 
         return sBack
 
-    def get_collection(self):
+    def get_collection(self, plain=False):
         """Link to the Collection"""
 
         sBack = "-"
@@ -7771,9 +7682,12 @@ class Colwit(models.Model):
         try:
             obj = self.collection
             if not obj is None :
-                url = reverse("collhist_details", kwargs={'pk': obj.id})
-                sText = obj.name
-                sBack = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(url, sText)
+                if plain:
+                    sBack = obj.name
+                else:
+                    url = reverse("collhist_details", kwargs={'pk': obj.id})
+                    sText = obj.name
+                    sBack = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(url, sText)
 
         except:
             oErr.get_error_message()
@@ -7803,7 +7717,7 @@ class Colwit(models.Model):
             oErr.DoError("Codico/get_lilacode")
         return sBack
 
-    def get_manuscript(self):
+    def get_manuscript(self, plain=False):
         """Visualize manuscript with link for details view"""
 
         sBack = "-"
@@ -7811,8 +7725,11 @@ class Colwit(models.Model):
         try:
             manu = self.codhead.msitem.manu
             if manu != None and manu.idno != None:
-                url = reverse("manuscript_details", kwargs={'pk': manu.id})
-                sBack = "<span class='badge signature cl'><a href='{}'>{}</a></span>".format(url, manu.idno)
+                if plain:
+                    sBack = manu.idno
+                else:
+                    url = reverse("manuscript_details", kwargs={'pk': manu.id})
+                    sBack = "<span class='badge signature cl'><a href='{}'>{}</a></span>".format(url, manu.idno)
 
         except:
             oErr.get_error_message()
@@ -7852,6 +7769,10 @@ class Colwit(models.Model):
                     sCode = "<span class='badge signature {}'>{}{}</span>".format(ediclass, prefix, code)
                     lHtml.append(sCode)
                 sBack = "\n".join(lHtml)
+            else:
+                for obj in self.signatures.all().order_by('editype', 'code'):
+                    lHtml.append(obj.code)
+                sBack = ", ".join(lHtml)
         except:
             msg = oErr.get_error_message()
             oErr.DoError("Colwit/get_signatures")
@@ -7895,14 +7816,14 @@ class ColwitSignature(models.Model):
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
         response = super(ColwitSignature, self).save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
         # Process any changes in colwit's siglist
-        colwit.do_siglist()
+        self.do_siglist()
         # Return the best response
         return response
 
     def delete(self, using, keep_parents) :
         response = super().delete(using=using, keep_parents=keep_parents)
         # Process any changes in colwit's siglist
-        colwit.do_siglist()
+        self.do_siglist()
         # Return the best response
         return response
 
@@ -7910,7 +7831,7 @@ class ColwitSignature(models.Model):
 # =========================== CANWIT RELATED ===================================
 
 
-class Canwit(models.Model):
+class Canwit(models.Model, Custom):
     """A Canonical Witness is part of a manuscript (via Colwit > MsItem > Codico > Manuscript)"""
 
     # [0-1] Not every sermon might have a title ...
@@ -8032,18 +7953,15 @@ class Canwit(models.Model):
         {'name': 'Full text',           'type': 'field', 'path': 'ftext'},
         {'name': 'Translation',         'type': 'field', 'path': 'ftrans'},
         {'name': 'Postscriptum',        'type': 'field', 'path': 'postscriptum'},
-        #{'name': 'Feast',               'type': 'fk',    'path': 'feast', 'fkfield': 'name'},
-        #{'name': 'Bible reference(s)',  'type': 'func',  'path': 'brefs'},
         {'name': 'Cod. notes',          'type': 'field', 'path': 'additional'},
         {'name': 'Note',                'type': 'field', 'path': 'note'},
         {'name': 'Keywords',            'type': 'func',  'path': 'keywords'},
         {'name': 'Keywords (user)',     'type': 'func',  'path': 'keywordsU'},
-        {'name': 'Gryson/Clavis (manual)','type': 'func',  'path': 'signaturesM'},
-        {'name': 'Gryson/Clavis (auto)','type': 'func',  'path': 'signaturesA'},
+        {'name': 'Gryson/Clavis',       'type': 'func',  'path': 'signaturesA'},
         {'name': 'Personal Datasets',   'type': 'func',  'path': 'datasets'},
         {'name': 'Literature',          'type': 'func',  'path': 'literature'},
-        {'name': 'Austat links',        'type': 'func',  'path': 'austatlinks'},
-        {'name': 'Austat one link',     'type': 'func',  'path': 'austat_one'},
+        {'name': 'Fons materialis',     'type': 'func',  'path': 'fonsM'},
+        {'name': 'Fons formalis',       'type': 'func',  'path': 'fonsF'},
         ]
 
     def __str__(self):
@@ -8244,74 +8162,26 @@ class Canwit(models.Model):
             profile = kwargs.get("profile")
             username = kwargs.get("username")
             team_group = kwargs.get("team_group")
-            if path == "dateranges":
-                qs = Daterange.objects.filter(codico__manuscript=self).order_by('yearstart')
-                dates = []
-                for obj in qs:
-                    dates.append(obj.__str__())
-                sBack = json.dumps(dates)
-            elif path == "keywords":
+
+            if path == "keywords":
                 sBack = self.get_keywords_markdown(plain=True)
             elif path == "keywordsU":
                 sBack =  self.get_keywords_user_markdown(profile, plain=True)
+            elif path == "signaturesA":
+                sBack = self.get_colwit_signatures()
             elif path == "datasets":
                 sBack = self.get_collections_markdown(username, team_group, settype="pd", plain=True)
             elif path == "literature":
                 sBack = self.get_litrefs_markdown(plain=True)
-            elif path == "origin":
-                sBack = self.get_origin()
-            elif path == "provenances":
-                sBack = self.get_provenance_markdown(plain=True)
-            elif path == "external":
-                sBack = self.get_external_markdown(plain=True)
-            elif path == "brefs":
-                sBack = self.get_bibleref(plain=True)
-            elif path == "ssglinks":
-                sBack = self.get_eqset(plain=True)
+            elif path == "fonsM":
+                sBack = self.get_fons("mat", plain=True)
+            elif path == "fonsF":
+                sBack = self.get_fons("for", plain=True)
+
         except:
             msg = oErr.get_error_message()
             oErr.DoError("Canwit/custom_get")
         return sBack
-
-    def custom_getkv(self, item, **kwargs):
-        """Get key and value from the manuitem entry"""
-
-        oErr = ErrHandle()
-        key = ""
-        value = ""
-        try:
-            keyfield = kwargs.get("keyfield", "name")
-            if keyfield == "path" and item['type'] == "fk_id":
-                key = "{}_id".format(key)
-            key = item[keyfield]
-            if self != None:
-                if item['type'] == 'field':
-                    value = getattr(self, item['path'])
-                elif item['type'] == "fk":
-                    fk_obj = getattr(self, item['path'])
-                    if fk_obj != None:
-                        value = getattr( fk_obj, item['fkfield'])
-                elif item['type'] == "fk_id":
-                    # On purpose: do not allow downloading the actual ID of a foreign ky - id's migh change
-                    pass
-                    #fk_obj = getattr(self, item['path'])
-                    #if fk_obj != None:
-                    #    value = getattr( fk_obj, "id")
-                elif item['type'] == 'func':
-                    value = self.custom_get(item['path'], kwargs=kwargs)
-                    # return either as string or as object
-                    if keyfield == "name":
-                        # Adaptation for empty lists
-                        if value == "[]": value = ""
-                    else:
-                        if value == "": 
-                            value = None
-                        elif value[0] == '[':
-                            value = json.loads(value)
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("Canwit/custom_getkv")
-        return key, value
 
     def custom_set(self, path, value, **kwargs):
         """Set related items"""
@@ -8867,6 +8737,25 @@ class Canwit(models.Model):
         #        lHtml.append(edi_display)
                 
         sBack = ", ".join(lHtml)
+        return sBack
+
+    def get_fons(self, fonstype, plain=False):
+        """Get Austat links of the specified type"""
+
+        oErr = ErrHandle()
+        sBack = ""
+        lHtml = []
+        try:
+            qs = self.canwit_austat.filter(fonstype=fonstype).order_by('canwit__author__name', 'canwit__siglist')
+            for obj in qs:
+                if plain:
+                    lHtml.append(obj.austat.get_keycode())
+                else:
+                    pass
+            sBack = ", ".join(lHtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_fons")
         return sBack
 
     def get_ftrans(self):
