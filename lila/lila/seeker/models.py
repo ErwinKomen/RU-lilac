@@ -1,6 +1,7 @@
 """Models for the SEEKER app.
 
 """
+from xml.dom.pulldom import ErrorHandler
 from django import utils
 from django.apps.config import AppConfig
 from django.apps import apps
@@ -5513,9 +5514,12 @@ class Auwork(models.Model, Custom):
 
         {'name': 'Genre(s)',            'type': 'func',     'path': 'genres'},
         {'name': 'Keywords',            'type': 'func',     'path': 'keywords'},
+        {'name': 'Signatures',          'type': 'func',     'path': 'signatures'},
         ]
 
     def __str__(self):
+        """Return the most distinguishing feature of myself"""
+
         return self.key
 
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
@@ -5542,6 +5546,56 @@ class Auwork(models.Model, Custom):
             oErr.DoError("Auwork.save")
             return None
 
+    def add_genres(self, genres):
+        """Possiblyl add genres to the Auwork object"""
+
+        bResult = True
+        oErr = ErrHandle()
+        try:
+            # Possibly add genres: to Auwork
+            if not genres is None:
+                lst_genres = [x.strip() for x in genres.split(",")]
+                for sGenre in lst_genres:
+                    # Check if this exists or not
+                    genre = Genre.objects.filter(name__iexact=sGenre).first()
+                    if genre is None:
+                        # Add it as a CPL (=gryson), because this is from Austat
+                        genre = Genre.objects.create(name=sGenre)
+                    # Check if the link is already there or not
+                    link = AuworkGenre.objects.filter(auwork=self, genre=genre).first()
+                    if link is None:
+                        # Create the link
+                        link = AuworkGenre.objects.create(auwork=self, genre=genre)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Colwit/add_genres")
+        return bResult
+
+    def add_signatures(self, signatures):
+        """Possiblyl add signatures to the Auwork object"""
+
+        bResult = True
+        oErr = ErrHandle()
+        try:
+            # Possibly add signatures: to Auwork
+            if not signatures is None:
+                lst_signatures = [x.strip() for x in signatures.split(",")]
+                for sSignature in lst_signatures:
+                    # Check if this exists or not
+                    signature = Signature.objects.filter(code__iexact=sSignature).first()
+                    if signature is None:
+                        # Add it as a CPL (=gryson), because this is from Austat
+                        signature = Signature.objects.create(code=sSignature, editype="cpl")
+                    # Check if the link is already there or not
+                    link = AuworkSignature.objects.filter(auwork=self, signature=signature).first()
+                    if link is None:
+                        # Create the link
+                        link = AuworkSignature.objects.create(auwork=self, signature=signature)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Auwork/add_signatures")
+        return bResult
+
     def custom_get(self, path, **kwargs):
         sBack = ""
         oErr = ErrHandle()
@@ -5553,6 +5607,8 @@ class Auwork(models.Model, Custom):
                 sBack = self.get_genres_markdown(plain=True)
             elif path == "keywords":
                 sBack = self.get_keywords_markdown(plain=True)
+            elif path == "signatures":
+                sBack = self.get_signatures(bUseHtml=False)
         except:
             msg = oErr.get_error_message()
             oErr.DoError("Custom/custom_get")
@@ -5933,6 +5989,31 @@ class Austat(models.Model, Custom):
                 # There is no Auwork yet, so this will have to be made first, on the basis of fields:
                 #   work_key, opus, work, date, genre
                 auwork = Auwork.objects.create(key=work_key, opus=opus, work=work, date=date)
+
+            else:
+                # There alsready is an auwork, but does it need any changes?
+                opus = oAustat.get('opus')
+                work = oAustat.get('auwork')
+                date = oAustat.get('date')
+                bNeedSaving = False
+                if auwork.opus.lower() != opus.lower():
+                    auwork.opus = opus
+                    bNeedSaving = True
+                if auwork.work.lower() != work.lower():
+                    auwork.work = work
+                    bNeedSaving = True
+                if auwork.date.lower() != date.lower():
+                    auwork.date = date
+                    bNeedSaving = True
+                # Need saving?
+                if bNeedSaving:
+                    auwork.save()
+
+            # Possibly add signatures: to Auwork
+            auwork.add_signatures(oAustat.get('signatures'))
+            # Possibly add genres: to Auwork
+            auwork.add_genres(oAustat.get("genres"))
+
 
             # The Austat must be created on the basis of:
             #   Auwork, austat_key, full text, translation
@@ -6542,6 +6623,12 @@ class Austat(models.Model, Custom):
         sBack = "<span  class='badge jumbo-1'><a href='{}'  title='Go to the Authoritative statement'>{}</a></span>".format(url, code)
         #lHtml.append("<span class='lilacode'>{}</span> ".format(code))
         #sBack = " ".join(lHtml)
+        return sBack
+
+    def get_signatures(self, bUseHtml=True):
+        sBack = "-"
+        if not self.auwork is None:
+            sBack = self.auwork.get_signatures(bUseHtml)
         return sBack
 
     def get_short(self):
@@ -7614,6 +7701,31 @@ class Colwit(models.Model, Custom):
         {'name': 'Description',     'type': 'field', 'path': 'descr'},
         {'name': 'Notes',           'type': 'field', 'path': 'notes'},
         ]
+
+    def add_signatures(self, signatures):
+        """Possiblyl add signatures to the Auwork object"""
+
+        bResult = True
+        oErr = ErrHandle()
+        try:
+            # Possibly add signatures: to Auwork
+            if not signatures is None:
+                lst_signatures = [x.strip() for x in signatures.split(",")]
+                for sSignature in lst_signatures:
+                    # Check if this exists or not
+                    signature = Signature.objects.filter(code__iexact=sSignature).first()
+                    if signature is None:
+                        # Add it as a CPL (=gryson), because this is from Austat
+                        signature = Signature.objects.create(code=sSignature, editype="cpl")
+                    # Check if the link is already there or not
+                    link = ColwitSignature.objects.filter(colwit=self, signature=signature).first()
+                    if link is None:
+                        # Create the link
+                        link = ColwitSignature.objects.create(colwit=self, signature=signature)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Colwit/add_signatures")
+        return bResult
 
     def custom_get(self, path, **kwargs):
         sBack = ""

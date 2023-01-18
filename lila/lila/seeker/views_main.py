@@ -4207,9 +4207,10 @@ class AustatEdit(BasicDetails):
                  'field_key': 'newftrans', 'key_ta': 'gldftrans-key', 'title': instance.get_ftrans_markdown("actual")}, 
 
                 # These three are taken over from Auwork (read only, non edit)
-                {'type': 'plain', 'label': "Date:",             'value': instance.get_date()            }, 
-                {'type': 'line',  'label': "Opus:",             'value': instance.get_opus()            }, 
-                {'type': 'line',  'label': "Genre(s):",         'value': instance.get_genres_markdown() }, 
+                {'type': 'plain', 'label': "Date:",         'value': instance.get_date()            }, 
+                {'type': 'line',  'label': "Opus:",         'value': instance.get_opus()            }, 
+                {'type': 'line',  'label': "Genre(s):",     'value': instance.get_genres_markdown() }, 
+                {'type': 'line',  'label': "CPL:",          'value': instance.get_signatures(), 'title': 'Signature(s)' }, 
 
                 {'type': 'line',  'label': "Keywords:",      'value': instance.get_keywords_markdown(), 'field_list': 'kwlist'},
                 {'type': 'plain', 'label': "Keywords (user):", 'value': instance.get_keywords_user_markdown(profile),   'field_list': 'ukwlist',
