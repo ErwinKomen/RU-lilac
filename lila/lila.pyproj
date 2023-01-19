@@ -209,6 +209,9 @@
     <None Include="lila\seeker\static\seeker\scripts\_references.js" />
     <Content Include="lila\basic\static\basic\content\basic.css" />
     <Content Include="lila\basic\static\basic\content\font-awesome.min.css" />
+    <Content Include="lila\reader\templates\reader\import_colwits.html" />
+    <Content Include="lila\reader\templates\reader\import_auworks.html" />
+    <Content Include="lila\seeker\static\seeker\scripts\litref.js" />
     <Content Include="lila\basic\static\basic\fonts\fontawesome-webfont.eot" />
     <Content Include="lila\basic\static\basic\fonts\fontawesome-webfont.svg" />
     <Content Include="lila\basic\static\basic\fonts\fontawesome-webfont.ttf" />
@@ -300,12 +303,12 @@
     <Content Include="lila\seeker\templates\seeker\report_download.html" />
     <Content Include="lila\seeker\templates\seeker\sermon_one.html" />
     <Content Include="lila\seeker\templates\seeker\sermon_view.html" />
-    <Content Include="lila\seeker\templates\seeker\sermon_superlinks.html" />
+    <Content Include="lila\seeker\templates\seeker\canwit_austatlinks.html" />
     <Content Include="lila\seeker\templates\seeker\super_goldset.html" />
     <Content Include="lila\seeker\templates\seeker\scount_histogram.html" />
     <Content Include="lila\seeker\templates\seeker\super_graph_hist.html" />
     <Content Include="lila\seeker\templates\seeker\super_graph.html" />
-    <Content Include="lila\seeker\templates\seeker\syncpassim.html" />
+    <Content Include="lila\seeker\templates\seeker\synclilac.html" />
     <Content Include="lila\seeker\templates\seeker\tei-msitem.xml" />
     <Content Include="lila\seeker\templates\seeker\tei-physdesc.xml" />
     <Content Include="lila\seeker\templates\seeker\tei-additional.xml" />
