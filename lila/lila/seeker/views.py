@@ -1792,7 +1792,38 @@ class AuworkListView(BasicList):
         ]
 
     def initializations(self):
+        """Initializations to the Auwork listview"""
+
+        # ======== One-time adaptations ==============
+        listview_adaptations("auwork_list")
+
+        self.uploads = []
+
         return None
+
+    def add_to_context(self, context, initial):
+        """Possibly add the Excel uploading stuff"""
+
+        oErr = ErrHandle()
+        try:
+            # Does this user have upload permissions?
+            if context['is_app_uploader']:
+                # Yes, user has upload permissions
+                html = []
+                html.append("Import Authoritative Works from one or more Excel files.")
+                msg = "<br />".join(html)
+                oExcel = dict(title="Authoritative_works", label="Excel",
+                                url=reverse('auwork_upload_excel'),
+                                type="multiple", msg=msg)
+                self.uploads.append(oExcel)
+
+                context['uploads'] = self.uploads
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("AuworkListView/add_to_context")
+
+        return context
 
     def get_field_value(self, instance, custom):
         sBack = ""

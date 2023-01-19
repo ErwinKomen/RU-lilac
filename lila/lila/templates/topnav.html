@@ -77,6 +77,10 @@
                             <li><a href="{% url 'profile_list' %}" title="Projects">User profiles</a></li>
                             <li><a href="{% url 'litref_list' %}" title="Zotero">Zotero literature</a></li>
                           {% endif %}
+
+                          {% if user.is_superuser %}
+                            <li><a onclick="ru.basic.multil_check('.multil-main');" title="Multi-Lingual AWS check">MultiL Check</a></li>
+                          {% endif %}
                         </ul>
                       </li>
 

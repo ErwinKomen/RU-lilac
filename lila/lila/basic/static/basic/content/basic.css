@@ -104,3 +104,9 @@ td.ruler {
     font-size: small;
     font-family: monospace;
 }
+
+.bi-filetype-xls {
+    position: relative;
+    top: 3px;
+}
+

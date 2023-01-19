@@ -39,7 +39,7 @@ from lila.settings import APP_PREFIX, MEDIA_DIR
 from lila.utils import ErrHandle
 
 from lila.seeker.models import Manuscript, MsItem, Canwit, Profile, Report, Codico, Codhead, Location, LocationType, Library, \
-    Austat, Auwork
+    Austat, Auwork, Collection, Colwit
 from lila.seeker.views import app_editor
 from lila.reader.views import ReaderImport
 from lila.reader.forms import UploadFileForm
@@ -204,7 +204,7 @@ class ManuscriptUploadExcel(ReaderImport):
                                 
                     # Set the status
                     oStatus.set("finishing", msg="file={}".format(filename))
-            code = "Imported using the [import_excel] function on this filew: {}".format(", ".join(file_list))
+            code = "Imported using the [import_excel] function on this file: {}".format(", ".join(file_list))
         except:
             bOkay = False
             code = oErr.get_error_message()
@@ -630,24 +630,6 @@ class AustatUploadExcel(ReaderImport):
                             if not ws_austat is None:
                                 # Get a list of the Austat excel columns
                                 self.get_columns_excel(ws_austat, col_defs, col_number)
-                                #row_num = 1
-                                #col_num = 1
-                                #bStop = False
-                                #while not bStop:
-                                #    k = ws_austat.cell(row=row_num, column=col_num).value
-                                #    if k is None or k == "":
-                                #        bStop = True
-                                #    else:
-                                #        col_name = k.lower()
-                                #        for oDef in col_defs:
-                                #            name = oDef['name']
-                                #            if col_number[name] < 0:
-                                #                for str_def in oDef['def']:
-                                #                    if str_def in col_name:
-                                #                        # Found it!
-                                #                        col_number[name] = col_num
-                                #                        break
-                                #    col_num += 1
 
                                 # Make sure we at least have [ftext]
                                 if col_number['ftext'] >= 1:
@@ -695,25 +677,290 @@ class AustatUploadExcel(ReaderImport):
                                         row_num += 1
 
  
+                    # Set the status
+                    oStatus.set("finishing", msg="file={}".format(filename))
 
-                        ## Create a report and add it to what we return
-                        #oContents = {'headers': lHeader, 'list': lst_manual, 'read': lst_read}
-                        #oReport = Report.make(username, "ixlsx", json.dumps(oContents))
-                                
-                        ## Determine a status code
-                        #statuscode = "error" if oResult == None or oResult['status'] == "error" else "completed"
-                        #if oResult == None:
-                        #    self.arErr.append("There was an error. No Austats have been added")
-                        #else:
-                        #    lResults.append(oResult)
+
+            code = "Imported using the [import_excel] function on this file: {}".format(", ".join(file_list))
+        except:
+            bOkay = False
+            code = oErr.get_error_message()
+        return bOkay, code
+
+
+class AuworkUploadExcel(ReaderImport):
+    """Specific parameters for importing manuscripts from Excel"""
+
+    import_type = "excel"
+    sourceinfo_url = "https://www.ru.nl/english/people/meeder-s/"
+    template_name = "reader/import_auworks.html"
+
+    def process_files(self, request, source, lResults, lHeader):
+        file_list = []
+        oErr = ErrHandle()
+        bOkay = True
+        code = ""
+        col_number = {}
+        col_defs = [
+            {"name": "key",         "def": ['key']                  },
+            {"name": "work",        "def": ['work']                 },
+            {"name": "full",        "def": ['full', 'full text']    },
+            {"name": "date",        "def": ['date']                 },
+            {"name": "opus",        "def": ['opus']                 },
+            {"name": "genres",      "def": ['genre(s)']             },
+            {"name": "keywords",    "def": ['keywords']             },
+            {"name": "signatures",  "def": ['cpl', 'signature']     }
+            ]
+        oStatus = self.oStatus
+        try:
+            # Make sure we have the username
+            username = self.username
+            profile = Profile.get_user_profile(username)
+            team_group = app_editor
+            kwargs = {'profile': profile, 'username': username, 'team_group': team_group}
+
+            # Initialize column numbers in dictionary [col_number]
+            for oDef in col_defs:
+                col_number[oDef['name']] = -1
+
+            # Get the contents of the imported file
+            files = request.FILES.getlist('files_field')
+            if files != None:
+                for data_file in files:
+                    filename = data_file.name
+                    file_list.append(filename)
+
+                    # Set the status
+                    oStatus.set("reading", msg="file={}".format(filename))
+
+                    # Get the source file
+                    if data_file == None or data_file == "":
+                        self.arErr.append("No source file specified for the selected project")
+                    else:
+                        # Check the extension
+                        arFile = filename.split(".")
+                        extension = arFile[len(arFile)-1]
+
+                        # Further processing depends on the extension
+                        oResult = {'status': 'ok', 'count': 0, 'auworks': 0, 'msg': "", 'user': username}
+
+                        if extension == "xlsx":
+                            # This is an Excel file: read the file using openpyxl
+                            # Write data temporarily to the WRITABLE dir, but with a temporary filename
+                            tmp_path = os.path.abspath(os.path.join( MEDIA_DIR, filename))
+                            with io.open(tmp_path, "wb") as f:
+                                sData = data_file.read()
+                                f.write(sData)
+
+                            # Read string file
+                            wb = openpyxl.load_workbook(tmp_path, read_only=True)
+
+                            # Find out which sheets point to work (=auwork)
+                            sheetnames = wb.sheetnames
+                            ws_auwork = None
+                            for sname in sheetnames:
+                                snameL = sname.lower()
+                                if snameL.find("work-") == 0:
+                                    ws_auwork = wb[sname]
+
+                            # Do we have a worksheet with Auwork items?
+                            if not ws_auwork is None:
+                                # Get a list of the Auwork excel columns
+                                self.get_columns_excel(ws_auwork, col_defs, col_number)
+ 
+                                # Make sure we at least have [key]
+                                if col_number['key'] >= 1:
+
+                                    # Walk through all rows
+                                    bStop = False
+                                    row_num = 2
+                                    while not bStop:
+                                        value = ws_auwork.cell(row=row_num, column=1).value
+                                        bStop = (value is None or value == "")
+                                        if not bStop:
+                                            # Read the values for this row into dictionary [oValue]
+                                            oValue = self.get_row_excel(ws_auwork, row_num, col_number)
+
+                                            # We have all the values, process the essentials to create a CanWit (if it doesn't exist already)
+                                            auwork_key = oValue['key']
+                                            auwork = Auwork.objects.filter(key=auwork_key).first()
+                                            # Only process if this Auwork has not yet been added!!!
+                                            if auwork is None:
+                                                # Start creating a result
+                                                oResult = {}
+                                                oResult['key'] = auwork_key
+
+                                                # Create this work
+                                                auwork = Auwork.custom_add(oValue)
+
+                                                # Process what we get back
+                                                oResult['auwork'] = auwork.id
+                                                oResult['work'] = "-" if auwork.work is None else auwork.work
+                                                oResult['opus'] = "-" if auwork.opus is None else auwork.opus
+
+                                                # Add the result to the list of results
+                                                lResults.append(oResult)
+                                        # Go to the next row
+                                        row_num += 1
 
                     # Set the status
                     oStatus.set("finishing", msg="file={}".format(filename))
 
 
-            code = "Imported using the [import_excel] function on this filew: {}".format(", ".join(file_list))
+            code = "Imported using the [import_excel] function on this file: {}".format(", ".join(file_list))
         except:
             bOkay = False
             code = oErr.get_error_message()
         return bOkay, code
+
+
+class ColwitUploadExcel(ReaderImport):
+    """Specific parameters for importing manuscripts from Excel"""
+
+    import_type = "excel"
+    sourceinfo_url = "https://www.ru.nl/english/people/meeder-s/"
+    template_name = "reader/import_colwits.html"
+
+    def process_files(self, request, source, lResults, lHeader):
+        file_list = []
+        oErr = ErrHandle()
+        bOkay = True
+        code = ""
+        col_number = {}
+        col_defs = [
+            {"name": "key",         "def": ['key']                  },
+            {"name": "manuscript",  "def": ['manuscript']           },
+            {"name": "section",     "def": ['section']              },
+            {"name": "locus",       "def": ['locus']                },
+            {"name": "collection",  "def": ['collection']           },
+            {"name": "notes",       "def": ['notes']                },
+            {"name": "signatures",  "def": ['cpl', 'signature']     }
+            ]
+        oStatus = self.oStatus
+        try:
+            # Make sure we have the username
+            username = self.username
+            profile = Profile.get_user_profile(username)
+            team_group = app_editor
+            kwargs = {'profile': profile, 'username': username, 'team_group': team_group}
+
+            # Initialize column numbers in dictionary [col_number]
+            for oDef in col_defs:
+                col_number[oDef['name']] = -1
+
+            # Get the contents of the imported file
+            files = request.FILES.getlist('files_field')
+            if files != None:
+                for data_file in files:
+                    filename = data_file.name
+                    file_list.append(filename)
+
+                    # Set the status
+                    oStatus.set("reading", msg="file={}".format(filename))
+
+                    # Get the source file
+                    if data_file == None or data_file == "":
+                        self.arErr.append("No source file specified for the selected project")
+                    else:
+                        # Check the extension
+                        arFile = filename.split(".")
+                        extension = arFile[len(arFile)-1]
+
+                        # Further processing depends on the extension
+                        oResult = {'status': 'ok', 'count': 0, 'colwits': 0, 'msg': "", 'user': username}
+
+                        if extension == "xlsx":
+                            # This is an Excel file: read the file using openpyxl
+                            # Write data temporarily to the WRITABLE dir, but with a temporary filename
+                            tmp_path = os.path.abspath(os.path.join( MEDIA_DIR, filename))
+                            with io.open(tmp_path, "wb") as f:
+                                sData = data_file.read()
+                                f.write(sData)
+
+                            # Read string file
+                            wb = openpyxl.load_workbook(tmp_path, read_only=True)
+
+                            # Find out which sheets point to work (=colwit)
+                            sheetnames = wb.sheetnames
+                            ws_colwit = None
+                            for sname in sheetnames:
+                                snameL = sname.lower()
+                                if snameL.find("colwit") == 0:
+                                    ws_colwit = wb[sname]
+
+                            # Do we have a worksheet with Colwit items?
+                            if not ws_colwit is None:
+                                # Get a list of the Colwit excel columns
+                                self.get_columns_excel(ws_colwit, col_defs, col_number)
+ 
+                                # Make sure we at least have [key]
+                                if col_number['key'] >= 1 and col_number['manuscript'] >= 1 and col_number['collection'] >= 1:
+
+                                    # Walk through all rows
+                                    bStop = False
+                                    row_num = 2
+                                    while not bStop:
+                                        value = ws_colwit.cell(row=row_num, column=1).value
+                                        bStop = (value is None or value == "")
+                                        if not bStop:
+                                            # Read the values for this row into dictionary [oValue]
+                                            oValue = self.get_row_excel(ws_colwit, row_num, col_number)
+
+                                            # We have all the values, process the essentials to create a CanWit (if it doesn't exist already)
+                                            colwit_key = oValue['key']
+                                            colwit_manu = oValue['manuscript']
+                                            colwit_coll = oValue['collection']
+                                            colwit_locus = oValue['locus']
+                                            if colwit_manu != "" and colwit_coll != "":
+
+                                                # Improve on the collection code and the manuscript code
+                                                colwit_manu = colwit_manu.strip('.')
+                                                colwit_coll = colwit_coll.strip('.')
+                                                oValue['manuscript'] = colwit_manu
+                                                oValue['collection'] = colwit_coll
+
+                                                # Calculate what the lilacode should be
+                                                lilacode = "{}.{}".format(colwit_manu, colwit_coll)
+
+                                                # Possibly adapt the key inside oValue
+                                                if colwit_key != lilacode:
+                                                    oValue['key'] = lilacode
+
+                                                # Try to find this one
+                                                colwit = Colwit.objects.filter(lilacodefull__iexact=lilacode).first()
+                                                if colwit is None:
+                                                    # Create it
+                                                    colwit = Colwit.objects.filter(lilacodefull=lilacode)
+
+                                                # Make sure we can continue safely
+                                                if not colwit is None:
+                                                    # Start creating a result
+                                                    oResult = {}
+                                                    oResult['key'] = colwit_key
+
+                                                    # Create this work
+                                                    colwit = Colwit.custom_add(oValue, **kwargs)
+
+                                                    # Process what we get back
+                                                    oResult['colwit'] = colwit.id
+                                                    oResult['lilacode'] = colwit.lilacodefull
+                                                    oResult['manuscript'] = colwit_manu
+                                                    oResult['locus'] = colwit_locus
+                                                    oResult['collection'] = colwit_coll
+
+                                                    # Add the result to the list of results
+                                                    lResults.append(oResult)
+                                        # Go to the next row
+                                        row_num += 1
+
+                    # Set the status
+                    oStatus.set("finishing", msg="file={}".format(filename))
+
+
+            code = "Imported using the [import_excel] function on this file: {}".format(", ".join(file_list))
+        except:
+            bOkay = False
+            code = oErr.get_error_message()
+        return bOkay, code
+
 

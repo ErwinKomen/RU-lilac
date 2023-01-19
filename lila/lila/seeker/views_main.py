@@ -2424,17 +2424,19 @@ class ColwitListView(BasicList):
     basic_name = "colwit"
     template_help = "seeker/filter_help.html"
 
-    order_cols = ['collection__name', 'codhead__msitem__manu__idno', 'siglist', '','', 'stype']
+    order_cols = ['lilacodefull', 'collection__name', 'codhead__msitem__manu__idno', 'siglist', '','', 'stype']
     order_default = order_cols
     order_heads = [
-        {'name': 'Collection',  'order': 'o=1', 'type': 'str', 'custom': 'collection', 'linkdetails': True}, 
-        {'name': 'Manuscript',  'order': 'o=2', 'type': 'str', 'custom': 'manuscript'},
-        {'name': 'Clavis',      'order': 'o=3', 'type': 'str', 'custom': 'clavis'},
+        {'name': 'Key',         'order': 'o=1', 'type': 'str', 'custom': 'key',         'linkdetails': True}, 
+        {'name': 'Collection',  'order': 'o=2', 'type': 'str', 'custom': 'collection',  'linkdetails': True}, 
+        {'name': 'Manuscript',  'order': 'o=3', 'type': 'str', 'custom': 'manuscript',  'linkdetails': True, 'main': True},
+        {'name': 'Clavis',      'order': 'o=4', 'type': 'str', 'custom': 'clavis'},
         {'name': 'Locus',       'order': '',    'type': 'str', 'custom': 'locus' },
         {'name': 'Links',       'order': '',    'type': 'str', 'custom': 'links'},
-        {'name': 'Status',      'order': 'o=6', 'type': 'str', 'custom': 'status'}]
+        {'name': 'Status',      'order': 'o=7', 'type': 'str', 'custom': 'status'}]
 
     filters = [ ]
+    uploads = []
     
     searches = [
         {'section': '', 'filterlist': [
@@ -2467,11 +2469,33 @@ class ColwitListView(BasicList):
         return None
 
     def add_to_context(self, context, initial):
-        # Find out who the user is
-        profile = Profile.get_user_profile(self.request.user.username)
-        context['basketsize'] = 0 if profile == None else profile.basketsize
-        context['basket_show'] = reverse('basket_show')
-        context['basket_update'] = reverse('basket_update')
+        oErr = ErrHandle()
+        try:
+            # Find out who the user is
+            profile = Profile.get_user_profile(self.request.user.username)
+            context['basketsize'] = 0 if profile == None else profile.basketsize
+            context['basket_show'] = reverse('basket_show')
+            context['basket_update'] = reverse('basket_update')
+
+            # Does this user have upload permissions?
+            if context['is_app_uploader']:
+                if len(self.uploads) == 0:
+                    # Yes, user has upload permissions
+                    html = []
+                    html.append("Import Collection witnesses from one or more Excel files.")
+                    msg = "<br />".join(html)
+                    oExcel = dict(title="collection_witnesses", label="Excel",
+                                    url=reverse('colwit_upload_excel'),
+                                    type="multiple", msg=msg)
+                    self.uploads.append(oExcel)
+
+                context['uploads'] = self.uploads
+            else:
+                context['uploads'] = []
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ColwitListview/add_to_context")
+
         return context
 
     def get_basketqueryset(self):
@@ -2489,9 +2513,13 @@ class ColwitListView(BasicList):
 
         if custom == "collection":
             html.append("<span class='collection'>{}</span>".format(instance.collection.name))
+        elif custom == "key":
+            lilacode = instance.lilacodefull
+            html.append( "-" if lilacode is None else lilacode)
         elif custom == "manuscript":
             manu = instance.codhead.msitem.manu
-            html.append(manu.idno)
+            sHtml = manu.get_lilacode()
+            html.append("<span class='manuscript'>{}</span>".format(sHtml))
         elif custom == "clavis":
             qs = instance.signatures.all().order_by('-editype', 'code')
             for obj in qs:
@@ -4969,7 +4997,6 @@ class AustatListView(BasicList):
     template_help = "seeker/filter_help.html"
     prefix = "as"
     bUseFilter = True  
-    bHasExcel = False
     plural_name = "Authoritative statements"
     sg_name = "Authoritative statement"
     # order_cols = ['code', 'author', 'firstsig', 'srchftext', '', 'scount', 'ssgcount', 'hccount', 'stype']
@@ -5055,10 +5082,7 @@ class AustatListView(BasicList):
         # ======== One-time adaptations ==============
         listview_adaptations("austat_list")
 
-        # Possibly add to 'uploads'
-        for item in self.uploads:
-            if item['title'] == "excel":
-                self.bHasExcel = True
+        self.uploads = []
 
         return None
     
@@ -5075,15 +5099,13 @@ class AustatListView(BasicList):
             # Does this user have upload permissions?
             if context['is_app_uploader']:
                 # Yes, user has upload permissions
-                if not self.bHasExcel:                
-                    # Add a reference to the Excel upload method
-                    html = []
-                    html.append("Import Authoritative statements from one or more Excel files.")
-                    msg = "<br />".join(html)
-                    oExcel = dict(title="excel", label="Excel",
-                                  url=reverse('austat_upload_excel'),
-                                  type="multiple", msg=msg)
-                    self.uploads.append(oExcel)
+                html = []
+                html.append("Import Authoritative statements from one or more Excel files.")
+                msg = "<br />".join(html)
+                oExcel = dict(title="authoritative_statements", label="Excel",
+                                url=reverse('austat_upload_excel'),
+                                type="multiple", msg=msg)
+                self.uploads.append(oExcel)
 
                 context['uploads'] = self.uploads
 

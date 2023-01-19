@@ -29,7 +29,7 @@ adaptation_list = {
     'canwit_list': ['lilacodefull'],
     'austat_list': ['keycodefull', 'dategenre'],
     'caned_list': ['canedftext'],
-    'colwit_list': ['signatures'],
+    'colwit_list': ['signatures', 'lilacode'],
     "collection_list": [] 
     }
 
@@ -401,3 +401,26 @@ def adapt_signatures(oStatus=None):
         msg = oErr.get_error_message()
         bResult = False
     return bResult, msg
+
+def adapt_lilacode(oStatus=None):
+    """Adapt all signatures for colwit items"""
+
+    oErr = ErrHandle()
+    bResult = True
+    msg = ""
+    oBack = dict(status="ok", msg="")
+
+    try:
+        # TODO: add code here and change to True
+        bResult = False
+        with transaction.atomic():
+            for obj in Colwit.objects.all():
+                obj.save()
+        # Note that we are indeed ready
+        bResult = True
+    except:
+        msg = oErr.get_error_message()
+        bResult = False
+    return bResult, msg
+
+

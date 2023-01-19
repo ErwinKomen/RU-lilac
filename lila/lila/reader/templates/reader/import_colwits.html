@@ -1,0 +1,49 @@
+﻿{% if statuscode == "completed" %}
+  <div class='col-md-12'>
+    <p>
+      The list of Collection Witnesses (Colwits) has been processed, and {{results|length}} new Colwits have been added.
+    </p>
+    <p>
+      Possible actions:
+      <ul>
+        <li><b>Show</b> show an overview of the Collection Witnesses that have been added
+          <button class="btn btn-default btn-sm dropdown-toggle"
+                  type="button" data-toggle="collapse" data-target="#cw-list">List</button>
+        </li>
+        <li><b>List</b> all collection witnesses
+            <!-- When ready press this button -->
+            <span><a class="btn btn-xs jumbo-1" role="button" href="{% url 'colwit_list' %}">List</a></span>
+        </li>
+      </ul>
+    </p>
+  </div>
+
+  <div class="col-md-12 collapse" id="cw-list">
+    <table class="func-view">
+      <thead><tr><th>Id</th><th>Key</th><th>Manuscript</th><th>Locus</th><th>Collection</th></tr></thead>
+      <tbody>
+        {% for item in results %}
+          <tr>
+            <td class="tdnowrap">{{item.colwit}}</td>
+            <td class="tdnowrap">{{item.key}}</td>
+            <td class="tdnowrap">{{item.manuscript}}</td>
+            <td class="tdnowrap">{{item.locus}}</td>
+            <td>{{item.collection}}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+{% endif %}
+
+<!-- Any errors are shown here too-->
+<div class="errors">
+  {% if error_list and statuscode != "error" %} 
+    <h4>Errors:</h4>
+    <div>statuscode = {{statuscode}}</div>
+    {% for item in error_list %}
+      <div class="error-item">{{item}}</div>
+    {% endfor %}
+  {% endif %}
+</div>

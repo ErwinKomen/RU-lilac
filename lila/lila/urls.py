@@ -26,7 +26,7 @@ from lila.seeker.views_api import *
 from lila.seeker.visualizations import *
 from lila.reader.views import *
 from lila.reader.excel import ManuscriptUploadExcel, ManuscriptUploadJson, ManuscriptUploadCanwits, \
-    AustatUploadExcel
+    AustatUploadExcel, AuworkUploadExcel, ColwitUploadExcel
 
 # Import from lila as a whole
 from lila.settings import APP_PREFIX
@@ -99,6 +99,7 @@ urlpatterns = [
     url(r'^colwit/details(?:/(?P<pk>\d+))?/$', ColwitDetails.as_view(), name='colwit_details'),
     url(r'^colwit/edit(?:/(?P<pk>\d+))?/$', ColwitEdit.as_view(), name='colwit_edit'),
     url(r'^colwit/list', ColwitListView.as_view(), name='colwit_list'),
+    url(r'^colwit/import/excel/$', ColwitUploadExcel.as_view(), name='colwit_upload_excel'),
     
     url(r'^austat/list', AustatListView.as_view(), name='austat_list'),
     url(r'^austat/details(?:/(?P<pk>\d+))?/$', AustatDetails.as_view(), name='austat_details'),
@@ -191,6 +192,7 @@ urlpatterns = [
     url(r'^auwork/list', AuworkListView.as_view(), name='auwork_list'),
     url(r'^auwork/details(?:/(?P<pk>\d+))?/$', AuworkDetails.as_view(), name='auwork_details'),
     url(r'^auwork/edit(?:/(?P<pk>\d+))?/$', AuworkEdit.as_view(), name='auwork_edit'),
+    url(r'^auwork/import/excel/$', AuworkUploadExcel.as_view(), name='auwork_upload_excel'),
 
     url(r'^userkeyword/list', UserKeywordListView.as_view(), name='userkeyword_list'),
     url(r'^userkeyword/details(?:/(?P<pk>\d+))?/$', UserKeywordDetails.as_view(), name='userkeyword_details'),

@@ -203,6 +203,24 @@ def get_default_loctype():
         value = obj.id
     return value
 
+def get_value_list(sValue):
+    value_lst = []
+    oErr = ErrHandle()
+    try:
+        if isinstance(sValue, str):
+            if sValue[0] == '[':
+                # Make list from JSON
+                value_lst = json.loads(sValue)
+            else:
+                value_lst = sValue.split(",")
+                for idx, item in enumerate(value_lst):
+                    value_lst[idx] = value_lst[idx].strip()
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("get_value_list")
+    return value_lst
+
+
 def adapt_search(val, do_brackets = True):
     if val == None: return None
     # First trim
@@ -3007,7 +3025,7 @@ class Manuscript(models.Model, Custom):
     library = models.ForeignKey(Library, null=True, blank=True, on_delete = models.SET_NULL, related_name="library_manuscripts")
     # [1] Each manuscript has an identification number: Shelf Mark
     idno = models.CharField("Identifier", max_length=LONG_STRING, null=True, blank=True)
-    # [0-1] The LiLaC code for this particular Manuscript
+    # [0-1] The  code for this particular Manuscript
     lilacode = models.CharField("LiLaC code", null=True, blank=True, max_length=LONG_STRING)
     ## [0-1] If possible we need to know the original location of the manuscript
     #origin = models.ForeignKey(Origin, null=True, blank=True, on_delete = models.SET_NULL, related_name="origin_manuscripts")
@@ -3790,10 +3808,20 @@ class Manuscript(models.Model, Custom):
             sBack = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(url, lib)
         return sBack
 
-    def get_lilacode(self):
+    def get_lilacode(self, plain=True):
         sBack = "-"
-        if not self.lilacode is None:
-            sBack = self.lilacode
+        oErr = ErrHandle()
+        try:
+            if not self.lilacode is None:
+                sBack = self.lilacode
+            elif not self.idno is None:
+                sBack = self.idno
+            if not plain:
+                url = reverse('manuscript_details', kwargs={'pk': self.id})
+                sBack = "<span class='manuscript'><a href='{}'>{}</a></span>".format(url, sBack)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Manuscript/get_lilacode")
         return sBack
 
     def get_litrefs_markdown(self, plain=False):
@@ -3825,30 +3853,6 @@ class Manuscript(models.Model, Custom):
         if self.notes != None:
             sBack = markdown(self.notes, extensions=['nl2br'])
         return sBack
-
-    #def get_origin(self):
-    #    sBack = "-"
-    #    if self.origin:
-    #        # Just take the bare name of the origin
-    #        sBack = self.origin.name
-    #        if self.origin.location:
-    #            # Add the actual location if it is known
-    #            sBack = "{}: {}".format(sBack, self.origin.location.get_loc_name())
-    #    return sBack
-
-    #def get_origin_markdown(self):
-    #    sBack = "-"
-    #    if self.origin:
-    #        # Just take the bare name of the origin
-    #        sBack = self.origin.name
-    #        if self.origin.location:
-    #            # Add the actual location if it is known
-    #            sBack = "{}: {}".format(sBack, self.origin.location.get_loc_name())
-    #        # Get the url to it
-    #        url = reverse('origin_details', kwargs={'pk': self.origin.id})
-    #        # Adapt what we return
-    #        sBack = "<span class='badge signature ot'><a href='{}'>{}</a></span>".format(url, sBack)
-    #    return sBack
 
     def get_origins(self):
         sBack = "-"
@@ -5554,7 +5558,10 @@ class Auwork(models.Model, Custom):
         try:
             # Possibly add genres: to Auwork
             if not genres is None:
-                lst_genres = [x.strip() for x in genres.split(",")]
+                if isinstance(genres, list):
+                    lst_genres = genres
+                else:
+                    lst_genres = [x.strip() for x in genres.split(",")]
                 for sGenre in lst_genres:
                     # Check if this exists or not
                     genre = Genre.objects.filter(name__iexact=sGenre).first()
@@ -5568,7 +5575,35 @@ class Auwork(models.Model, Custom):
                         link = AuworkGenre.objects.create(auwork=self, genre=genre)
         except:
             msg = oErr.get_error_message()
-            oErr.DoError("Colwit/add_genres")
+            oErr.DoError("Auwork/add_genres")
+        return bResult
+
+    def add_keywords(self, keywords):
+        """Possiblyl add keywords to the Auwork object"""
+
+        bResult = True
+        oErr = ErrHandle()
+        try:
+            # Possibly add keywords: to Auwork
+            if not keywords is None:
+                if isinstance(keywords, list):
+                    lst_keywords = keywords
+                else:
+                    lst_keywords = [x.strip() for x in keywords.split(",")]
+                for sKeyword in lst_keywords:
+                    # Check if this exists or not
+                    keyword = Keyword.objects.filter(name__iexact=sKeyword).first()
+                    if keyword is None:
+                        # Add it as a CPL (=gryson), because this is from Austat
+                        keyword = Keyword.objects.create(name=sKeyword)
+                    # Check if the link is already there or not
+                    link = AuworkKeyword.objects.filter(auwork=self, keyword=keyword).first()
+                    if link is None:
+                        # Create the link
+                        link = AuworkKeyword.objects.create(auwork=self, keyword=keyword)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Auwork/add_keywords")
         return bResult
 
     def add_signatures(self, signatures):
@@ -5579,7 +5614,10 @@ class Auwork(models.Model, Custom):
         try:
             # Possibly add signatures: to Auwork
             if not signatures is None:
-                lst_signatures = [x.strip() for x in signatures.split(",")]
+                if isinstance(signatures, list):
+                    lst_signatures = signatures
+                else:
+                    lst_signatures = [x.strip() for x in signatures.split(",")]
                 for sSignature in lst_signatures:
                     # Check if this exists or not
                     signature = Signature.objects.filter(code__iexact=sSignature).first()
@@ -5595,6 +5633,67 @@ class Auwork(models.Model, Custom):
             msg = oErr.get_error_message()
             oErr.DoError("Auwork/add_signatures")
         return bResult
+
+    def custom_add(oAuwork, **kwargs):
+        """Add an Auwork according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        bOverwriting = False
+        lst_msg = []
+
+        try:
+            # Understand where we are coming from
+            keyfield = kwargs.get("keyfield", "path")
+            profile = kwargs.get("profile")
+
+            # The Auwork must be created on the basis of: 
+            #   key
+            auwork_key = oAuwork.get("key")
+            obj = Auwork.objects.filter(key=auwork_key).first()
+            if obj is None:
+                # Create one with default items
+                # NOTE: 
+                # - the stype must be initialized correctly as 'imported'
+                obj = Auwork.objects.create(key=auwork_key, stype="imp")
+
+            # NOTE: putting this code here means that anything imported for the second (or third) time
+            #       will be overwriting what was there
+
+            # Process all fields in the Specification
+            for oField in Auwork.specification:
+                field = oField.get(keyfield).lower()
+                if keyfield == "path" and oField.get("type") == "fk_id":
+                    field = "{}_id".format(field)
+                value = oAuwork.get(field)
+                readonly = oField.get('readonly', False)
+                
+                if value != None and value != "" and not readonly:
+                    type = oField.get("type")
+                    path = oField.get("path")
+                    if type == "field":
+                        # Set the correct field's value
+                        setattr(obj, path, value)
+                    elif type == "fk":
+                        fkfield = oField.get("fkfield")
+                        model = oField.get("model")
+                        if fkfield != None and model != None:
+                            # Find an item with the name for the particular model
+                            cls = apps.app_configs['seeker'].get_model(model)
+                            instance = cls.objects.filter(**{"{}".format(fkfield): value}).first()
+                            if instance != None:
+                                setattr(obj, path, instance)
+                    elif type == "func":
+                        # Set the KV in a special way
+                        obj.custom_set(path, value)
+
+                # Be sure to save the object
+                obj.save()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Auwork/custom_add")
+        return obj
 
     def custom_get(self, path, **kwargs):
         sBack = ""
@@ -5613,6 +5712,36 @@ class Auwork(models.Model, Custom):
             msg = oErr.get_error_message()
             oErr.DoError("Custom/custom_get")
         return sBack
+
+    def custom_set(self, path, value, **kwargs):
+        """Set related items"""
+
+        bResult = True
+        oErr = ErrHandle()
+
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            value_lst = get_value_list(value)
+
+            # Note: we skip a number of fields that are determined automatically
+            #       [ stype ]
+            if path == "genres":
+                self.add_genres(value_lst)
+            elif path == "keywords":
+                self.add_keywords(value_lst)
+            elif path == "signatures":
+                # Walk the signatures connected to me
+                self.add_signatures(value_lst)
+            else:
+                # TODO: figure out what to do in this case
+                pass
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Auwork/custom_set")
+            bResult = False
+        return bResult
 
     def get_edirefs_markdown(self):
         lHtml = []
@@ -7661,6 +7790,9 @@ class Colwit(models.Model, Custom):
     - title: the title of this collection (taken over from the collection to which I link)
     """
 
+    # [0-1] The LiLaC code for this particular Colwit (as automatically calculated)
+    lilacodefull = models.CharField("LiLaC code full (calculated)", null=True, blank=True, max_length=LONG_STRING)
+
     # [0-1] Description
     descr = models.TextField("Description", null=True, blank=True)
     # [0-1] Notes
@@ -7693,14 +7825,33 @@ class Colwit(models.Model, Custom):
 
     # Scheme for downloading and uploading
     specification = [
+        {'name': 'Lilacode',        'type': 'field', 'path': 'key'},
+        {'name': 'Status',          'type': 'field', 'path': 'stype',     'readonly': True},
+        {'name': 'Description',     'type': 'field', 'path': 'descr'},
+        {'name': 'Notes',           'type': 'field', 'path': 'notes'},
+
         {'name': 'Collection',      'type': 'func',  'path': 'collection'},
         {'name': 'Manuscript',      'type': 'func',  'path': 'manuscript'},
         {'name': 'Signatures',      'type': 'func',  'path': 'signatures'},
         {'name': 'Locus',           'type': 'func',  'path': 'locus'},
-        {'name': 'Status',          'type': 'field', 'path': 'stype',     'readonly': True},
-        {'name': 'Description',     'type': 'field', 'path': 'descr'},
-        {'name': 'Notes',           'type': 'field', 'path': 'notes'},
         ]
+
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+
+        oErr = ErrHandle()
+        try:
+            # Adapt lilacodefull if needed
+            lilacodefull = self.get_lilacode()
+            if self.lilacodefull != lilacodefull:
+                self.lilacodefull = lilacodefull
+            # Do the saving initially
+            response = super(Colwit, self).save(force_insert, force_update, using, update_fields)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Colwit.save")
+            response = None
+
+        return response
 
     def add_signatures(self, signatures):
         """Possiblyl add signatures to the Auwork object"""
@@ -7710,7 +7861,10 @@ class Colwit(models.Model, Custom):
         try:
             # Possibly add signatures: to Auwork
             if not signatures is None:
-                lst_signatures = [x.strip() for x in signatures.split(",")]
+                if isinstance(signatures, list):
+                    lst_signatures = signatures
+                else:
+                    lst_signatures = [x.strip() for x in signatures.split(",")]
                 for sSignature in lst_signatures:
                     # Check if this exists or not
                     signature = Signature.objects.filter(code__iexact=sSignature).first()
@@ -7726,6 +7880,70 @@ class Colwit(models.Model, Custom):
             msg = oErr.get_error_message()
             oErr.DoError("Colwit/add_signatures")
         return bResult
+
+    def custom_add(oColwit, **kwargs):
+        """Add an Colwit according to the specifications provided"""
+
+        oErr = ErrHandle()
+        obj = None
+        bOverwriting = False
+        lst_msg = []
+
+        try:
+            # Understand where we are coming from
+            keyfield = kwargs.get("keyfield", "path")
+            profile = kwargs.get("profile")
+
+            kwargs['settings'] = oColwit
+
+            # The Colwit must be created on the basis of: 
+            #   key
+            lilacode = oColwit.get("key")
+            if not lilacode is None:
+                obj = Colwit.objects.filter(lilacodefull=lilacode).first()
+                if obj is None:
+                    # Create one with default items
+                    # NOTE: 
+                    # - the stype must be initialized correctly as 'imported'
+                    obj = Colwit.objects.create(lilacodefull=lilacode, stype="imp")
+
+                # NOTE: putting this code here means that anything imported for the second (or third) time
+                #       will be overwriting what was there
+
+                # Process all fields in the Specification
+                for oField in Colwit.specification:
+                    field = oField.get(keyfield).lower()
+                    if keyfield == "path" and oField.get("type") == "fk_id":
+                        field = "{}_id".format(field)
+                    value = oColwit.get(field)
+                    readonly = oField.get('readonly', False)
+                
+                    if value != None and value != "" and not readonly:
+                        type = oField.get("type")
+                        path = oField.get("path")
+                        if type == "field":
+                            # Set the correct field's value
+                            setattr(obj, path, value)
+                        elif type == "fk":
+                            fkfield = oField.get("fkfield")
+                            model = oField.get("model")
+                            if fkfield != None and model != None:
+                                # Find an item with the name for the particular model
+                                cls = apps.app_configs['seeker'].get_model(model)
+                                instance = cls.objects.filter(**{"{}".format(fkfield): value}).first()
+                                if instance != None:
+                                    setattr(obj, path, instance)
+                        elif type == "func":
+                            # Set the KV in a special way
+                            obj.custom_set(path, value, **kwargs)
+
+                    # Be sure to save the object
+                    obj.save()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Colwit/custom_add")
+        return obj
 
     def custom_get(self, path, **kwargs):
         sBack = ""
@@ -7748,6 +7966,41 @@ class Colwit(models.Model, Custom):
             msg = oErr.get_error_message()
             oErr.DoError("Colwit/custom_get")
         return sBack
+
+    def custom_set(self, path, value, **kwargs):
+        """Set related items"""
+
+        bResult = True
+        oErr = ErrHandle()
+
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+            oSettings = kwargs.get("settings")
+            value_lst = get_value_list(value)
+
+            # Note: we skip a number of fields that are determined automatically
+            #       [ stype ]
+            if path == "collection":
+                self.set_collection(value)
+            elif path == "manuscript":
+                # This is not set separately, but this involves setting the correct Codhead
+                #      and that is done by combining manuscript + locus
+                pass
+            elif path == "locus":
+                self.set_codhead(value, oSettings.get('manuscript'))
+            elif path == "signatures":
+                # Walk the signatures connected to me
+                self.add_signatures(value_lst)
+            else:
+                # TODO: figure out what to do in this case
+                pass
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Colwit/custom_set")
+            bResult = False
+        return bResult
 
     def do_siglist(self):
         """(re-)calculate the contents for [siglist]"""
@@ -7898,6 +8151,60 @@ class Colwit(models.Model, Custom):
         sBack = get_stype_light(self.stype, usercomment, count)
         return sBack
 
+    def set_collection(self, value):
+        """Set (change) the field [collection] to the indicated value"""
+
+        bResult = True
+        oErr = ErrHandle()
+
+        try:
+            value = value.strip()
+            collection = Collection.objects.filter(lilacode=value).first()
+            id = None if self.collection is None else self.collection.id
+            if not collection is None and id != collection.id:
+                self.collection = collection
+                self.save()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Colwit/set_collection")
+            bResult = False
+        return bResult
+
+    def set_codhead(self, locus, sManuscript):
+        """Set (change) the correct Codhead, making use of the locus = [value] and the manuscript"""
+
+        bResult = True
+        oErr = ErrHandle()
+
+        try:
+            locus = locus.strip()
+            locus_start = locus.split("-")[0]
+            sManuscript = sManuscript.strip()
+            # Find the right manuscript
+            manuscripts = Manuscript.objects.filter(lilacode__iexact=sManuscript)
+
+            # Now look for the possible codhead ids
+            codheads = Codhead.objects.filter(
+                Q(locus__iexact=locus) | Q(locus__icontains=locus_start)).filter(
+                msitem__codico__manuscript__in=manuscripts)
+            codhead_ids = [x['id'] for x in codheads.values('id')]
+
+            # It does not exist yet - can we create it?
+            # Find the MsItem within the manuscript that should have it
+            if len(codhead_ids) > 0:
+                # Check if the corrent codhead is set correctly or not
+                id = None if self.codhead is None else self.codhead.id
+                if not id in codhead_ids:
+                    # Take the first codhead and use that
+                    self.codhead = codheads.first()
+                    self.save()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Colwit/set_locus")
+            bResult = False
+        return bResult
+
 
 class ColwitKeyword(models.Model):
     """Relation between a Colwit and a Keyword"""
@@ -7928,7 +8235,7 @@ class ColwitSignature(models.Model):
     def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
         response = super(ColwitSignature, self).save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
         # Process any changes in colwit's siglist
-        self.do_siglist()
+        self.colwit.do_siglist()
         # Return the best response
         return response
 
