@@ -63,6 +63,7 @@ def get_application_name():
     return "unknown"
 # Provide application-specific information
 PROJECT_NAME = get_application_name()
+APPLICATION_NAME = "Lilac"
 app_uploader = "{}_uploader".format(PROJECT_NAME.lower())
 app_editor = "{}_editor".format(PROJECT_NAME.lower())
 app_userplus = "{}_userplus".format(PROJECT_NAME.lower())
@@ -816,37 +817,44 @@ def adapt_m2o(cls, instance, field, qs, link_to_obj = None, **kwargs):
 def csv_to_excel(sCsvData, response):
     """Convert CSV data to an Excel worksheet"""
 
-    # Start workbook
-    wb = openpyxl.Workbook()
-    ws = wb.get_active_sheet()
-    ws.title="Data"
+    oErr = ErrHandle()
+    try:
+        # Start workbook
+        wb = openpyxl.Workbook()
+        # ws = wb.get_active_sheet()
+        ws = wb.active
+        ws.title="Data"
 
-    # Start accessing the string data 
-    f = StringIO(sCsvData)
-    reader = csv.reader(f, delimiter=",")
+        # Start accessing the string data 
+        f = StringIO(sCsvData)
+        reader = csv.reader(f, delimiter=",")
 
-    # Read the header cells and make a header row in the worksheet
-    headers = next(reader)
-    for col_num in range(len(headers)):
-        c = ws.cell(row=1, column=col_num+1)
-        c.value = headers[col_num]
-        c.font = openpyxl.styles.Font(bold=True)
-        # Set width to a fixed size
-        ws.column_dimensions[get_column_letter(col_num+1)].width = 5.0        
+        # Read the header cells and make a header row in the worksheet
+        headers = next(reader)
+        for col_num in range(len(headers)):
+            c = ws.cell(row=1, column=col_num+1)
+            c.value = headers[col_num]
+            c.font = openpyxl.styles.Font(bold=True)
+            # Set width to a fixed size
+            ws.column_dimensions[get_column_letter(col_num+1)].width = 5.0        
 
-    row_num = 1
-    lCsv = []
-    for row in reader:
-        # Keep track of the EXCEL row we are in
-        row_num += 1
-        # Walk the elements in the data row
-        # oRow = {}
-        for idx, cell in enumerate(row):
-            c = ws.cell(row=row_num, column=idx+1)
-            c.value = row[idx]
-            c.alignment = openpyxl.styles.Alignment(wrap_text=False)
-    # Save the result in the response
-    wb.save(response)
+        row_num = 1
+        lCsv = []
+        for row in reader:
+            # Keep track of the EXCEL row we are in
+            row_num += 1
+            # Walk the elements in the data row
+            # oRow = {}
+            for idx, cell in enumerate(row):
+                c = ws.cell(row=row_num, column=idx+1)
+                c.value = row[idx]
+                c.alignment = openpyxl.styles.Alignment(wrap_text=False)
+        # Save the result in the response
+        wb.save(response)
+    except:
+        msg = oErr.get_error_message()
+        oErr.DoError("csv_to_excel")
+
     return response
 
 
@@ -1524,7 +1532,8 @@ class BasicList(ListView):
 
             # Make a download name
             downloadname = self.model.__name__
-            sDbName = "lilac_{}.xlsx".format(downloadname)
+            applname = APPLICATION_NAME
+            sDbName = "{}_{}.xlsx".format(applname, downloadname)
 
             # Convert 'compressed_content' to an Excel worksheet
             sContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -1532,8 +1541,7 @@ class BasicList(ListView):
             response['Content-Disposition'] = 'attachment; filename="{}"'.format(sDbName)    
             # Get the Data
             sData = self.get_data('', dtype, response)
-            # Last transformation
-            response = csv_to_excel(sData, response)
+
         except:
             msg = oErr.get_error_message()
             oErr.DoError("process_download")

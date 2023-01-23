@@ -1541,7 +1541,7 @@ class LocationType(models.Model):
         return obj
 
 
-class Location(models.Model):
+class Location(models.Model, Custom):
     """One location element can be a city, village, cloister, region"""
 
     # [1] obligatory name in ENGLISH
@@ -1563,6 +1563,18 @@ class Location(models.Model):
     # Many-to-many field that identifies relations between locations
     relations = models.ManyToManyField("self", through="LocationRelation", symmetrical=False, related_name="relations_location")
 
+    # Definitions for download/upload
+    specification = [
+        {'name': 'Name',        'type': 'field',    'path': 'name'},
+        {'name': 'Type',        'type': 'func',     'path': 'loctype' },
+
+        {'name': 'City',        'type': 'func',     'path': 'city'},
+        {'name': 'Country',     'type': 'func',     'path': 'country'},
+
+        {'name': 'Part of',     'type': 'func',     'path': 'partof'},
+        ]
+
+
     def __str__(self):
         return self.name
 
@@ -1574,6 +1586,41 @@ class Location(models.Model):
         # Regular saving
         response = super(Location, self).save(force_insert, force_update, using, update_fields)
         return response
+
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            # Use if - elif - else to check the *path* defined in *specification*
+            if path == "loctype":
+                sBack = self.loctype.name
+            elif path == "city":
+                sBack = self.get_city_name()
+            elif path == "country":
+                sBack = self.get_city_name()
+            elif path == "partof":
+                sBack = self.partof()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Location/custom_get")
+        return sBack
+
+    def get_city_name(self):
+        sBack = "-"
+        if not self.lcity is None:
+            sBack = self.lcity.name
+        return sBack
+
+    def get_country_name(self):
+        sBack = "-"
+        if not self.lcountry is None:
+            sBack = self.lcountry.name
+        return sBack
 
     def get_loc_name(self):
         lname = "{} ({})".format(self.name, self.loctype)
@@ -1805,7 +1852,7 @@ class City(models.Model):
         return hit
 
 
-class Library(models.Model):
+class Library(models.Model, Custom):
     """Library in a particular city"""
 
     # [1] LIbrary code according to CNRS
@@ -1838,6 +1885,15 @@ class Library(models.Model):
     # [0-1] Library according to the 'Location' specification
     lcountry = models.ForeignKey(Location, null=True, related_name="lcountry_libraries", on_delete=models.SET_NULL)
 
+    # Definitions for download/upload
+    specification = [
+        {'name': 'Country',     'type': 'func',     'path': 'country'},
+        {'name': 'City',        'type': 'func',     'path': 'city'},
+        {'name': 'Library',     'type': 'field',    'path': 'name'},
+        {'name': 'Type',        'type': 'func',     'path': 'libtype' },
+        {'name': 'CNRS id',     'type': 'func',     'path': 'cnrs'},
+        ]
+
     def __str__(self):
         return self.name
 
@@ -1846,6 +1902,29 @@ class Library(models.Model):
         obj = self.get_city(False)
         obj = self.get_country(False)
         return super(Library, self).save(force_insert, force_update, using, update_fields)
+
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            # Use if - elif - else to check the *path* defined in *specification*
+            if path == "country":
+                sBack = self.get_country_name()
+            elif path == "city":
+                sBack = self.get_city_name()
+            elif path == "libtype":
+                sBack = self.get_libtype_display()
+            elif path == "cnrs":
+                sBack = self.get_cnrs_id()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Library/custom_get")
+        return sBack
 
     def get_best_match(sCountry, sCity, sLibrary):
         """Get the best matching objects for country, city, library"""
@@ -1892,6 +1971,14 @@ class Library(models.Model):
             hit.save()
 
         return hit
+
+    def get_cnrs_id(self):
+        """If defined, get the CNRS library id"""
+
+        sBack = "-"
+        if not self.idLibrEtab is None and self.idLibrEtab >= 0:
+            sBack = "{}".format(self.idLibrEtab)
+        return sBack
 
     def get_location(self):
         """Get the location of the library to show in details view"""
@@ -2057,7 +2144,7 @@ class Library(models.Model):
         return oResult
 
 
-class Origin(models.Model):
+class Origin(models.Model, Custom):
     """The 'origin' is a location where manuscripts were originally created"""
 
     # [1] Name of the location
@@ -2072,8 +2159,33 @@ class Origin(models.Model):
     # [1] Re-counted for each update: number of manuscripts
     mcount = models.IntegerField("Manuscript count", default=-1)
 
+    # Definitions for download/upload
+    specification = [
+        {'name': 'Name',        'type': 'field',    'path': 'name'},
+        {'name': 'Location',    'type': 'func',     'path': 'location' },
+        {'name': 'Note',        'type': 'field',    'path': 'note'},
+        {'name': 'ManuCount',   'type': 'field',    'path': 'mcount'},
+        ]
+
     def __str__(self):
         return self.name
+
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            # Use if - elif - else to check the *path* defined in *specification*
+            if path == "location":
+                sBack = self.get_location()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Origin/custom_get")
+        return sBack
 
     def do_mcount(self):
         """Count (or re-count) the number of manuscripts attached to me"""
@@ -2122,7 +2234,7 @@ class Origin(models.Model):
         return sBack
 
 
-class SourceInfo(models.Model):
+class SourceInfo(models.Model, Custom):
     """Details of the source from which we get information"""
 
     # [1] Obligatory time of extraction
@@ -2135,24 +2247,32 @@ class SourceInfo(models.Model):
     collector = models.CharField("Collected by", max_length=LONG_STRING)
     profile = models.ForeignKey(Profile, on_delete=models.SET_NULL, blank=True, null=True, related_name="profile_sourceinfos")
 
-    def init_profile():
-        coll_set = {}
-        qs = SourceInfo.objects.filter(profile__isnull=True)
-        with transaction.atomic():
-            for obj in qs:
-                if obj.collector != "" and obj.collector not in coll_set:
-                    coll_set[obj.collector] = Profile.get_user_profile(obj.collector)
-                obj.profile = coll_set[obj.collector]
-                obj.save()
-        # Derive from profile
-        qs = SourceInfo.objects.filter(collector="").exclude(profile__isnull=True)
-        with transaction.atomic():
-            for obj in qs:
-                if obj.collector == "" or obj.collector not in coll_set:
-                    obj.collector = Profile.objects.filter(id=obj.profile.id).first().user.username
-                obj.save()
+    # Definitions for download/upload
+    specification = [
+        {'name': 'Date',            'type': 'func',     'path': 'date'},
+        {'name': 'Collector',       'type': 'field',    'path': 'collector'},
+        {'name': 'Collected from',  'type': 'field',    'path': 'code' },
+        {'name': 'Manuscripts',     'type': 'func',     'path': 'mcount'},
+        ]
 
-        result = True
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            # Use if - elif - else to check the *path* defined in *specification*
+            if path == "date":
+                sBack = self.get_created()
+            elif path == "mcount":
+                sBack = self.get_mcount()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("SourceInfo/custom_get")
+        return sBack
 
     def get_created(self):
         sBack = self.created.strftime("%d/%b/%Y %H:%M")
@@ -2188,8 +2308,42 @@ class SourceInfo(models.Model):
             sBack = "<br />".join(html)
         return sBack
 
+    def get_mcount(self):
+        sBack = ""
+        mcount = self.sourcemanuscripts.count()
+        sBack = "{}".format(mcount)
+        return sBack
 
-class Litref(models.Model):
+    def init_profile():
+        """Initialise the source info, possibly from profile"""
+
+        result = True
+        oErr = ErrHandle()
+        try:
+            coll_set = {}
+            qs = SourceInfo.objects.filter(profile__isnull=True)
+            with transaction.atomic():
+                for obj in qs:
+                    if obj.collector != "" and obj.collector not in coll_set:
+                        coll_set[obj.collector] = Profile.get_user_profile(obj.collector)
+                    obj.profile = coll_set[obj.collector]
+                    obj.save()
+            # Derive from profile
+            qs = SourceInfo.objects.filter(collector="").exclude(profile__isnull=True)
+            with transaction.atomic():
+                for obj in qs:
+                    if obj.collector == "" or obj.collector not in coll_set:
+                        obj.collector = Profile.objects.filter(id=obj.profile.id).first().user.username
+                    obj.save()
+
+            result = True
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("SourceInfo/init_profile")
+        return result
+
+
+class Litref(models.Model, Custom):
     """A literature reference as found in a shared Zotero database"""
 
     # [1] The itemId for this literature reference
@@ -2211,10 +2365,39 @@ class Litref(models.Model):
 
     ok_types = ['book', 'bookSection', 'conferencePaper', 'journalArticle', 'manuscript', 'thesis']
 
+    # Definitions for download/upload
+    specification = [
+        {'name': 'Year',    'type': 'field','path': 'year'},
+        {'name': 'Short',   'type': 'func', 'path': 'short'},
+        {'name': 'Full',    'type': 'func', 'path': 'full'},
+        {'name': 'Date',    'type': 'func', 'path': 'date' },
+        ]
+
     def __str__(self):
         sBack = str(self.itemid)
         if self.short != None and self.short != "":
             sBack = self.short
+        return sBack
+
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            # Use if - elif - else to check the *path* defined in *specification*
+            if path == "date":
+                sBack = self.get_saved()
+            elif path == "short":
+                sBack = self.get_short()
+            elif path == "full":
+                sBack = self.get_full()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Litref/custom_get")
         return sBack
 
     def get_zotero(self):
@@ -2874,7 +3057,7 @@ class Litref(models.Model):
         return oBack, ""
        
 
-class Project(models.Model):
+class Project(models.Model, Custom):
     """Manuscripts may belong to the one or more projects (lila or others)"""
     
     # Editor status? zie punt 4 bij https://github.com/ErwinKomen/RU-lila/issues/412
@@ -2887,6 +3070,17 @@ class Project(models.Model):
     # [1] Date created (automatically done)
     created = models.DateTimeField(default=get_current_datetime)
   
+    # Definitions for download/upload
+    specification = [
+        {'name': 'Name',        'type': 'field',    'path': 'name'},
+        {'name': 'Description', 'type': 'field',    'path': 'description'},
+        {'name': 'Date',        'type': 'func',     'path': 'date' },
+        {'name': 'Manuscripts', 'type': 'func',     'path': 'manucount' },
+        {'name': 'Canwits',     'type': 'func',     'path': 'canwitcount' },
+        {'name': 'Austats',     'type': 'func',     'path': 'austatcount' },
+        {'name': 'Histcols',    'type': 'func',     'path': 'hccount' },
+        ]
+
     def __str__(self):
         sName = self.name
         if sName == None or sName == "":
@@ -2914,6 +3108,35 @@ class Project(models.Model):
 
         return response
 
+    def get_created(self):
+        sCreated = get_crpp_date(self.created, True)
+        return sCreated
+
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            # Use if - elif - else to check the *path* defined in *specification*
+            if path == "date":
+                sBack = self.get_created()
+            elif path == "manucount":
+                sBack = self.get_manucount(plain=True)
+            elif path == "canwitcount":
+                sBack = self.get_canwitcount(plain=True)
+            elif path == "austatcount":
+                sBack = self.get_austatcount(plain=True)
+            elif path == "hccount":
+                sBack = self.get_hccount(plain=True)
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Project/custom_get")
+        return sBack
+
     def get_editor_markdown(self):
         """List of users (=profiles) that have editing rights"""
 
@@ -2929,8 +3152,76 @@ class Project(models.Model):
         sBack = ", ".join(lHtml)
         return sBack
 
+    def get_manucount(self, plain=False):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            count = self.project_manuscripts.exclude(mtype="tem").count()
+            if plain:
+                sBack = "{}".format(count)
+            else:
+                url = reverse('manuscript_list')
+                if count > 0:
+                    sBack = "<a href='{}?manu-projlist={}'><span class='badge jumbo-3 clickable' title='{} manuscripts in this project'>{}</span></a>".format(
+                        url, self.id, count, count)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_manucount")
+        return sBack
 
-class Keyword(models.Model):
+    def get_canwitcount(self, plain=False):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            count = self.project_canwits.count() 
+            if plain:
+                sBack = "{}".format(count)
+            else:
+                url = reverse('canwit_list')
+                if count > 0:
+                    sBack = "<a href='{}?canwit-projlist={}'><span class='badge jumbo-3 clickable' title='{} canonical witnesses in this project'>{}</span></a>".format(
+                        url, self.id, count, count)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_canwitcount")
+        return sBack
+
+    def get_austatcount(self, plain=False):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            count = self.project_austat.count() 
+            if plain:
+                sBack = "{}".format(count)
+            else:
+                url = reverse('austat_list')
+                if count > 0:
+                    sBack = "<a href='{}?austat-projlist={}'><span class='badge jumbo-3 clickable' title='{} Authoritative statements in this project'>{}</span></a>".format(
+                        url, self.id, count, count)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_austatcount")
+        return sBack
+
+    def get_hccount(self, plain=False):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            count = self.project_collection.exclude(settype="pd").count() # Nog expliciet met HC rekening houden?
+            if plain:
+                sBack = "{}".format(count)
+            else:
+                url = reverse('collhist_list')
+                if count > 0:
+                    sBack = "<a href='{}?hist-projlist={}'><span class='badge jumbo-3 clickable' title='{} historical collections in this project'>{}</span></a>".format(
+                        url, self.id, count, count)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_hccount")
+        return sBack
+
+
+class Keyword(models.Model, Custom):
     """A keyword that can be referred to from a Canwit"""
 
     # [1] Obligatory text of a keyword
@@ -2940,8 +3231,41 @@ class Keyword(models.Model):
     # [0-1] Further details are perhaps required too
     description = models.TextField("Description", blank=True, null=True)
 
+    # Definitions for download/upload
+    specification = [
+        {'name': 'Name',        'type': 'field',    'path': 'name'},
+        {'name': 'Visibility',  'type': 'func',     'path': 'visibility' },
+        {'name': 'Description', 'type': 'field',    'path': 'description'},
+        {'name': 'Canwits',     'type': 'func',     'path': 'freqcanwit'},
+        {'name': 'Manuscripts', 'type': 'func',     'path': 'freqmanu'},
+        {'name': 'Austats',     'type': 'func',     'path': 'freqaustat'},
+        ]
+
     def __str__(self):
         return self.name
+
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            # Use if - elif - else to check the *path* defined in *specification*
+            if path == "visibility":
+                sBack = self.get_visibility_display()
+            elif path == "freqcanwit":
+                sBack = "{}".format(self.freqcanwit())
+            elif path == "freqmanu":
+                sBack = "{}".format(self.freqmanu())
+            elif path == "freqaustat":
+                sBack = "{}".format(self.freqaustat())
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Keyword/custom_get")
+        return sBack
 
     def freqcanwit(self):
         """Frequency in manifestation sermons"""
@@ -2953,8 +3277,8 @@ class Keyword(models.Model):
         freq = self.keywords_manu.all().count()
         return freq
 
-    def freqsuper(self):
-        """Frequency in Super sermons gold"""
+    def freqaustat(self):
+        """Frequency in Authoritative statements"""
         freq = self.keywords_super.all().count()
         return freq
 
@@ -2991,7 +3315,7 @@ class Keyword(models.Model):
         return qs
 
 
-class Comment(models.Model):
+class Comment(models.Model, Custom):
     """User comment"""
 
     # [0-1] The text of the comment itself
@@ -3003,12 +3327,89 @@ class Comment(models.Model):
     # [1] Date created (automatically done)
     created = models.DateTimeField(default=get_current_datetime)
 
+    # Definitions for download/upload
+    specification = [
+        {'name': 'Date',        'type': 'func',     'path': 'date'},
+        {'name': 'User name',   'type': 'func',     'path': 'user'},
+        {'name': 'Item type',   'type': 'func',     'path': 'otype' },
+        {'name': 'Link',        'type': 'func',     'path': 'link' },
+        ]
+
     def __str__(self):
         return self.content
+
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            # Use if - elif - else to check the *path* defined in *specification*
+            if path == "date":
+                sBack = self.get_created()
+            elif path == "user":
+                sBack = self.profile.user.username
+            elif path == "link":
+                sBack = self.get_link(plain=True)
+            elif path == "otype":
+                sBack = self.get_otype()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Litref/custom_get")
+        return sBack
 
     def get_created(self):
         sCreated = get_crpp_date(self.created, True)
         return sCreated
+
+    def get_link(self, plain=False):
+        """Get a link in HTML"""
+
+        sBack = ""
+        url = ""
+        oErr = ErrHandle()
+        try:
+            if self.otype == "manu":
+                obj = self.comments_manuscript.first()
+                if not obj is None:
+                    url = reverse("manuscript_details", kwargs={'pk': obj.id})
+                    label = "manu_{}".format(obj.id)
+                else:
+                    iStop = 1
+            elif self.otype == "sermo":
+                obj = self.comments_sermon.first()
+                if obj is None:
+                    iStop = 1
+                else:
+                    url = reverse("canwit_details", kwargs={'pk': obj.id})
+                    label = "sermo_{}".format(obj.id)
+            elif self.otype == "austat":
+                obj = self.comments_super.first()
+                if obj is None:
+                    iStop = 1
+                else:
+                    url = reverse("austat_details", kwargs={'pk': obj.id})
+                    label = "super_{}".format(obj.id)
+            elif self.otype == "codi":
+                obj = self.comments_codi.first()
+                if obj is None:
+                    iStop = 1
+                else:
+                    url = reverse("codico_details", kwargs={'pk': obj.id})
+                    label = "codi_{}".format(obj.id)
+            if url != "":
+                if plain:
+                    sBack = "{}".format(url)
+                else:
+                    sBack = "<span class='badge signature gr'><a href='{}'>{}</a></span>".format(url, label)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Comment/get_link")
+        return sBack
+
 
     def send_by_email(self, contents):
         """Send this comment by email to two addresses"""
@@ -3028,8 +3429,8 @@ class Comment(models.Model):
         return True
 
     def get_otype(self):
-        otypes = dict(manu="Manuscript", sermo="Sermon", gold="Gold Sermon", 
-                      super="Authoritative statement", codi="codicological unit")
+        otypes = dict(manu="Manuscript", canwit="Canon witness", sermo="Canon witness", 
+                      austat="Authoritative statement", codi="codicological unit")
         return otypes[self.otype]
 
 
@@ -5144,7 +5545,7 @@ class Daterange(models.Model):
         return bBack
 
 
-class Author(models.Model):
+class Author(models.Model, Custom):
     """We have a set of authors that are the 'golden' standard"""
 
     # [1] Name of the author
@@ -5156,8 +5557,38 @@ class Author(models.Model):
     # [1] Can this author's name and abbreviation be edited by users?
     editable = models.BooleanField("Editable", default=True)
 
+    # Definitions for download/upload
+    specification = [
+        {'name': 'Name',        'type': 'field',    'path': 'name'},
+        {'name': 'Abbreviation','type': 'field',    'path': 'abbr'},
+        {'name': 'Canwits',     'type': 'func',     'path': 'canwit' },
+        {'name': 'Austats',     'type': 'func',     'path': 'austat' },
+        {'name': 'Histcols',    'type': 'func',     'path': 'histcol' },
+        ]
+
     def __str__(self):
         return self.name
+
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            # Use if - elif - else to check the *path* defined in *specification*
+            if path == "canwit":
+                sBack = self.get_links(linktype=path, plain=True)
+            elif path == "austat":
+                sBack = self.get_links(linktype=path, plain=True)
+            elif path == "histcol":
+                sBack = self.get_links(linktype=path, plain=True)
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Litref/custom_get")
+        return sBack
 
     def find_or_create(sName):
         """Find an author or create it."""
@@ -5295,6 +5726,49 @@ class Author(models.Model):
         """Provide the HTML of the """
         pass
 
+    def get_links(self, linktype="canwit", plain=False):
+        """Get the number of Canwits with this author"""
+
+        sBack = ""
+        html = []
+        oErr = ErrHandle()
+        try:
+            # Get the HTML code for the links of this instance
+            number = 0
+            url = ""
+            title = ""
+            prefix = ""
+            if linktype == "canwit":
+                number = self.author_sermons.count()
+                url = reverse('canwit_list')
+                title = "canonical witnesses"
+                prefix = "canwit"
+            elif linktype == "austat":
+                number = self.author_austats.count()
+                url = reverse("austat_list")
+                title = "authoritative statements"
+                prefix = "austat"
+            elif linktype == "histcol":
+                number = self.author_collections.filter(settype="hc").count()
+                url = reverse("collhist_list")
+                title = "historical collections"
+                prefix = "hc"
+
+            if plain:
+                sBack = "{}".format(number)
+            else:
+                if number > 0:
+                    url = reverse('canwit_list')
+                    html.append("<span class='badge jumbo-1' title='linked {}'>".format(title))
+                    html.append(" <a href='{}?{}-author={}'>{}</a></span>".format(url, prefix, instance.id, number))
+                # Combine the HTML code
+                sBack = "\n".join(html)
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Author/get_links")
+        return sBack
+
     def get_number(self):
         """Get the author number"""
 
@@ -5386,7 +5860,7 @@ class Free(models.Model):
         return sCombi
 
 
-class Genre(models.Model):
+class Genre(models.Model, Custom):
     """Christian feast commemmorated in one of the Latin texts or sermons"""
 
     # [1] Name of the genre in English
@@ -5396,8 +5870,40 @@ class Genre(models.Model):
     # [1] And a date: the date of saving this relation
     created = models.DateTimeField(default=get_current_datetime)
 
+    # Definitions for download/upload
+    specification = [
+        {'name': 'Name',        'type': 'field',    'path': 'name'},
+        {'name': 'Description', 'type': 'field',    'path': 'description'},
+        {'name': 'Date',        'type': 'func',     'path': 'date' },
+        {'name': 'Manuscripts', 'type': 'func',     'path': 'manucount' },
+        {'name': 'Canwits',     'type': 'func',     'path': 'canwitcount' },
+        {'name': 'Austats',     'type': 'func',     'path': 'austatcount' },
+        {'name': 'Histcols',    'type': 'func',     'path': 'hccount' },
+        ]
+
     def __str__(self):
         return self.name
+
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            # Use if - elif - else to check the *path* defined in *specification*
+            if path == "date":
+                sBack = self.get_saved()
+            elif path == "short":
+                sBack = self.get_short()
+            elif path == "full":
+                sBack = self.get_full()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Litref/custom_get")
+        return sBack
 
     def freqcanwit(self):
         """Frequency in manifestation sermons"""
@@ -5428,7 +5934,7 @@ class Genre(models.Model):
         return obj
 
 
-class Provenance(models.Model):
+class Provenance(models.Model, Custom):
     """The 'origin' is a location where manuscripts were originally created"""
 
     # [1] Name of the location (can be cloister or anything)
@@ -5441,8 +5947,40 @@ class Provenance(models.Model):
     ## [1] One provenance belongs to exactly one manuscript
     #manu = models.ForeignKey(Manuscript, default=0, related_name="manuprovenances")
 
+    # Definitions for download/upload
+    specification = [
+        {'name': 'Name',        'type': 'field',    'path': 'name'},
+        {'name': 'Description', 'type': 'field',    'path': 'description'},
+        {'name': 'Date',        'type': 'func',     'path': 'date' },
+        {'name': 'Manuscripts', 'type': 'func',     'path': 'manucount' },
+        {'name': 'Canwits',     'type': 'func',     'path': 'canwitcount' },
+        {'name': 'Austats',     'type': 'func',     'path': 'austatcount' },
+        {'name': 'Histcols',    'type': 'func',     'path': 'hccount' },
+        ]
+
     def __str__(self):
         return self.name
+
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            # Use if - elif - else to check the *path* defined in *specification*
+            if path == "date":
+                sBack = self.get_saved()
+            elif path == "short":
+                sBack = self.get_short()
+            elif path == "full":
+                sBack = self.get_full()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Litref/custom_get")
+        return sBack
 
     def find_or_create(sName,  city=None, country=None, note=None):
         """Find a location or create it."""

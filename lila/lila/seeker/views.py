@@ -1790,18 +1790,20 @@ class AuworkListView(BasicList):
         {'name': 'Frequency', 'order': '',    'type': 'str', 'custom': 'links'},
         ]
     filters = [ 
-        {"name": "Key code",    "id": "filter_keycode", "enabled": False, 'include_id': 'filter_opus'},
-        {"name": "Work",        "id": "filter_work",    "enabled": False, 'include_id': 'filter_opus'},
-        {"name": "Opus",        "id": "filter_opus",    "enabled": False, 'head_id': 'hidden'},
-        # {"name": "Opus",        "id": "filter_opus",    "enabled": False},
+        {"name": "Key code",    "id": "filter_keycode", "enabled": False},
+        {"name": "Work",        "id": "filter_work",    "enabled": False},
+        {"name": "Opus",        "id": "filter_opus",    "enabled": False},
+
+        # Sticky search field example
+        #{"name": "Key code",    "id": "filter_keycode", "enabled": False, 'include_id': 'filter_opus'},
+        #{"name": "Work",        "id": "filter_work",    "enabled": False, 'include_id': 'filter_opus'},
+        #{"name": "Opus",        "id": "filter_opus",    "enabled": False, 'head_id': 'hidden'},
         ]
     searches = [
         {'section': '', 'filterlist': [
             {'filter': 'keycode',   'dbfield': 'key',   'keyS': 'key_ta'},
             {'filter': 'work',      'dbfield': 'work',  'keyS': 'work_ta' },
             {'filter': 'opus',      'dbfield': 'opus',  'keyS': 'opus_ta' },
-            # Include [opus_ta] whenever [keycode] or [work] is opened
-            # {'include': ['keycode', 'work'], 'dbfield': 'opus',  'keyS': 'opus_ta' },
             ]}
         ]
 
@@ -1976,7 +1978,7 @@ class KeywordListView(BasicList):
                 url = reverse('manuscript_list')
                 html.append("<a href='{}?manu-kwlist={}'>".format(url, instance.id))
                 html.append("<span class='badge jumbo-3 clickable' title='Frequency in manuscripts'>{}</span></a>".format(number))
-            number = instance.freqsuper()
+            number = instance.freqaustat()
             if number > 0:
                 url = reverse('austat_list')
                 html.append("<a href='{}?ssg-kwlist={}'>".format(url, instance.id))
@@ -3318,8 +3320,8 @@ class ProjectListView(BasicList):
     order_heads = [
         {'name': 'Project',                  'order': 'o=1', 'type': 'str', 'custom': 'project',   'main': True, 'linkdetails': True},
         {'name': 'Manuscripts',              'order': 'o=2', 'type': 'str', 'custom': 'manulink',  'align': 'right' },
-        {'name': 'Sermons',                  'order': 'o=3', 'type': 'str', 'custom': 'sermolink', 'align': 'right'},
-        {'name': 'Authoritative statements', 'order': 'o=4', 'type': 'str', 'custom': 'ssglink',   'align': 'right'},
+        {'name': 'Sermons',                  'order': 'o=3', 'type': 'str', 'custom': 'canwitlink','align': 'right'},
+        {'name': 'Authoritative statements', 'order': 'o=4', 'type': 'str', 'custom': 'austatlink','align': 'right'},
         {'name': 'Historical collections',   'order': 'o=5', 'type': 'str', 'custom': 'hclink',    'align': 'right'}]
                    
     filters = [ {"name": "Project",         "id": "filter_project",     "enabled": False},
@@ -3340,37 +3342,19 @@ class ProjectListView(BasicList):
         try:
             if custom == "manulink":
                 # Link to the manuscripts in this project
-                count = instance.project_manuscripts.exclude(mtype="tem").count()
-                url = reverse('manuscript_list')
-                if count > 0:
-                 #   html.append("<a href='{}?manu-prjlist={}'><span class='badge jumbo-3 clickable' title='{} manuscripts in this project'>{}</span></a>".format(
-                 #       url, instance.id, count, count)) 
-                    html.append("<a href='{}?manu-projlist={}'><span class='badge jumbo-3 clickable' title='{} manuscripts in this project'>{}</span></a>".format(
-                        url, instance.id, count, count))
+                html.append(instance.get_manucount())
 
-            elif custom == "sermolink":
-                # Link to the sermons in this project
-                count = instance.project_canwits.count() 
-                url = reverse('canwit_list')
-                if count > 0:                 
-                    html.append("<a href='{}?sermo-projlist={}'><span class='badge jumbo-3 clickable' title='{} sermons in this project'>{}</span></a>".format(
-                        url, instance.id, count, count))
+            elif custom == "canwitlink":
+                # Link to the canwits in this project
+                html.append(instance.get_canwitcount())
             
-            elif custom == "ssglink":
+            elif custom == "austatlink":
                 # Link to the Authoritative statements in this project
-                count = instance.project_austat.count() 
-                url = reverse('austat_list')
-                if count > 0:                 
-                    html.append("<a href='{}?ssg-projlist={}'><span class='badge jumbo-3 clickable' title='{} Authoritative statements in this project'>{}</span></a>".format(
-                        url, instance.id, count, count))
+                html.append(instance.get_austatcount())
 
             elif custom == "hclink":
                 # Link to the historical collections in this project
-                count = instance.project_collection.exclude(settype="pd").count() # Nog expliciet met HC rekening houden?
-                url = reverse('collhist_list')
-                if count > 0:                 
-                    html.append("<a href='{}?hist-projlist={}'><span class='badge jumbo-3 clickable' title='{} historical collections in this project'>{}</span></a>".format(
-                        url, instance.id, count, count))
+                html.append(instance.get_hccount())
 
             elif custom == "project":
                 sName = instance.name
@@ -3575,38 +3559,7 @@ class CommentListView(BasicList):
             elif custom == "otype":
                 sBack = instance.get_otype()
             elif custom == "link":
-                url = ""
-                label = ""
-                if instance.otype == "manu":
-                    obj = instance.comments_manuscript.first()
-                    if not obj is None:
-                        url = reverse("manuscript_details", kwargs={'pk': obj.id})
-                        label = "manu_{}".format(obj.id)
-                    else:
-                        iStop = 1
-                elif instance.otype == "sermo":
-                    obj = instance.comments_sermon.first()
-                    if obj is None:
-                        iStop = 1
-                    else:
-                        url = reverse("canwit_details", kwargs={'pk': obj.id})
-                        label = "sermo_{}".format(obj.id)
-                elif instance.otype == "austat":
-                    obj = instance.comments_super.first()
-                    if obj is None:
-                        iStop = 1
-                    else:
-                        url = reverse("austat_details", kwargs={'pk': obj.id})
-                        label = "super_{}".format(obj.id)
-                elif instance.otype == "codi":
-                    obj = instance.comments_codi.first()
-                    if obj is None:
-                        iStop = 1
-                    else:
-                        url = reverse("codico_details", kwargs={'pk': obj.id})
-                        label = "codi_{}".format(obj.id)
-                if url != "":
-                    sBack = "<span class='badge signature gr'><a href='{}'>{}</a></span>".format(url, label)
+                sBack = instance.get_link()
         except:
             msg = oErr.get_error_message()
             oErr.DoError("CommentListView/get_field_value")
@@ -3667,7 +3620,7 @@ class AuthorListView(BasicList):
                     'title': 'Abbreviation of this name (used in standard literature)', 'field': 'abbr', 'default': ""},
                    {'name': 'Number',      'order': 'o=2', 'type': 'int', 'title': 'lila author number', 'field': 'number', 'default': 10000, 'align': 'right'},
                    {'name': 'Author name', 'order': 'o=3', 'type': 'str', 'field': "name", "default": "", 'main': True, 'linkdetails': True},
-                   {'name': 'Links',       'order': '',    'type': 'str', 'title': 'Number of links from Sermon Descriptions and Gold Sermons', 'custom': 'links' },
+                   {'name': 'Canwits',     'order': '',    'type': 'str', 'title': 'Number of links from Canonical witnesses', 'custom': 'canwits' },
                    {'name': '',            'order': '',    'type': 'str', 'options': ['delete']}]
     filters = [ {"name": "Author",  "id": "filter_author",  "enabled": False}]
     searches = [
@@ -3684,16 +3637,8 @@ class AuthorListView(BasicList):
     def get_field_value(self, instance, custom):
         sBack = ""
         sTitle = ""
-        if custom == "links":
-            html = []
-            # Get the HTML code for the links of this instance
-            number = instance.author_sermons.count()
-            if number > 0:
-                url = reverse('canwit_list')
-                html.append("<span class='badge jumbo-1' title='linked sermon descriptions'>")
-                html.append(" <a href='{}?sermo-author={}'>{}</a></span>".format(url, instance.id, number))
-            # Combine the HTML code
-            sBack = "\n".join(html)
+        if custom == "canwits":
+            sBack = instance.get_links(linktype="canwits")
         return sBack, sTitle
 
 
