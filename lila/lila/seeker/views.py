@@ -1224,12 +1224,12 @@ class OriginListView(BasicList):
     has_select2 = True
     paginate_by = 15
     page_function = "ru.lila.seeker.search_paged_start"
-    order_cols = ['name', 'location', 'note', '']
+    order_cols = ['name', 'location', 'note', 'mcount']
     order_default = order_cols
-    order_heads = [{'name': 'Name',     'order': 'o=1', 'type': 'str', 'custom': 'origin', 'main': True, 'linkdetails': True},
-                   {'name': 'Location', 'order': 'o=2', 'type': 'str', 'custom': 'location'},
-                   {'name': 'Note',     'order': 'o=3', 'type': 'str', 'custom': 'note'},
-                   {'name': '',         'order': '',    'type': 'str', 'custom': 'manulink' }]
+    order_heads = [{'name': 'Name',         'order': 'o=1', 'type': 'str', 'custom': 'origin', 'main': True, 'linkdetails': True},
+                   {'name': 'Location',     'order': 'o=2', 'type': 'str', 'custom': 'location'},
+                   {'name': 'Note',         'order': 'o=3', 'type': 'str', 'custom': 'note'},
+                   {'name': 'Manuscripts',  'order': 'o=4', 'type': 'int', 'custom': 'manulink' }]
     filters = [ {"name": "Location",        "id": "filter_location",    "enabled": False},
                 {"name": "Shelfmark",       "id": "filter_manuid",      "enabled": False, "head_id": "filter_other"},
                ]
@@ -1238,13 +1238,24 @@ class OriginListView(BasicList):
             {'filter': 'location', 'dbfield': 'name', 'keyS': 'location_ta', 'keyList': 'locationlist', 'infield': 'name' }]}
         ]
 
+    def initializations(self):
+        """Initializations to the Auwork listview"""
+
+        # ======== One-time adaptations ==============
+        listview_adaptations("origin_list")
+
+        return None
+
     def get_field_value(self, instance, custom):
         sBack = ""
         sTitle = ""
         html = []
         if custom == "manulink":
             # Link to manuscripts in this project
-            count = instance.origin_manuscripts.all().count()
+            count = instance.mcount
+            # count = Manuscript.objects.filter(origin_codicos__codico__manuscript=instance).count()
+            # count = instance.origin_manuscripts.all().count()
+
             url = reverse('manuscript_list')
             if count > 0:
                 html.append("<a href='{}?manu-origin={}'><span class='badge jumbo-3 clickable' title='{} manuscripts with this origin'>{}</span></a>".format(
@@ -1779,15 +1790,18 @@ class AuworkListView(BasicList):
         {'name': 'Frequency', 'order': '',    'type': 'str', 'custom': 'links'},
         ]
     filters = [ 
-        {"name": "Key code",    "id": "filter_keycode", "enabled": False},
-        {"name": "Work",        "id": "filter_work",    "enabled": False},
-        {"name": "Opus",        "id": "filter_opus",    "enabled": False},
+        {"name": "Key code",    "id": "filter_keycode", "enabled": False, 'include_id': 'filter_opus'},
+        {"name": "Work",        "id": "filter_work",    "enabled": False, 'include_id': 'filter_opus'},
+        {"name": "Opus",        "id": "filter_opus",    "enabled": False, 'head_id': 'hidden'},
+        # {"name": "Opus",        "id": "filter_opus",    "enabled": False},
         ]
     searches = [
         {'section': '', 'filterlist': [
             {'filter': 'keycode',   'dbfield': 'key',   'keyS': 'key_ta'},
             {'filter': 'work',      'dbfield': 'work',  'keyS': 'work_ta' },
             {'filter': 'opus',      'dbfield': 'opus',  'keyS': 'opus_ta' },
+            # Include [opus_ta] whenever [keycode] or [work] is opened
+            # {'include': ['keycode', 'work'], 'dbfield': 'opus',  'keyS': 'opus_ta' },
             ]}
         ]
 

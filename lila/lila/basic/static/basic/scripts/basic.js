@@ -1209,58 +1209,87 @@ var ru = (function ($, ru) {
        */
       filter_click: function (el) {
         var target = null,
+            targetadd = null,
+            target_item = null,
+            i = 0,
+            sLabel = "",
+            lst_target = [],
             specs = null;
 
         try {
+          // Find out which target to show
           target = $(this).attr("targetid");
+          // Check if there is any other target to show
+          sLabel = $(this).attr("targetaddid");
+          if (sLabel !== undefined && sLabel !== null && sLabel !== "") {
+            targetadd = $("#" + sLabel);
+          }
+          // Start showing the target
           if (target !== undefined && target !== null && target !== "") {
             target = $("#" + target);
+            // Create a list of targets
+            lst_target.push(target);
+            if (targetadd !== null && $(targetadd).length > 0) {
+              lst_target.push(targetadd);
+            }
             // Action depends on checking or not
             if ($(this).hasClass("on")) {
               // it is on, switch it off
               $(this).removeClass("on");
               $(this).removeClass("jumbo-3");
               $(this).addClass("jumbo-1");
-              // Must hide it and reset target
-              $(target).addClass("hidden");
 
-              // Check if target has a targetid
-              specs = $(target).attr("targetid");
-              if (specs !== undefined && specs !== "") {
-                // Reset related badges
-                $(target).find("span.badge").each(function (idx, elThis) {
-                  var subtarget = "";
+              for (i = 0; i < lst_target.length; i++) {
+                // Treat this item
+                target_item = lst_target[i];
 
-                  $(elThis).removeClass("on");
-                  $(elThis).removeClass("jumbo-3");
-                  $(elThis).removeClass("jumbo-2");
-                  $(elThis).addClass("jumbo-1");
-                  subtarget = $(elThis).attr("targetid");
-                  if (subtarget !== undefined && subtarget !== "") {
-                    $("#" + subtarget).addClass("hidden");
-                  }
+                // Must hide it and reset target
+                $(target_item).addClass("hidden");
+
+                // Check if target has a targetid
+                specs = $(target_item).attr("targetid");
+                if (specs !== undefined && specs !== "") {
+                  // Reset related badges
+                  $(target_item).find("span.badge").each(function (idx, elThis) {
+                    var subtarget = "";
+
+                    $(elThis).removeClass("on");
+                    $(elThis).removeClass("jumbo-3");
+                    $(elThis).removeClass("jumbo-2");
+                    $(elThis).addClass("jumbo-1");
+                    subtarget = $(elThis).attr("targetid");
+                    if (subtarget !== undefined && subtarget !== "") {
+                      $("#" + subtarget).addClass("hidden");
+                    }
+                  });
+                  // Re-define the target
+                  target_item = $("#" + specs);
+                }
+
+                $(target_item).find("input").each(function (idx, elThis) {
+                  $(elThis).val("");
                 });
-                // Re-define the target
-                target = $("#" + specs);
+                // Also reset all select 2 items
+                $(target_item).find("select").each(function (idx, elThis) {
+                  $(elThis).val("").trigger("change");
+                });
+
               }
 
-              $(target).find("input").each(function (idx, elThis) {
-                $(elThis).val("");
-              });
-              // Also reset all select 2 items
-              $(target).find("select").each(function (idx, elThis) {
-                $(elThis).val("").trigger("change");
-              });
 
             } else {
-              // Must show target
-              $(target).removeClass("hidden");
+              // Must show target[s]
+              for (i = 0; i < lst_target.length; i++) {
+                // Treat this item
+                target_item = lst_target[i];
+                $(target_item).removeClass("hidden");
+              }
+
               // it is off, switch it on
               $(this).addClass("on");
               $(this).removeClass("jumbo-1");
               $(this).addClass("jumbo-3");
             }
-
           }
         } catch (ex) {
           private_methods.errMsg("filter_click", ex);
@@ -3025,32 +3054,46 @@ var ru = (function ($, ru) {
         try {
           // Clear filters
           $(".badge.filter").each(function (idx, elThis) {
-            var target;
+            var target,
+              targetadd,
+              targetitem,
+              i,
+              lst_target = [];
 
             target = $(elThis).attr("targetid");
+            targetadd = $(elThis).attr("targetaddid");
             if (target !== undefined && target !== null && target !== "") {
               target = $("#" + target);
+              lst_target.push(target);
+              if (targetadd !== undefined && targetadd !== null && targetadd !== "") {
+                lst_target.push($("#" + targetadd));
+              }
+
               // Action depends on checking or not
               if ($(elThis).hasClass("on")) {
                 // it is on, switch it off
                 $(elThis).removeClass("on");
                 $(elThis).removeClass("jumbo-3");
                 $(elThis).addClass("jumbo-1");
-                // Must hide it and reset target
-                $(target).addClass("hidden");
 
-                // Process the <input> element
-                $(target).find("input").each(function (idx, elThis) {
-                  $(elThis).val("");
-                });
-                // Process the <textarea> element
-                $(target).find("textarea").each(function (idx, elThis) {
-                  $(elThis).val("");
-                });
-                // Also reset all select 2 items
-                $(target).find("select").each(function (idx, elThis) {
-                  $(elThis).val("").trigger("change");
-                });
+                // Must hide it and reset all associated targets
+                for (i = 0; i < lst_target.length; i++) {
+                  targetitem = lst_target[i];
+                  $(targetitem).addClass("hidden");
+
+                  // Process the <input> element
+                  $(targetitem).find("input").each(function (idx, elLocal) {
+                    $(elLocal).val("");
+                  });
+                  // Process the <textarea> element
+                  $(targetitem).find("textarea").each(function (idx, elLocal) {
+                    $(elLocal).val("");
+                  });
+                  // Also reset all select 2 items
+                  $(targetitem).find("select").each(function (idx, elLocal) {
+                    $(elLocal).val("").trigger("change");
+                  });
+                }
               }
             }
           });

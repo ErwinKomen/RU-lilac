@@ -161,7 +161,8 @@
                       <h4>
                       {% for filter in filters %}
                         {% if not filter.head_id or filter.head_id == "none" %}
-                          <span class="badge filter {% if filter.enabled %} jumbo-3 on {% else %} jumbo-1 {% endif %} " targetid="{{filter.id}}" >{{filter.name}}</span>
+                          <span class="badge filter {% if filter.enabled %} jumbo-3 on {% else %} jumbo-1 {% endif %} " 
+                                targetid="{{filter.id}}" targetaddid="{{filter.include_id}}">{{filter.name}}</span>
                         {% endif %}
                       {% endfor %}
                       </h4>
@@ -179,8 +180,10 @@
 
                       <!-- Show the different filters in the list -->
                       {% for filter in filters %}
-                        {% if not filter.head_id  %}
-                          <div id="{{filter.id}}" class="{% if not filter.hasvalue %}hidden{% endif %}">
+                        {% if not filter.head_id or filter.head_id == "hidden" %}
+                          <div id="{{filter.id}}" class="{% if filter.hasvalue %} {% else %}hidden {% endif %}"
+                               addview="{% if filter.include_id %}{{filter.include_id}}{% endif %}"
+                               >
                             <table style="width: 100%;">
                               <tr class="form-row">
                                 <td style="min-width: 130px;" valign="top">

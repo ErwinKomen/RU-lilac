@@ -2069,8 +2069,26 @@ class Origin(models.Model):
     # [0-1] Further details are perhaps required too
     note = models.TextField("Notes on this origin", blank=True, null=True)
 
+    # [1] Re-counted for each update: number of manuscripts
+    mcount = models.IntegerField("Manuscript count", default=-1)
+
     def __str__(self):
         return self.name
+
+    def do_mcount(self):
+        """Count (or re-count) the number of manuscripts attached to me"""
+
+        bResult = True
+        oErr = ErrHandle()
+        try:
+            mcount = Manuscript.objects.filter(manuscriptcodicounits__codico_origins__origin=self).count()
+            if self.mcount != mcount:
+                self.mcount = mcount
+                self.save()
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Origin/do_mcount")
+        return bResult
 
     def find_or_create(sName, city=None, country=None, note=None):
         """Find a location or create it."""
@@ -3095,10 +3113,6 @@ class Manuscript(models.Model, Custom):
     # Where do we get our information from? And when was it added?
     #    Note: deletion of a sourceinfo sets the manuscript.source to NULL
     source = models.ForeignKey(SourceInfo, null=True, blank=True, on_delete = models.SET_NULL, related_name="sourcemanuscripts")
-
-    # [0-1] Each manuscript should belong to a particular project TH this needs to be changed to a MANYTOMANY
-    # in order to be able to link on manuscript to multiple 
-    # project = models.ForeignKey(Project, null=True, blank=True, on_delete = models.SET_NULL, related_name="project_manuscripts")
 
     # ============== MANYTOMANY connections
     # [m] Many-to-many: one manuscript can have a series of provenances
@@ -10259,63 +10273,6 @@ class CodicoKeyword(models.Model):
     created = models.DateTimeField(default=get_current_datetime)
 
 
-# =========================== PROJECT RELATED ===================================
-
-
-class ManuscriptProject(models.Model):
-    """Relation between a Manuscript and a Project"""
-
-    # [1] The link is between a Manuscript instance ...
-    manuscript = models.ForeignKey(Manuscript, related_name="manuscript_proj", on_delete=models.CASCADE)
-    # [1] ...and a project instance
-    project = models.ForeignKey(Project, related_name="manuscript_proj", on_delete=models.CASCADE)
-    # [1] And a date: the date of saving this relation
-    created = models.DateTimeField(default=get_current_datetime)
-
-    def delete(self, using = None, keep_parents = False):
-        # Deletion is only allowed, if the project doesn't become 'orphaned'
-        count = self.manuscript.projects.count()
-        if count > 1:
-            response = super(ManuscriptProject, self).delete(using, keep_parents)
-        else:
-            response = None
-        return response
-
-
-class ManuscriptCorpus(models.Model):
-    """A user-SSG-specific manuscript corpus"""
-
-    # [1] Each corpus is created with a particular SSG as starting point
-    austat = models.ForeignKey(Austat, related_name="supercorpora", on_delete=models.CASCADE)
-
-    # Links: source.SSG - target.SSG - manu
-    # [1] Link-item 1: source
-    source = models.ForeignKey(Austat, related_name="sourcecorpora", on_delete=models.CASCADE)
-    # [1] Link-item 2: target
-    target = models.ForeignKey(Austat, related_name="targetcorpora", on_delete=models.CASCADE)
-    # [1] Link-item 3: manuscript
-    manu = models.ForeignKey(Manuscript, related_name="manucorpora", on_delete=models.CASCADE)
-
-    # [1] Each corpus belongs to a person
-    profile = models.ForeignKey(Profile, related_name="profilecorpora", on_delete=models.CASCADE)
-    # [1] And a date: the date of saving this relation
-    created = models.DateTimeField(default=get_current_datetime)
-
-
-class ManuscriptCorpusLock(models.Model):
-    """A user-SSG-specific manuscript corpus"""
-
-    # [1] Each lock is created with a particular SSG as starting point
-    austat = models.ForeignKey(Austat, related_name="supercorpuslocks", on_delete=models.CASCADE)
-    # [1] Each lock belongs to a person
-    profile = models.ForeignKey(Profile, related_name="profilecorpuslocks", on_delete=models.CASCADE)
-    # [1] And a date: the date of saving this relation
-    created = models.DateTimeField(default=get_current_datetime)
-
-    # [1] Status
-    status = models.TextField("Status", default = "empty")
-
-    
 class UserKeyword(models.Model):
     """Relation between a M/S/SG/SSG and a Keyword - restricted to user"""
 
@@ -10391,6 +10348,66 @@ class UserKeyword(models.Model):
         except:
             msg = oErr.get_error_message()
         return response
+
+
+# =========================== PROJECT RELATED ===================================
+
+
+class ManuscriptProject(models.Model):
+    """Relation between a Manuscript and a Project"""
+
+    # [1] The link is between a Manuscript instance ...
+    manuscript = models.ForeignKey(Manuscript, related_name="manuscript_proj", on_delete=models.CASCADE)
+    # [1] ...and a project instance
+    project = models.ForeignKey(Project, related_name="manuscript_proj", on_delete=models.CASCADE)
+    # [1] And a date: the date of saving this relation
+    created = models.DateTimeField(default=get_current_datetime)
+
+    def delete(self, using = None, keep_parents = False):
+        # Deletion is only allowed, if the project doesn't become 'orphaned'
+        count = self.manuscript.projects.count()
+        if count > 1:
+            response = super(ManuscriptProject, self).delete(using, keep_parents)
+        else:
+            response = None
+        return response
+
+
+class ManuscriptCorpus(models.Model):
+    """A user-SSG-specific manuscript corpus"""
+
+    # [1] Each corpus is created with a particular SSG as starting point
+    austat = models.ForeignKey(Austat, related_name="supercorpora", on_delete=models.CASCADE)
+
+    # Links: source.SSG - target.SSG - manu
+    # [1] Link-item 1: source
+    source = models.ForeignKey(Austat, related_name="sourcecorpora", on_delete=models.CASCADE)
+    # [1] Link-item 2: target
+    target = models.ForeignKey(Austat, related_name="targetcorpora", on_delete=models.CASCADE)
+    # [1] Link-item 3: manuscript
+    manu = models.ForeignKey(Manuscript, related_name="manucorpora", on_delete=models.CASCADE)
+
+    # [1] Each corpus belongs to a person
+    profile = models.ForeignKey(Profile, related_name="profilecorpora", on_delete=models.CASCADE)
+    # [1] And a date: the date of saving this relation
+    created = models.DateTimeField(default=get_current_datetime)
+
+
+class ManuscriptCorpusLock(models.Model):
+    """A user-SSG-specific manuscript corpus"""
+
+    # [1] Each lock is created with a particular SSG as starting point
+    austat = models.ForeignKey(Austat, related_name="supercorpuslocks", on_delete=models.CASCADE)
+    # [1] Each lock belongs to a person
+    profile = models.ForeignKey(Profile, related_name="profilecorpuslocks", on_delete=models.CASCADE)
+    # [1] And a date: the date of saving this relation
+    created = models.DateTimeField(default=get_current_datetime)
+
+    # [1] Status
+    status = models.TextField("Status", default = "empty")
+
+    
+# =========================== Canwit other RELATED ===================================
 
 
 class CanwitAustat(models.Model):
@@ -10552,6 +10569,9 @@ class CanwitSignature(models.Model):
         return response
 
 
+# =========================== BASKET RELATED ===================================
+
+
 class Basket(models.Model):
     """The basket is the user's vault of search results (of canwit items)"""
 
@@ -10590,6 +10610,9 @@ class BasketAustat(models.Model):
         combi = "{}_s{}".format(self.profile.user.username, self.sermon.id)
         return combi
     
+
+# =========================== PROVENANCE RELATED ===================================
+
 
 class ProvenanceMan(models.Model):
     """Link between Provenance and Codico"""
@@ -10635,6 +10658,9 @@ class ProvenanceCod(models.Model):
         return sBack
 
 
+# =========================== ORIGIN RELATED ===================================
+
+
 class OriginCodico(models.Model):
     """Link between Origin and Codico"""
 
@@ -10644,6 +10670,16 @@ class OriginCodico(models.Model):
     codico = models.ForeignKey(Codico, related_name = "codico_origins", on_delete=models.CASCADE)
     # [0-1] Further details are required too
     note = models.TextField("Codico-specific origin note", blank=True, null=True)
+
+    def delete(self, using = None, keep_parents = False):
+        # Perform the actual deletion
+        response = super(OriginCodico, self).delete(using, keep_parents)
+
+        # Adapt the [mcount] for the manuscript
+        self.codico.manuscript.do_mcount()
+
+        # Return the response we got
+        return response
 
     def get_origin(self):
         sBack = ""
@@ -10655,6 +10691,19 @@ class OriginCodico(models.Model):
         if ori.location != None: sLoc = ori.location.name
         sBack = "<span class='badge signature gr'><a href='{}'>{}{}</a></span>".format(url, sName, sLoc)
         return sBack
+
+    def save(self, force_insert, force_update, using, update_fields):
+        # First perform the saving
+        response = super(OriginCodico, self).save(force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
+
+        # Adapt the [mcount] for the manuscript
+        self.codico.manuscript.do_mcount()
+
+        # Return the original response
+        return response
+
+
+# =========================== LITREF RELATED ===================================
 
 
 class LitrefMan(models.Model):
@@ -10869,6 +10918,9 @@ class CollectionMan(models.Model):
     order = models.IntegerField("Order", default = -1)
 
 
+# =========================== CANED RELATED ===================================
+
+
 class Caned(models.Model):
     """The link between a collection item and a Austat (authoritative statement)"""
 
@@ -11008,6 +11060,54 @@ class CollectionProject(models.Model):
         return response
 
 
+class CollOverlap(models.Model):
+    """Used to calculate the overlap between (historical) collections and manuscripts"""
+
+    # [1] Every CollOverlap belongs to someone
+    profile = models.ForeignKey(Profile, null=True, on_delete=models.CASCADE, related_name="profile_colloverlaps")
+    # [1] The overlap is with one Collection
+    collection = models.ForeignKey(Collection, null=True, on_delete=models.CASCADE, related_name="collection_colloverlaps")
+    # [1] Every CollOverlap links to a `Manuscript`
+    manuscript = models.ForeignKey(Manuscript, null=True, on_delete=models.CASCADE, related_name="manu_colloverlaps")
+    # [1] The percentage overlap
+    overlap = models.IntegerField("Overlap percentage", default=0)
+    # [1] And a date: the date of saving this report
+    created = models.DateTimeField(default=get_current_datetime)
+    saved = models.DateTimeField(null=True, blank=True)
+
+    def get_overlap(profile, collection, manuscript):
+        """Calculate and set the overlap between collection and manuscript"""
+
+        obj = CollOverlap.objects.filter(profile=profile,collection=collection, manuscript=manuscript).first()
+        if obj == None:
+            obj = CollOverlap.objects.create(profile=profile,collection=collection, manuscript=manuscript)
+        # Get the ids of the SSGs in the collection
+        coll_list = [ collection ]
+        ssg_coll = Austat.objects.filter(collections__in=coll_list).values('id')
+        if len(ssg_coll) == 0:
+            ptc = 0
+        else:
+            # Get the id's of the SSGs in the manuscript: Manu >> MsItem >> Canwit >> SSG
+            ssg_manu = Austat.objects.filter(canwit_austat__canwit__msitem__manu=manuscript).values('id')
+            # Now calculate the overlap
+            count = 0
+            for item in ssg_coll:
+                if item in ssg_manu: count += 1
+            ptc = 100 * count // len(ssg_coll)
+        # Check if there is a change in percentage
+        if ptc != obj.overlap:
+            # Set the percentage
+            obj.overlap = ptc
+            obj.save()
+        return ptc
+
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+        # Adapt the save date
+        self.saved = get_current_datetime()
+        response = super(CollOverlap, self).save(force_insert, force_update, using, update_fields)
+        return response
+
+
 class ProjectEditor(models.Model):
     """Relation between a Profile (=person) and a Project"""
 
@@ -11029,6 +11129,9 @@ class ProjectEditor(models.Model):
     def __str__(self):
         sBack = "{}-{}".format(self.profile.user.username, self.project.name)
         return sBack
+
+
+# =========================== TEMPLATE RELATED ===================================
 
 
 class Template(models.Model):
@@ -11077,52 +11180,3 @@ class Template(models.Model):
             # Combine response
             sBack = "\n".join(html)
         return sBack
-
-
-class CollOverlap(models.Model):
-    """Used to calculate the overlap between (historical) collections and manuscripts"""
-
-    # [1] Every CollOverlap belongs to someone
-    profile = models.ForeignKey(Profile, null=True, on_delete=models.CASCADE, related_name="profile_colloverlaps")
-    # [1] The overlap is with one Collection
-    collection = models.ForeignKey(Collection, null=True, on_delete=models.CASCADE, related_name="collection_colloverlaps")
-    # [1] Every CollOverlap links to a `Manuscript`
-    manuscript = models.ForeignKey(Manuscript, null=True, on_delete=models.CASCADE, related_name="manu_colloverlaps")
-    # [1] The percentage overlap
-    overlap = models.IntegerField("Overlap percentage", default=0)
-    # [1] And a date: the date of saving this report
-    created = models.DateTimeField(default=get_current_datetime)
-    saved = models.DateTimeField(null=True, blank=True)
-
-    def get_overlap(profile, collection, manuscript):
-        """Calculate and set the overlap between collection and manuscript"""
-
-        obj = CollOverlap.objects.filter(profile=profile,collection=collection, manuscript=manuscript).first()
-        if obj == None:
-            obj = CollOverlap.objects.create(profile=profile,collection=collection, manuscript=manuscript)
-        # Get the ids of the SSGs in the collection
-        coll_list = [ collection ]
-        ssg_coll = Austat.objects.filter(collections__in=coll_list).values('id')
-        if len(ssg_coll) == 0:
-            ptc = 0
-        else:
-            # Get the id's of the SSGs in the manuscript: Manu >> MsItem >> Canwit >> SSG
-            ssg_manu = Austat.objects.filter(canwit_austat__canwit__msitem__manu=manuscript).values('id')
-            # Now calculate the overlap
-            count = 0
-            for item in ssg_coll:
-                if item in ssg_manu: count += 1
-            ptc = 100 * count // len(ssg_coll)
-        # Check if there is a change in percentage
-        if ptc != obj.overlap:
-            # Set the percentage
-            obj.overlap = ptc
-            obj.save()
-        return ptc
-
-    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
-        # Adapt the save date
-        self.saved = get_current_datetime()
-        response = super(CollOverlap, self).save(force_insert, force_update, using, update_fields)
-        return response
-

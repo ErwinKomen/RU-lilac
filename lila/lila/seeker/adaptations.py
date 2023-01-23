@@ -30,7 +30,8 @@ adaptation_list = {
     'austat_list': ['keycodefull', 'dategenre'],
     'caned_list': ['canedftext'],
     'colwit_list': ['signatures', 'lilacode'],
-    "collection_list": [] 
+    "collection_list": [] ,
+    "origin_list": ['mcount']
     }
 
 
@@ -415,6 +416,30 @@ def adapt_lilacode(oStatus=None):
         bResult = False
         with transaction.atomic():
             for obj in Colwit.objects.all():
+                obj.save()
+        # Note that we are indeed ready
+        bResult = True
+    except:
+        msg = oErr.get_error_message()
+        bResult = False
+    return bResult, msg
+
+# =========== Part of origin_list ======================
+
+def adapt_mcount(oStatus=None):
+    """Adapt all signatures for colwit items"""
+
+    oErr = ErrHandle()
+    bResult = True
+    msg = ""
+    oBack = dict(status="ok", msg="")
+
+    try:
+        # TODO: add code here and change to True
+        bResult = False
+        with transaction.atomic():
+            for obj in Origin.objects.all():
+                obj.do_mcount()
                 obj.save()
         # Note that we are indeed ready
         bResult = True
