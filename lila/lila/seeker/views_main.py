@@ -4416,7 +4416,7 @@ class AustatEdit(BasicDetails):
 
             # (3) 'genres'
             genrelist = form.cleaned_data['genrelist']
-            adapt_m2m(AustatGenre, instance, "equal", genrelist, "genre")
+            adapt_m2m(AustatGenre, instance, "austat", genrelist, "genre")
 
             # (3) 'keywords'
             kwlist = form.cleaned_data['kwlist']

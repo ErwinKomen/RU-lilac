@@ -1425,22 +1425,20 @@ class GenreListView(BasicList):
         sTitle = ""
         if custom == "links":
             html = []
-            # Get the HTML code for the links of this instance
-            #number = instance.freqcanwit()
-            #if number > 0:
-            #    url = reverse('canwit_list')
-            #    html.append("<a href='{}?sermo-genrelist={}'>".format(url, instance.id))
-            #    html.append("<span class='badge jumbo-1 clickable' title='Frequency in manifestation sermons'>{}</span></a>".format(number))
-            #number = instance.freqmanu()
-            #if number > 0:
-            #    url = reverse('manuscript_list')
-            #    html.append("<a href='{}?manu-genrelist={}'>".format(url, instance.id))
-            #    html.append("<span class='badge jumbo-3 clickable' title='Frequency in manuscripts'>{}</span></a>".format(number))
+
+            # Look at the Austat frequency
             number = instance.freqsuper()
             if number > 0:
                 url = reverse('austat_list')
                 html.append("<a href='{}?as-genrelist={}'>".format(url, instance.id))
-                html.append("<span class='badge jumbo-4 clickable' title='Frequency in manuscripts'>{}</span></a>".format(number))
+                html.append("<span class='badge jumbo-4 clickable' title='Frequency in Authoritative Statements'>{}</span></a>".format(number))
+
+            # Look at the Auwork frequency
+            number = instance.freqauwork()
+            if number > 0:
+                url = reverse('auwork_list')
+                html.append("<a href='{}?as-genrelist={}'>".format(url, instance.id))
+                html.append("<span class='badge jumbo-3 clickable' title='Frequency in Authoritative Works'>{}</span></a>".format(number))
             # Combine the HTML code
             sBack = "\n".join(html)
 
@@ -2412,32 +2410,10 @@ class ProvenanceListView(BasicList):
         sBack = ""
         sTitle = ""
         if custom == "manuscript":
-            # Multiple connections possible
-            # One provenance may be connected to any number of manuscripts!
-            lManu = []
-            for obj in instance.manuscripts_provenances.all():
-                # Add the shelfmark of this one
-                manu = obj.manuscript
-                url = reverse("manuscript_details", kwargs = {'pk': manu.id})
-                shelfmark = manu.idno[:20]
-                lManu.append("<span class='badge signature cl'><a href='{}'>{}</a></span>".format(url, manu.idno))
-            sBack = ", ".join(lManu)
-            # Issue #289: the innovation below is turned back to the original above
-            ## find the shelfmark
-            #manu = instance.manu
-            #if manu != None:
-            #    # Get the URL to the manu details
-            #    url = reverse("manuscript_details", kwargs = {'pk': manu.id})
-            #    shelfmark = manu.idno[:20]
-            #    sBack = "<span class='badge signature cl'><a href='{}'>{}</a></span>".format(url, manu.idno)
+            sBack = instance.get_manuscripts()
         elif custom == "location":
-            sBack = ""
-            if instance.location:
-                sBack = instance.location.name
-        #elif custom == "note":
-        #    sBack = ""
-        #    if instance.note:
-        #        sBack = instance.note[:40]
+            sBack = instance.get_location()
+
         return sBack, sTitle
 
     def adapt_search(self, fields):
