@@ -10040,36 +10040,48 @@ class Canwit(models.Model, Custom):
         """Get all the keywords attached to the SSG of which I am part"""
 
         lHtml = []
-        # Get all the SSGs to which I link with equality
-        # ssg_id = Austat.objects.filter(canwit_austat__canwit=self, canwit_austat__linktype=LINK_EQUAL).values("id")
-        ssg_id = self.austats.all().values("id")
-        # Get all keywords attached to these SGs
-        qs = Keyword.objects.filter(austat_kw__equal__id__in=ssg_id).order_by("name").distinct()
-        # Visit all keywords
-        for keyword in qs:
-            # Determine where clicking should lead to
-            url = "{}?ssg-kwlist={}".format(reverse('austat_list'), keyword.id)
-            # Create a display for this topic
-            lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,keyword.name))
+        oErr = ErrHandle()
+        sBack = ""
+        try:
+            # Get all the SSGs to which I link with equality
+            # ssg_id = Austat.objects.filter(canwit_austat__canwit=self, canwit_austat__linktype=LINK_EQUAL).values("id")
+            ssg_id = self.austats.all().values("id")
+            # Get all keywords attached to these SGs
+            qs = Keyword.objects.filter(austat_kw__austat__id__in=ssg_id).order_by("name").distinct()
+            # Visit all keywords
+            for keyword in qs:
+                # Determine where clicking should lead to
+                url = "{}?ssg-kwlist={}".format(reverse('austat_list'), keyword.id)
+                # Create a display for this topic
+                lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,keyword.name))
 
-        sBack = ", ".join(lHtml)
+            sBack = ", ".join(lHtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Canwit/get_keywords_ssg_markdown")
         return sBack
 
     def get_keywords_ssg_plain(self):
         """Get all the keywords attached to the SSG of which I am part"""
 
         lHtml = []
-        # Get all the SSGs to which I link with equality
-        # ssg_id = Austat.objects.filter(canwit_austat__canwit=self, canwit_austat__linktype=LINK_EQUAL).values("id")
-        ssg_id = self.austats.all().values("id")
-        # Get all keywords attached to these SGs
-        qs = Keyword.objects.filter(austat_kw__equal__id__in=ssg_id).order_by("name").distinct()
-        # Visit all keywords
-        for keyword in qs:
-            # Create a display for this topic
-            lHtml.append("<span class='keyword'>{}</span>".format(keyword.name))
+        oErr = ErrHandle()
+        sBack = ""
+        try:
+            # Get all the SSGs to which I link with equality
+            # ssg_id = Austat.objects.filter(canwit_austat__canwit=self, canwit_austat__linktype=LINK_EQUAL).values("id")
+            ssg_id = self.austats.all().values("id")
+            # Get all keywords attached to these SGs
+            qs = Keyword.objects.filter(austat_kw__austat__id__in=ssg_id).order_by("name").distinct()
+            # Visit all keywords
+            for keyword in qs:
+                # Create a display for this topic
+                lHtml.append("<span class='keyword'>{}</span>".format(keyword.name))
 
-        sBack = ", ".join(lHtml)
+            sBack = ", ".join(lHtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Canwit/get_keywords_ssg_plain")
         return sBack
 
     def get_lilacode(self):
