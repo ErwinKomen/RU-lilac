@@ -6443,6 +6443,10 @@ class Auwork(models.Model, Custom):
         sBack = ", ".join(lHtml)
         return sBack
 
+    def get_lilacode(self):
+        sBack = self.key
+        return sBack
+
     def get_signatures(self, bUseHtml=True):
         """Get a list of all signatures tied to me"""
 
@@ -6983,6 +6987,36 @@ class Austat(models.Model, Custom):
         sBack = "not specified"
         if self.author:
             sBack = self.author.name
+        return sBack
+
+    def get_breadcrumb(self):
+        """Get breadcrumbs to show where this canwit exists:
+       
+        1 - Authoritative work
+        3 - lila code (and a link to it)"""
+
+        sBack = ""
+        html = []
+        oErr = ErrHandle()
+        try:
+            # (1) Authoritative work
+            auwork = self.auwork
+            if not auwork is None:
+                url_auwork = reverse('auwork_details', kwargs={'pk': auwork.id})
+                txt_auwork = auwork.get_lilacode()
+                html.append("<span class='badge signature cl' title='Authoritative work'><a href='{}' style='color: inherit'>{}</a></span>".format(
+                    url_auwork, txt_auwork))
+
+            # (2) austat itself
+            url_austat = reverse('austat_details', kwargs={'pk': self.id})
+            txt_austat = self.get_keycode()
+            html.append("<span class='badge signature gr' title='Authoritative statement'><a href='{}' style='color: inherit'>{}</a></span>".format(
+                url_austat, txt_austat))
+
+            sBack = "<span style='font-size: small;'>{}</span>".format(" > ".join(html))
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Austat/get_breadcrumb")
         return sBack
 
     def get_code(self):
@@ -9645,6 +9679,45 @@ class Canwit(models.Model, Custom):
         # Return what we have
         return sBack
 
+    def get_breadcrumb(self):
+        """Get breadcrumbs to show where this canwit exists:
+       
+        1 - Manuscript link
+        2 - Collection witness link
+        3 - lila code (and a link to it)"""
+
+        sBack = ""
+        html = []
+        oErr = ErrHandle()
+        try:
+            # (1) Manuscript
+            manu = self.get_manuscript()
+            if not manu is None:
+                url_manu = reverse('manuscript_details', kwargs={'pk': manu.id})
+                txt_manu = manu.get_lilacode()
+                html.append("<span class='badge signature ot' title='Manuscript'><a href='{}' style='color: inherit'>{}</a></span>".format(
+                    url_manu, txt_manu))
+
+            # (2) Collection witness
+            colwit = self.colwit
+            if not colwit is None:
+                url_colwit = reverse('colwit_details', kwargs={'pk': colwit.id})
+                txt_colwit = colwit.get_lilacode()
+                html.append("<span class='colwit' title='Collection Witness'><a href='{}' style='color: inherit'>{}</a></span>".format(
+                    url_colwit, txt_colwit))
+
+            # (3) Canwit itself
+            url_canwit = reverse('canwit_details', kwargs={'pk': self.id})
+            txt_canwit = self.get_lilacode()
+            html.append("<span class='badge signature cl' title='Canon Witness'><a href='{}' style='color: inherit'>{}</a></span>".format(
+                url_canwit, txt_canwit))
+
+            sBack = "<span style='font-size: small;'>{}</span>".format(" > ".join(html))
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_breadcrumb")
+        return sBack
+
     def get_caput(self):
         """Get the Caput (if defined) and display it as a Roman number"""
 
@@ -10197,7 +10270,7 @@ class Canwit(models.Model, Custom):
         return sBack
 
     def get_austat_lilacode_markdown(self):
-        """Get the lila code (and a link to it)"""
+        """Get the  lila code (and a link to it)"""
 
         sBack = ""
         # Get the first austat
@@ -11654,6 +11727,36 @@ class Caned(models.Model, Custom):
         except:
             msg = oErr.get_error_message()
             oErr.DoError("Caned/get_austat")
+        return sBack
+
+    def get_breadcrumb(self):
+        """Get breadcrumbs to show where this caned exists:
+       
+        1 - Historical collection
+        2 - lila code (and a link to it)"""
+
+        sBack = ""
+        html = []
+        oErr = ErrHandle()
+        try:
+            # (1) Historical Collection
+            hc = self.collection
+            if not hc is None:
+                url_hc = reverse('collhist_details', kwargs={'pk': hc.id})
+                txt_hc = hc.get_lilacode()
+                html.append("<span class='badge signature ot' title='Historical Collection'><a href='{}' style='color: inherit'>{}</a></span>".format(
+                    url_hc, txt_hc))
+
+            # (2) Caned itself
+            url_caned = reverse('caned_details', kwargs={'pk': self.id})
+            txt_caned = self.get_lilacode()
+            html.append("<span class='badge signature cl' title='Canon Edition'><a href='{}' style='color: inherit'>{}</a></span>".format(
+                url_caned, txt_caned))
+
+            sBack = "<span style='font-size: small;'>{}</span>".format(" > ".join(html))
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_breadcrumb")
         return sBack
 
     def get_collection(self, plain=False):

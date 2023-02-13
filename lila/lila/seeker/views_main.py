@@ -3146,7 +3146,7 @@ class CanwitEdit(BasicDetails):
                 idno = "(unknown)"
             context['topleftbuttons'] = topleftlist
             # Add something right to the CanwitDetails title
-            context['title_addition'] = instance.get_austat_lilacode_markdown()
+            context['title_addition'] = instance.get_breadcrumb() # instance.get_austat_lilacode_markdown()
 
             # Add the manuscript's IDNO completely right
             title_right = ["<span class='manuscript-idno' title='Manuscript'>{}</span>".format(
@@ -4039,6 +4039,9 @@ class CanedEdit(BasicDetails):
                  'field_key': 'ftrans', 'key_ta': 'srmexplicit-key'}, 
                 ]
 
+            # Add something right to the CanEd title
+            context['title_addition'] = instance.get_breadcrumb()
+
             # Signal that we have select2
             context['has_select2'] = True
 
@@ -4296,6 +4299,9 @@ class AustatEdit(BasicDetails):
                 lhtml = []
                 lhtml.append(render_to_string("seeker/comment_add.html", context, self.request))
                 context['after_details'] = "\n".join(lhtml)
+
+            # Add something right to the AustatDetails title
+            context['title_addition'] = instance.get_breadcrumb()
 
             # Signal that we have select2
             context['has_select2'] = True
