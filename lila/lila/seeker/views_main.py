@@ -2398,8 +2398,74 @@ class ColwitDetails(ColwitEdit):
         oErr = ErrHandle()
 
         try:
+            if instance != None and instance.id != None:
+                context['sections'] = []
 
-            pass
+                # Lists of related objects
+                related_objects = []
+                resizable = True
+                sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_end = '</span>'
+
+                username = self.request.user.username
+                team_group = app_editor
+                profile = Profile.get_user_profile(username=username)
+
+                ## ============= List of historical collections related to the Austat  ==============================
+                #collections = dict(title="Historical collections", prefix="hist", gridclass="resizable", classes="")
+
+                ## Get all historical collections (including private ones)
+                #qs_hc = instance.collections.filter(settype="hc").order_by("name")
+                #qs_hc = Caned.objects.filter(austat=instance).order_by(
+                #    "collection__name")
+                #rel_list = []
+                #for obj in qs_hc:
+                #    rel_item = []
+                #    # The [obj] is a Caned. Now get to the actual Collection
+                #    item = obj.collection
+                    
+                #    # Make sure we have the link to the HC
+                #    url = reverse("collhist_details", kwargs={'pk': item.id})
+
+                #    # HC: Order of Austat within collection
+                #    add_rel_item(rel_item, obj.order, False, align="right")
+
+                #    # HC: Name of collection
+                #    add_rel_item(rel_item, self.get_field_value("collection", item, "name"), resizable, link=url)
+
+                #    # HC: Manuscript + Canonical witness linked to collection
+                #    add_rel_item(rel_item, self.get_field_value("collection", item, "canwits"), resizable, main=True, nowrap=False)
+
+                #    # HC: Owner of collection
+                #    add_rel_item(rel_item, self.get_field_value("collection", item, "owner"), resizable, link=url)
+
+                #    # HC: Scope of collection
+                #    add_rel_item(rel_item, self.get_field_value("collection", item, "scope"), resizable, link=url)
+
+                #    # HC: Number of authors
+                #    add_rel_item(rel_item, self.get_field_value("collection", item, "authnum"), resizable, link=url, align="right")
+
+
+                #    # Add this line to the list
+                #    rel_list.append(dict(id=item.id, cols=rel_item))
+
+                #collections['rel_list'] = rel_list
+
+                #collections['columns'] = [
+                #    '{}<span title="Order">Order<span>{}'.format(sort_start_int, sort_end),
+                #    '{}<span title="Name of the historical collection">Name</span>{}'.format(sort_start_int, sort_end), 
+                #    '{}<span title="Manuscripts with canonical witnesses in this collection">Manuscripts</span>{}'.format(sort_start_int, sort_end), 
+                #    '{}<span title="Owner">Owner</span>{}'.format(sort_start_int, sort_end), 
+                #    '{}<span title="Scope">Scope</span>{}'.format(sort_start_int, sort_end), 
+                #    '{}<span title="Number of Authoritative Statement authors">Authors</span>{}'.format(sort_start_int, sort_end), 
+                #    ]
+
+                ## Add the manuscript to the related objects
+                #related_objects.append(collections)
+
+                context['related_objects'] = related_objects
+
         except:
             msg = oErr.get_error_message()
             oErr.DoError("ColwitDetails/add_to_context")
@@ -4728,12 +4794,12 @@ class AustatDetails(AustatEdit):
                 team_group = app_editor
                 profile = Profile.get_user_profile(username=username)
 
-                # Make sure to delete any previous corpora of mine
-                AustatCorpus.objects.filter(profile=profile, ssg=instance).delete()
+                ## Make sure to delete any previous corpora of mine
+                #AustatCorpus.objects.filter(profile=profile, ssg=instance).delete()
 
-                # Old, extinct
-                ManuscriptCorpus.objects.filter(austat=instance).delete()
-                ManuscriptCorpusLock.objects.filter(profile=profile, austat=instance).delete()
+                ## Old, extinct
+                #ManuscriptCorpus.objects.filter(austat=instance).delete()
+                #ManuscriptCorpusLock.objects.filter(profile=profile, austat=instance).delete()
 
                 # ============= List of manuscripts related to the Austat via canwit descriptions ==================
                 manuscripts = dict(title="Canonical witnesses in their Manuscripts", prefix="manu", gridclass="resizable", classes="hidden")
