@@ -4955,7 +4955,7 @@ class AustatDetails(AustatEdit):
                 sBack = instance.get_collections_markdown(username, team_group)
             elif custom == "canwit":
                 manu = instance.msitem.manu
-                sBack = "{}/{}".format(instance.msitem.order, manu.get_canwit_count())
+                sBack = "{}/{}: {}".format(instance.msitem.order, manu.get_canwit_count(), instance.get_lilacode())
             elif custom == "locus":
                 sBack = instance.locus
             elif custom == "author":
@@ -4971,7 +4971,9 @@ class AustatDetails(AustatEdit):
             if custom == "name":
                 sBack = instance.name
             elif custom == "canwits":
-                austat_ids = [x.austat.id for x in Caned.objects.filter(collection=instance)]
+                # austat_ids = [x.austat.id for x in Caned.objects.filter(collection=instance)]
+                # We should just look at ONE SINGLE austat id!!
+                austat_ids = [ instance.id ]
                 canwits = [x.canwit for x in CanwitAustat.objects.filter(austat__id__in=austat_ids)]
                 html = []
                 for obj in canwits:
