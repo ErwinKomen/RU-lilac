@@ -1742,9 +1742,9 @@ class AuworkDetails(AuworkEdit):
                 keycode_txt = item.get_keycode()
                 add_rel_item(rel_item, keycode_txt, False, main=False, link=url)
 
-                # Work
-                work_txt = item.get_work()
-                add_rel_item(rel_item, work_txt, False, main=True, link=url)
+                # Full text
+                full_txt = item.get_ftext_markdown(incexp_type = "actual")
+                add_rel_item(rel_item, full_txt, False, main=True, link=url, nowrap=False)
 
 
                 # Add this line to the list
@@ -1756,7 +1756,7 @@ class AuworkDetails(AuworkEdit):
                 '{}<span>#</span>{}'.format(sort_start_int, sort_end), 
                 '{}<span>Author</span>{}'.format(sort_start, sort_end), 
                 '{}<span>Key code</span>{}'.format(sort_start_mix, sort_end), 
-                '{}<span>Work</span>{}'.format(sort_start_int, sort_end)
+                '{}<span>Full text</span>{}'.format(sort_start_int, sort_end)
                 ]
             related_objects.append(austats)
 
