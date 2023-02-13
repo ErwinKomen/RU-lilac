@@ -530,8 +530,14 @@ class ManuscriptEdit(BasicDetails):
     def get_provenance_markdown(self, instance):
         """Calculate a collapsible table view of the provenances for this manuscript, for Manu details view"""
 
-        context = dict(manu=instance)
-        sBack = render_to_string("seeker/manu_provs.html", context, self.request)
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            context = dict(manu=instance)
+            sBack = render_to_string("seeker/manu_provs.html", context, self.request)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_provenance_markdown")
         return sBack
 
     def process_formset(self, prefix, request, formset):
@@ -5428,9 +5434,16 @@ class CollAnyEdit(BasicDetails):
 
     def custom_init(self, instance):
         if instance != None and instance.settype == "hc":
-            self.formset_objects.append(
-                {'formsetClass': self.ClitFormSet,  'prefix': 'clit',  
-                 'readonly': False, 'noinit': True, 'linkfield': 'collection'})
+            # First check if the 'clit' is already in the formset_objects or not
+            bFound = False
+            for oItem in self.formset_objects:
+                if oItem['prefix'] == "clit":
+                    bFound = True
+                    break
+            if not bFound:
+                self.formset_objects.append(
+                    {'formsetClass': self.ClitFormSet,  'prefix': 'clit',  
+                     'readonly': False, 'noinit': True, 'linkfield': 'collection'})
         if instance != None:
             self.datasettype = instance.type
         return None
@@ -5731,10 +5744,15 @@ class CollAnyEdit(BasicDetails):
                     if oneref:
                         litref = cleaned['oneref']
                         # Check if all is in order
-                        if litref:
-                            form.instance.reference = litref
-                            if newpages:
-                                form.instance.pages = newpages
+                        if not litref is None:
+                            # Check that this link is not there already
+                            obj = LitrefCol.objects.filter(reference=oneref, collection=instance, pages=newpages).first()
+
+                            if obj is None:
+                                # Continue
+                                form.instance.reference = litref
+                                if newpages:
+                                    form.instance.pages = newpages
                     # Note: it will get saved with form.save()
 
             else:
@@ -6346,6 +6364,7 @@ class CollHistDetails(CollHistEdit):
             if bMayEdit:
                 sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
                 sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
                 sort_end = '</span>'
 
             # In all cases: Get all the SSGs that are part of this historical collection:
@@ -6400,8 +6419,8 @@ class CollHistDetails(CollHistEdit):
                 supers['columns'] = [
                     '{}<span title="Default order">Order<span>{}'.format(sort_start_int, sort_end),
                     '{}<span title="Author">Author</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="CanEd code">CanEd</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="Austat code">Austat</span>{}'.format(sort_start, sort_end), 
+                    '{}<span title="CanEd code">CanEd</span>{}'.format(sort_start_mix, sort_end), 
+                    '{}<span title="Austat code">Austat</span>{}'.format(sort_start_mix, sort_end), 
                     '{}<span title="Full text">ftext</span>{}'.format(sort_start, sort_end), 
                     '{}<span title="Number of Canon witnesses part of this set">Size</span>{}'.format(sort_start_int, sort_end), 
                     ''

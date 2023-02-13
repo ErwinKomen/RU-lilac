@@ -1715,6 +1715,7 @@ class AuworkDetails(AuworkEdit):
             index = 1
             sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
             sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
+            sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
             sort_end = '</span>'
 
             # List of Sermons that link to this feast (with an FK)
@@ -1754,7 +1755,7 @@ class AuworkDetails(AuworkEdit):
             austats['columns'] = [
                 '{}<span>#</span>{}'.format(sort_start_int, sort_end), 
                 '{}<span>Author</span>{}'.format(sort_start, sort_end), 
-                '{}<span>Key code</span>{}'.format(sort_start, sort_end), 
+                '{}<span>Key code</span>{}'.format(sort_start_mix, sort_end), 
                 '{}<span>Work</span>{}'.format(sort_start_int, sort_end)
                 ]
             related_objects.append(austats)

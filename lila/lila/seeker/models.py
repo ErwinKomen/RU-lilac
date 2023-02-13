@@ -7909,7 +7909,7 @@ class Collection(models.Model, Custom):
             lstQ = []
             lstQ.append(Q(codicoitems__itemsermons__austats__collections=self))
             lstQ.append(Q(manuscript__mtype="man"))
-            iBack = Codico.objects.filter(*lstQ).count()
+            iBack = Codico.objects.filter(*lstQ).distinct().count()
         except:
             msg = oErr.get_error_message()
             oErr.DoError("Collection/get_count_codico")
@@ -8026,14 +8026,20 @@ class Collection(models.Model, Custom):
 
     def get_litrefs_markdown(self):
         lHtml = []
-        # Visit all literature references
-        for litref in self.collection_litrefcols.all().order_by('reference__short'):
-            # Determine where clicking should lead to
-            url = "{}#lit_{}".format(reverse('literature_list'), litref.reference.id)
-            # Create a display for this item
-            lHtml.append("<span class='badge signature cl'><a href='{}'>{}</a></span>".format(url,litref.get_short_markdown()))
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            # Visit all literature references
+            for litref in self.collection_litrefcols.all().order_by('reference__short'):
+                # Determine where clicking should lead to
+                url = "{}#lit_{}".format(reverse('literature_list'), litref.reference.id)
+                # Create a display for this item
+                lHtml.append("<span class='badge signature cl'><a href='{}'>{}</a></span>".format(url,litref.get_short_markdown()))
 
-        sBack = ", ".join(lHtml)
+            sBack = ", ".join(lHtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_litrefs_markdown")
         return sBack
 
     def get_manuscript_link(self):
@@ -11394,8 +11400,16 @@ class LitrefCol(models.Model):
         response = None
         # Double check the ESSENTIALS (pages may be empty)
         if self.collection_id and self.reference_id:
-            # Do the saving initially
-            response = super(LitrefCol, self).save(force_insert, force_update, using, update_fields)
+            # Check that it is not there already
+            qs = LitrefCol.objects.filter(collection_id=self.collection_id, reference_id=self.reference_id)
+            if qs.count() == 0:
+                # Do the saving initially
+                response = super(LitrefCol, self).save(force_insert, force_update, using, update_fields)
+            elif qs.count() > 1:
+                # Remove all but one of them
+                id_list = [x['id'] for x in qs.values('id')]
+                id_list = id_list[1:]
+                qs.delete(id__in=id_list)
         # Then return the response: should be "None"
         return response
 
