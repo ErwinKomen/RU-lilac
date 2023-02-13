@@ -7091,7 +7091,7 @@ class Austat(models.Model, Custom):
             search = self.srchftext
             sBack = "<div>{}</div><div class='searchincexp'>{}</div>".format(parsed, search)
         elif incexp_type == "actual":
-            sBack = adapt_markdown(self.ftext)
+            sBack = adapt_markdown(self.ftext, lowercase=False)
         elif incexp_type == "search":
             sBack = adapt_markdown(self.srchftext)
         return sBack
@@ -9993,7 +9993,7 @@ class Canwit(models.Model, Custom):
             if self.srchftext == None or self.srchftext == "":
                 Canwit.init_latin()
 
-        return adapt_markdown(self.ftext)
+        return adapt_markdown(self.ftext, lowercase=False)
 
     def get_keywords_plain(self):
         lHtml = []
@@ -11698,7 +11698,7 @@ class Caned(models.Model, Custom):
             search = self.srchftext
             sBack = "<div>{}</div><div class='searchincexp'>{}</div>".format(parsed, search)
         elif incexp_type == "actual":
-            sBack = adapt_markdown(self.ftext)
+            sBack = adapt_markdown(self.ftext, lowercase=False)
         elif incexp_type == "search":
             sBack = adapt_markdown(self.srchftext)
         return sBack
