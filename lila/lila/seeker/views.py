@@ -2269,6 +2269,7 @@ class ProvenanceDetails(ProvenanceEdit):
         resizable = True
         index = 1
         sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+        sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
         sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
         sort_end = '</span>'
 
@@ -2348,7 +2349,7 @@ class ProvenanceDetails(ProvenanceEdit):
         codicos['columns'] = [
             '{}<span>#</span>{}'.format(sort_start_int, sort_end), 
             '{}<span>Manuscript</span>{}'.format(sort_start, sort_end), 
-            '{}<span>codicological unit</span>{}'.format(sort_start, sort_end), 
+            '{}<span>codicological unit</span>{}'.format(sort_start_mix, sort_end), 
             '{}<span>Note</span>{}'.format(sort_start, sort_end)
             ]
         related_objects.append(codicos)

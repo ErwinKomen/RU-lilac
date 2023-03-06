@@ -2405,6 +2405,7 @@ class ColwitDetails(ColwitEdit):
                 related_objects = []
                 resizable = True
                 sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
                 sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
                 sort_end = '</span>'
 
@@ -4787,6 +4788,7 @@ class AustatDetails(AustatEdit):
                 related_objects = []
                 resizable = True
                 sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
                 sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
                 sort_end = '</span>'
 
@@ -4869,7 +4871,7 @@ class AustatDetails(AustatEdit):
                     '{}<span title="Origin/Provenance">or./prov.</span>{}'.format(sort_start_int, sort_end), 
                     '{}<span title="Date range">date</span>{}'.format(sort_start_int, sort_end), 
                     '{}<span title="Collection name">coll.</span>{}'.format(sort_start_int, sort_end), 
-                    '{}<span title="Item">item</span>{}'.format(sort_start_int, sort_end), 
+                    '{}<span title="Item">item</span>{}'.format(sort_start_mix, sort_end), 
                     '{}<span title="Folio number">ff.</span>{}'.format(sort_start_int, sort_end), 
                     '{}<span title="Attributed author">auth.</span>{}'.format(sort_start_int, sort_end), 
                     '{}<span title="Full text">txt.</span>{}'.format(sort_start_int, sort_end), 
@@ -6115,6 +6117,7 @@ class CollPrivDetails(CollAnyEdit):
         resizable = True
         index = 1
         sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+        sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
         sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
         sort_end = '</span>'
 
@@ -6275,7 +6278,7 @@ class CollPrivDetails(CollAnyEdit):
                 supers['columns'] = [
                     '{}<span title="Default order">Order</span>{}'.format(sort_start_int, sort_end),
                     '{}<span title="Author">Author</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="Key code">lila</span>{}'.format(sort_start, sort_end), 
+                    '{}<span title="Key code">lila</span>{}'.format(sort_start_mix, sort_end), 
                     '{}<span title="Full text">ftext</span>{}'.format(sort_start, sort_end), 
                     '{}<span title="Number of Sermons Gold part of this set">Size</span>{}'.format(sort_start_int, sort_end), 
                     ''
