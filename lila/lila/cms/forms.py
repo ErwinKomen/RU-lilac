@@ -20,37 +20,140 @@ from lila.cms.models import *
 # ================= WIDGETS =====================================
 
 
-#class AuthorOneWidget(ModelSelect2Widget):
-#    model = Author
-#    search_fields = [ 'name__icontains']
+class CpageOneWidget(ModelSelect2Widget):
+    model = Cpage
+    search_fields = [ 'name__icontains']
 
-#    def label_from_instance(self, obj):
-#        return obj.name
+    def label_from_instance(self, obj):
+        return obj.name
 
-#    def get_queryset(self):
-#        return Author.objects.all().order_by('name').distinct()
+    def get_queryset(self):
+        return Cpage.objects.all().order_by('name').distinct()
 
 
-#class AuthorWidget(ModelSelect2MultipleWidget):
-#    model = Author
-#    search_fields = [ 'name__icontains']
+class CpageWidget(ModelSelect2MultipleWidget):
+    model = Cpage
+    search_fields = [ 'name__icontains']
 
-#    def label_from_instance(self, obj):
-#        return obj.name
+    def label_from_instance(self, obj):
+        return obj.name
 
-#    def get_queryset(self):
-#        return Author.objects.all().order_by('name').distinct()
+    def get_queryset(self):
+        return Cpage.objects.all().order_by('name').distinct()
+
+
+class ClocationOneWidget(ModelSelect2Widget):
+    model = Clocation
+    search_fields = [ 'name__icontains']
+
+    def label_from_instance(self, obj):
+        return obj.name
+
+    def get_queryset(self):
+        return Clocation.objects.all().order_by('page__name', 'name').distinct()
+
+
+class ClocationWidget(ModelSelect2MultipleWidget):
+    model = Clocation
+    search_fields = [ 'name__icontains']
+
+    def label_from_instance(self, obj):
+        return obj.name
+
+    def get_queryset(self):
+        return Clocation.objects.all().order_by('page__name', 'name').distinct()
 
 
 
 
 # ================= FORMS =======================================
 
-class CitemForm(forms.ModelForm):
-    """Keyword list and edit"""
+class CpageForm(forms.ModelForm):
+    """Content Page list and edit"""
 
     page_ta = forms.CharField(label=_("Page"), required=False,
                 widget=forms.TextInput(attrs={'class': 'typeahead searching input-sm', 'placeholder': 'Page...', 'style': 'width: 100%;'}))
+    typeaheads = []
+
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = Cpage
+        fields = ['name', 'urlname']
+        widgets={
+            'name':     forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
+            'urlname':  forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'})
+            }
+
+    def __init__(self, *args, **kwargs):
+        # Start by executing the standard handling
+        super(CpageForm, self).__init__(*args, **kwargs)
+
+        oErr = ErrHandle()
+        try:
+            # Some fields are not required
+            self.fields['name'].required = False
+            self.fields['urlname'].required = False
+
+            # Get the instance
+            if 'instance' in kwargs:
+                instance = kwargs['instance']
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CpageForm/init")
+
+        # We do not really return anything from the init
+        return None
+
+
+class ClocationForm(forms.ModelForm):
+    """Content location list and edit"""
+
+    location_ta = forms.CharField(label=_("Location"), required=False,
+                widget=forms.TextInput(attrs={'class': 'typeahead searching input-sm', 'placeholder': 'Location...', 'style': 'width: 100%;'}))
+    typeaheads = []
+
+    class Meta:
+        ATTRS_FOR_FORMS = {'class': 'form-control'};
+
+        model = Clocation
+        fields = ['name', 'htmlid', 'page']
+        widgets={
+            'name':     forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
+            'htmlid':   forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
+            'page':     CpageOneWidget(attrs={'data-placeholder': 'Select a page...', 'style': 'width: 100%;'})
+            }
+
+    def __init__(self, *args, **kwargs):
+        # Start by executing the standard handling
+        super(ClocationForm, self).__init__(*args, **kwargs)
+
+        oErr = ErrHandle()
+        try:
+            # Some fields are not required
+            self.fields['name'].required = False
+            self.fields['htmlid'].required = False
+            self.fields['page'].required = False
+
+            self.fields['page'].queryset = Cpage.objects.all().order_by('name')
+
+            # Get the instance
+            if 'instance' in kwargs:
+                instance = kwargs['instance']
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ClocationForm/init")
+
+        # We do not really return anything from the init
+        return None
+
+
+class CitemForm(forms.ModelForm):
+    """Keyword list and edit"""
+
+    #page_ta = forms.CharField(label=_("Page"), required=False,
+    #            widget=forms.TextInput(attrs={'class': 'typeahead searching input-sm', 'placeholder': 'Page...', 'style': 'width: 100%;'}))
     #kwlist     = ModelMultipleChoiceField(queryset=None, required=False, 
     #            widget=KeywordWidget(attrs={'data-placeholder': 'Select multiple keywords...', 'style': 'width: 100%;', 'class': 'searching'}))
     typeaheads = []
@@ -59,12 +162,9 @@ class CitemForm(forms.ModelForm):
         ATTRS_FOR_FORMS = {'class': 'form-control'};
 
         model = Citem
-        fields = ['page', 'htmlid', 'location', 'contents']
+        fields = ['clocation', 'contents']
         widgets={
-            'page':        forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
-            'htmlid':      forms.TextInput(attrs={'style': 'width: 100%;', 'class': 'searching'}),
-            'location': forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 
-                                                      'class': 'searching', 'placeholder': 'Location of this item (descriptive)...'}),
+            'clocation': ClocationOneWidget(attrs={'data-placeholder': 'Select a location...', 'style': 'width: 100%;'}),
             'contents': forms.Textarea(attrs={'rows': 1, 'cols': 40, 'style': 'height: 40px; width: 100%;', 
                                                       'class': 'searching', 'placeholder': 'Contents (use markdown to enter)...'})
             }
@@ -76,12 +176,10 @@ class CitemForm(forms.ModelForm):
         oErr = ErrHandle()
         try:
             # Some fields are not required
-            self.fields['page'].required = False
-            self.fields['htmlid'].required = False
-            self.fields['location'].required = False
+            self.fields['clocation'].required = False
             self.fields['contents'].required = False
 
-            # self.fields['kwlist'].queryset = Keyword.objects.all().order_by('name')
+            self.fields['clocation'].queryset = Clocation.objects.all().order_by('page__name', 'name')
 
             # Get the instance
             if 'instance' in kwargs:

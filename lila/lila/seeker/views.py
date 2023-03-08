@@ -88,6 +88,7 @@ from lila.reader.views import reader_uploads
 from lila.bible.models import Reference
 from lila.seeker.adaptations import listview_adaptations, adapt_codicocopy, add_codico_to_manuscript
 from lila.seeker.views_utils import lila_action_add, lila_get_history
+from lila.cms.views import add_cms_contents
 
 # ======= from RU-Basic ========================
 from lila.basic.views import BasicPart, BasicList, BasicDetails, make_search_list, add_rel_item, adapt_search
@@ -756,6 +757,9 @@ def home(request, errortype=None):
     # Gather pie-chart data
     context['pie_data'] = get_pie_data()
 
+    # Add context items from the CMS system
+    context = add_cms_contents('home', context)
+
     # Render and return the page
     return render(request, template_name, context)
 
@@ -922,6 +926,9 @@ def about(request):
     people_lst = [{"count": v, "person": k} for k,v in people.items()]
     people_lst = sorted(people_lst, key = lambda x: x['count'], reverse=True)
     context['people'] = people_lst
+
+    # Add context items from the CMS system
+    context = add_cms_contents('about', context)
 
     # Process this visit
     context['breadcrumbs'] = get_breadcrumbs(request, "About", True)

@@ -11,6 +11,12 @@ from django.http import HttpResponseNotFound
 from django.urls import path
 import django.contrib.auth.views
 import django
+from django.shortcuts import redirect
+from django.urls import reverse, reverse_lazy
+from django.views.decorators.csrf import csrf_exempt
+from django.views.generic.base import RedirectView
+
+# ================================ PROJECT SPECIFIC STUFF ==============================================
 
 import lila.seeker.forms
 import lila.seeker.views
@@ -18,6 +24,8 @@ import lila.seeker.views_main
 import lila.seeker.views_api
 import lila.seeker.views_ta
 import lila.reader.views
+import lila.cms.views
+
 from lila import views
 from lila.seeker.views import *
 from lila.seeker.views_main import *
@@ -27,16 +35,12 @@ from lila.seeker.visualizations import *
 from lila.reader.views import *
 from lila.reader.excel import ManuscriptUploadExcel, ManuscriptUploadJson, ManuscriptUploadCanwits, \
     AustatUploadExcel, AuworkUploadExcel, ColwitUploadExcel
+from lila.cms.views import *
 
 # Import from lila as a whole
 from lila.settings import APP_PREFIX
 
 # Other Django stuff
-from django.shortcuts import redirect
-from django.urls import reverse, reverse_lazy
-from django.views.decorators.csrf import csrf_exempt
-from django.views.generic.base import RedirectView
-
 admin.autodiscover()
 
 
@@ -146,6 +150,23 @@ urlpatterns = [
 
     url(r'^basket/austat/update', BasketUpdateSuper.as_view(), name='basket_update_austat'),
     url(r'^basket/austat/show', BasketViewSuper.as_view(), name='basket_show_austat'),
+
+    # ============================== CMS VIEWS ========================================
+
+    url(r'^cpage/list', CpageListView.as_view(), name='cpage_list'),
+    url(r'^cpage/details(?:/(?P<pk>\d+))?/$', CpageDetails.as_view(), name='cpage_details'),
+    url(r'^cpage/edit(?:/(?P<pk>\d+))?/$', CpageEdit.as_view(), name='cpage_edit'),
+    url(r'^cpage/clocation/add(?:/(?P<pk>\d+))?/$', CpageAdd.as_view(), name='cpage_add_loc'),
+
+    url(r'^clocation/list', ClocationListView.as_view(), name='clocation_list'),
+    url(r'^clocation/details(?:/(?P<pk>\d+))?/$', ClocationDetails.as_view(), name='clocation_details'),
+    url(r'^clocation/edit(?:/(?P<pk>\d+))?/$', ClocationEdit.as_view(), name='clocation_edit'),
+    url(r'^clocation/citem/add(?:/(?P<pk>\d+))?/$', ClocationAdd.as_view(), name='clocation_add_item'),
+
+    url(r'^citem/list', CitemListView.as_view(), name='citem_list'),
+    url(r'^citem/details(?:/(?P<pk>\d+))?/$', CitemDetails.as_view(), name='citem_details'),
+    url(r'^citem/edit(?:/(?P<pk>\d+))?/$', CitemEdit.as_view(), name='citem_edit'),
+
     
     # ============================== VIEWS ============================================
     
