@@ -1591,23 +1591,6 @@ class Stype(models.Model):
         return self.abbr
 
 
-class Cms(models.Model):
-    """Restricted content management system"""
-
-    # [1] obligatory name of the page this content element pertains to
-    page = models.CharField("Page", max_length=STANDARD_LENGTH)
-    # [1] obligatory htmlid on the page
-    htmlid = models.CharField("Htmlid", max_length=STANDARD_LENGTH)
-
-    # [0-1] optional description of location in plain text
-    location = models.TextField("Location", null=True, blank=True)
-    # [0-1] the markdown contents for the information
-    contents = models.TextField("Contents", null=True, blank=True)
-
-    def __str__(self) -> str:
-        sBack = "{}:{}".format(self.page, self.htmlid)
-        return sBack
-
 
 
 # ==================== lila/Seeker models =============================
