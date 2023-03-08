@@ -224,7 +224,6 @@
     <None Include="lila\seeker\static\seeker\scripts\_references.js" />
     <Content Include="lila\basic\static\basic\content\basic.css" />
     <Content Include="lila\basic\static\basic\content\font-awesome.min.css" />
-    <Content Include="lila\cms\templates\cms\index.html" />
     <Content Include="lila\reader\templates\reader\import_colwits.html" />
     <Content Include="lila\reader\templates\reader\import_auworks.html" />
     <Content Include="lila\seeker\static\seeker\scripts\litref.js" />
