@@ -2606,10 +2606,17 @@ var ru = (function ($, ru) {
 
                     // UNCLEAN: data = { calling: "usedatafilter", dataset: dataset };
                     // Using CLEANED data
-                    data = { calling: "usedatafilter", dataset: dsetclean };
+                    data = { calling: "usedatafilter", filtervar: "NIETS", predictor: "", dataset: dsetclean };
                     // Make sure to STRINGIFY the data, so that it is in the body
                     $.post(url_forest, JSON.stringify(data), function (post_response) {
-                      var rfiltermsg = null;
+                      var rfiltermsg = null,
+                          plotdata = null,
+                          short = null,
+                          extended = null,
+                          sHtml = "",
+                          arHtml = [],
+                          i = 0,
+                          oResponse = {};
 
                       // Action depends on the response
                       if (post_response === undefined || post_response === null) {
@@ -2619,8 +2626,25 @@ var ru = (function ($, ru) {
                         rfiltermsg = post_response.errorMessage;
                         $(elMultilCheck).html(rfiltermsg);
                       } else {
+                        // What we are receiving is an object that needs to be disentangled
+                        oResponse = JSON.parse(post_response);
+                        plotdata = oResponse.plotdata;
+                        short = oResponse.short;
+                        extended = oResponse.extended;
+                        arHtml.push("Short:");
+                        arHtml.push(JSON.stringify(short));
+                        arHtml.push("Extended:");
+                        arHtml.push(JSON.stringify(extended));
+                        if (plotdata !== undefined && plotdata != null) {
+                          plotdata = JSON.parse(plotdata[0]);
+                          arHtml.push("Return data:");
+                          for (i = 0; i < plotdata.length; i++) {
+                            arHtml.push(JSON.stringify(plotdata[i]));
+                          }
+                        }
+                        sHtml = arHtml.join("<br />");
                         // We will have received an array of values
-                        $(elMultilCheck).html(post_response, null, "  ");
+                        $(elMultilCheck).html(sHtml, null, "  ");
                       }
                     });
                   }

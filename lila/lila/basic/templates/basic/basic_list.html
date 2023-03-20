@@ -27,6 +27,19 @@
 
         <!-- Allow access to interface parts that are normally hidden -->
         <div  class="panel panel-none">
+          {% if user.is_superuser %}
+            <!-- Test purposes for MultiL -->
+            <div class="row">
+              <div class="col-md-12">
+                <div class="multil-main">
+                  <a role="button" class="btn jumbo-1 btn-xs hidden"
+                     onclick="ru.basic.multil_check(this);">MultiL Check</a>
+                  <div class="multil-check"></div>
+                </div>
+              </div>
+            </div>
+            <!-- End test purposes -->
+          {% endif %}
 
           <div class="row">
             <div class="col-md-2 col-md-offset-8 text-right dropdown" style="margin-top: 5px;">
@@ -46,16 +59,6 @@
                   {% endfor %}
                 </ul>
                 <span id="downloadstatus" class="hidden"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></span>
-              {% endif %}
-
-              {% if user.is_superuser %}
-                <!-- Test purposes for MultiL -->
-                <div class="multil-main">
-                  <a role="button" class="btn jumbo-1 btn-xs hidden"
-                     onclick="ru.basic.multil_check(this);">MultiL Check</a>
-                  <div class="multil-check"></div>
-                </div>
-                <!-- End test purposes -->
               {% endif %}
 
             </div>
