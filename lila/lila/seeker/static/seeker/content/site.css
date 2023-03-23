@@ -1458,6 +1458,11 @@ div.view-mode a, div.any-mode a {
   text-decoration: none;
   color: inherit;
 }
+div.view-mode a.retain, div.any-mode a.retain {
+    /*text-decoration: underline; */
+    color: blue;
+}
+
 
 tr.selected > td.selectable {
   background-color: yellow;

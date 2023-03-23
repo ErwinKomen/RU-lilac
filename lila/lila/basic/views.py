@@ -232,19 +232,25 @@ def make_search_list(filters, oFields, search_list, qd, lstExclude):
     """Using the information in oFields and search_list, produce a revised filters array and a lstQ for a Queryset"""
 
     def enable_filter(filter_id, head_id=None):
-        full_filter_id = "filter_{}".format(filter_id)
-        for item in filters:
-            if filter_id in item['id'] or full_filter_id == item['include_id']:
-                item['enabled'] = True
-                # Break from my loop
-                break
-        # Check if this one has a head
-        if head_id != None and head_id != "":
+        oErr = ErrHandle()
+        bResult = True
+        try:
+            full_filter_id = "filter_{}".format(filter_id)
             for item in filters:
-                if head_id in item['id']:
+                if filter_id in item['id'] or full_filter_id == item.get('include_id', ""):
                     item['enabled'] = True
-                    # Break from this sub-loop
+                    # Break from my loop
                     break
+            # Check if this one has a head
+            if head_id != None and head_id != "":
+                for item in filters:
+                    if head_id in item['id']:
+                        item['enabled'] = True
+                        # Break from this sub-loop
+                        break
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("make_search_list/enable_filter")
         return True
 
     def get_value(obj, field, default=None):

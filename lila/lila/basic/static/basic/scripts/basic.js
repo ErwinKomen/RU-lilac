@@ -499,6 +499,7 @@ var ru = (function ($, ru) {
           // Find out which direction is needed
           if ($(el).hasClass("fa-sort-down")) sDirection = "asc";
           if ($(elSortable).hasClass("integer")) sSortType = "integer";
+          else if ($(elSortable).hasClass("mixed")) sSortType = "mixed";
           // restore direction everywhere in headers
           $(el).closest("tr").find(".fa.sortshow").each(function (idx, elSort) {
             $(elSort).removeClass("fa-sort-down");
@@ -543,7 +544,7 @@ var ru = (function ($, ru) {
         if (sorttype === undefined) sorttype = "text";
 
         // The sorttype determines the sort function
-        if (sorttype == "integer") {
+        if (sorttype === "integer") {
           rows.sort(function (a, b) {
             var A = 0, B = 0, sA = "", sB = "";
 
@@ -558,6 +559,66 @@ var ru = (function ($, ru) {
                 if (A < B) { return -1; } else if (A > B) { return 1; } else return 0;
               case "asc":
                 if (A < B) { return 1; } else if (A > B) { return -1; } else return 0;
+            }
+
+          });
+          $.each(rows, function (index, row) {
+            $(elTable).children('tbody').append(row);
+          });
+        } else if (sorttype === "mixed") {
+          rows.sort(function (a, b) {
+            var A_list = $(a).children('td').eq(colidx).text().toUpperCase().trim().split("."),
+              B_list = $(b).children('td').eq(colidx).text().toUpperCase().trim().split("."),
+                sTmp = "",
+                len = 0,
+                A_text = "",
+                A_int = 0,
+                B_text = "",
+                B_int = 0;
+
+            len = A_list.length;
+            if (len === 1) {
+              A_text = A_list.join(".");
+            } else {
+              sTmp = A_list[len - 1].trim();
+              if (/^[0-9]+$/.test(sTmp)) {
+                // Extract the integer
+                A_int = parseInt(sTmp, 10);
+                // Create string from the other part
+                A_text = A_list.slice(0, len - 1).join(".");
+              } else {
+                A_text = A_list.join(".");
+              }
+            }
+
+            len = B_list.length;
+            if (len === 1) {
+              B_text = B_list.join(".");
+            } else {
+              sTmp = B_list[len - 1].trim();
+              if (/^[0-9]+$/.test(sTmp)) {
+                // Extract the integer
+                B_int = parseInt(sTmp, 10);
+                // Create string from the other part
+                B_text = B_list.slice(0, len - 1).join(".");
+              } else {
+                B_text = B_list.join(".");
+              }
+            }
+
+            switch (direction) {
+              case "desc":
+                if (A_text < B_text) { return -1; }
+                else if (A_text > B_text) { return 1; }
+                else if (A_int < B_int) { return -1; }
+                else if (A_int > B_int) { return 1; }
+                else return 0;
+              case "asc":
+                if (A_text < B_text) { return 1; }
+                else if (A_text > B_text) { return -1; }
+                else if (A_int < B_int) { return 1; }
+                else if (A_int > B_int) { return -1; }
+                else return 0;
             }
 
           });
@@ -2545,10 +2606,17 @@ var ru = (function ($, ru) {
 
                     // UNCLEAN: data = { calling: "usedatafilter", dataset: dataset };
                     // Using CLEANED data
-                    data = { calling: "usedatafilter", dataset: dsetclean };
+                    data = { calling: "usedatafilter", filtervar: "NIETS", predictor: "", dataset: dsetclean };
                     // Make sure to STRINGIFY the data, so that it is in the body
                     $.post(url_forest, JSON.stringify(data), function (post_response) {
-                      var rfiltermsg = null;
+                      var rfiltermsg = null,
+                          plotdata = null,
+                          short = null,
+                          extended = null,
+                          sHtml = "",
+                          arHtml = [],
+                          i = 0,
+                          oResponse = {};
 
                       // Action depends on the response
                       if (post_response === undefined || post_response === null) {
@@ -2558,8 +2626,25 @@ var ru = (function ($, ru) {
                         rfiltermsg = post_response.errorMessage;
                         $(elMultilCheck).html(rfiltermsg);
                       } else {
+                        // What we are receiving is an object that needs to be disentangled
+                        oResponse = JSON.parse(post_response);
+                        plotdata = oResponse.plotdata;
+                        short = oResponse.short;
+                        extended = oResponse.extended;
+                        arHtml.push("Short:");
+                        arHtml.push(JSON.stringify(short));
+                        arHtml.push("Extended:");
+                        arHtml.push(JSON.stringify(extended));
+                        if (plotdata !== undefined && plotdata != null) {
+                          plotdata = JSON.parse(plotdata[0]);
+                          arHtml.push("Return data:");
+                          for (i = 0; i < plotdata.length; i++) {
+                            arHtml.push(JSON.stringify(plotdata[i]));
+                          }
+                        }
+                        sHtml = arHtml.join("<br />");
                         // We will have received an array of values
-                        $(elMultilCheck).html(post_response, null, "  ");
+                        $(elMultilCheck).html(sHtml, null, "  ");
                       }
                     });
                   }

@@ -1146,7 +1146,7 @@ class Information(models.Model):
         return super(Information, self).save(force_insert, force_update, using, update_fields)
 
 
-class Profile(models.Model):
+class Profile(models.Model, Custom):
     """Information about the user"""
 
     # [1] Every profile is linked to a user
@@ -1189,6 +1189,21 @@ class Profile(models.Model):
     # Many-to-many field that links this person/profile with particular projects
     projects = models.ManyToManyField("Project", through="ProjectEditor", related_name="projects_profile")
               
+    # Definitions for download/upload
+    specification = [
+        {'name': 'User name',           'type': 'func',  'path': 'user'         },
+        {'name': 'E-mail',              'type': 'func',  'path': 'email'        },
+        {'name': 'First name',          'type': 'func',  'path': 'firstname'    },
+        {'name': 'Last name',           'type': 'func',  'path': 'lastname'     },
+        {'name': 'Superuser',           'type': 'func',  'path': 'superuser'    },
+        {'name': 'Staff',               'type': 'func',  'path': 'staff'        },
+        {'name': 'Active',              'type': 'func',  'path': 'active'       },
+        {'name': 'Status',              'type': 'func',  'path': 'ptype'        },
+        {'name': 'Affiliation',         'type': 'field', 'path': 'affiliation'  },
+        {'name': 'Project approver',    'type': 'func',  'path': 'approver'     },
+        {'name': 'Groups',              'type': 'func',  'path': 'groups'       },
+        ]
+
     def __str__(self):
         sStack = self.stack
         return sStack
@@ -1245,6 +1260,41 @@ class Profile(models.Model):
             msg = oErr.get_error_message()
             oErr.DoError("profile/add_visit")
 
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            # Use if - elif - else to check the *path* defined in *specification*
+            if path == "user":
+                sBack = self.user.username
+            elif path == "email":
+                sBack = "" if self.user.email is None else self.user.email
+            elif path == "firstname":
+                sBack = "" if self.user.first_name is None else self.user.first_name
+            elif path == "lastname":
+                sBack = "" if self.user.last_name is None else self.user.last_name
+            elif path == "superuser":
+                sBack = 1 if self.user.is_superuser else 0
+            elif path == "staff":
+                sBack = 1 if self.user.is_staff else 0
+            elif path == "active":
+                sBack = 1 if self.user.is_active else 0
+            elif path == "ptype":
+                sBack = self.get_ptype_display()
+            elif path == "approver":
+                sBack = self.get_defaults_markdown(plain=True)
+            elif path == "groups":
+                sBack = self.get_groups_markdown(plain=True)
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Profile/custom_get")
+        return sBack
+
     def defaults_update(self, deflist):
         """Update the 'status' field with the default incl/excl"""
 
@@ -1279,20 +1329,29 @@ class Profile(models.Model):
         # Return the list
         return qs
 
-    def get_defaults_markdown(self):
+    def get_defaults_markdown(self, plain=False):
         """List of projects to which this user (profile) has editing rights"""
 
         lHtml = []
-        # Visit all keywords
-        for obj in self.project_editor.filter(status="incl").order_by('project__name'):
-            project = obj.project
-            # Find the URL of the related project
-            url = reverse('project_details', kwargs={'pk': project.id})
-            # Create a display for this topic
-            lHtml.append("<span class='clickable'><a href='{}' class='nostyle'><span class='badge signature gr'>{}</a></span></span>".format(
-                url, project.name))
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            # Visit all projects where I am a 'editor' (=approver)
+            for obj in self.project_editor.filter(status="incl").order_by('project__name'):
+                project = obj.project
+                if plain:
+                    lHtml.append(project.name)
+                else:
+                    # Find the URL of the related project
+                    url = reverse('project_details', kwargs={'pk': project.id})
+                    # Create a display for this topic
+                    lHtml.append("<span class='clickable'><a href='{}' class='nostyle'><span class='badge signature gr'>{}</a></span></span>".format(
+                        url, project.name))
 
-        sBack = ", ".join(lHtml)
+            sBack = ", ".join(lHtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Profile/get_defaults_markdown")
         return sBack
 
     def get_editor_status(self, project, is_editor=False, is_developer=False, is_moderator=False, is_superuser=False):
@@ -1342,16 +1401,25 @@ class Profile(models.Model):
         profile = Profile.objects.filter(user=user).first()
         return profile
 
-    def get_groups_markdown(self):
+    def get_groups_markdown(self, plain=False):
         """Get all the groups this user is member of"""
 
         lHtml = []
-        # Visit all keywords
-        for group in self.user.groups.all().order_by('name'):
-            # Create a display for this topic
-            lHtml.append("<span class='keyword'>{}</span>".format(group.name))
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            # Visit all keywords
+            for group in self.user.groups.all().order_by('name'):
+                if plain:
+                    lHtml.append(group.name)
+                else:
+                    # Create a display for this topic
+                    lHtml.append("<span class='keyword'>{}</span>".format(group.name))
 
-        sBack = ", ".join(lHtml)
+            sBack = ", ".join(lHtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Profile/get_groups_markdown")
         return sBack
 
     def get_projects_markdown(self):
@@ -1521,6 +1589,8 @@ class Stype(models.Model):
 
     def __str__(self):
         return self.abbr
+
+
 
 
 # ==================== lila/Seeker models =============================
@@ -5875,10 +5945,8 @@ class Genre(models.Model, Custom):
         {'name': 'Name',        'type': 'field',    'path': 'name'},
         {'name': 'Description', 'type': 'field',    'path': 'description'},
         {'name': 'Date',        'type': 'func',     'path': 'date' },
-        {'name': 'Manuscripts', 'type': 'func',     'path': 'manucount' },
-        {'name': 'Canwits',     'type': 'func',     'path': 'canwitcount' },
         {'name': 'Austats',     'type': 'func',     'path': 'austatcount' },
-        {'name': 'Histcols',    'type': 'func',     'path': 'hccount' },
+        {'name': 'Auworks',     'type': 'func',     'path': 'auworkcount' },
         ]
 
     def __str__(self):
@@ -5894,11 +5962,11 @@ class Genre(models.Model, Custom):
 
             # Use if - elif - else to check the *path* defined in *specification*
             if path == "date":
-                sBack = self.get_saved()
-            elif path == "short":
-                sBack = self.get_short()
-            elif path == "full":
-                sBack = self.get_full()
+                sBack = self.get_created()
+            elif path == "austatcount":
+                sBack = "{}".format(self.freqsuper())
+            elif path == "auworkcount":
+                sBack = "{}".format(self.freqauwork())
 
         except:
             msg = oErr.get_error_message()
@@ -5918,6 +5986,11 @@ class Genre(models.Model, Custom):
     def freqsuper(self):
         """Frequency in Authoritative Statements"""
         freq = self.genres_super.all().count()
+        return freq
+
+    def freqauwork(self):
+        """Frequency in Authoritative Works"""
+        freq = self.genres_auwork.all().count()
         return freq
 
     def get_created(self):
@@ -5941,21 +6014,22 @@ class Provenance(models.Model, Custom):
     name = models.CharField("Provenance location", max_length=LONG_STRING)
     # [0-1] Optional: LOCATION element this refers to
     location = models.ForeignKey(Location, null=True, related_name="location_provenances", on_delete=models.SET_NULL)
+
     ## [0-1] Further details are perhaps required too
     #note = models.TextField("Notes on this provenance", blank=True, null=True)
 
     ## [1] One provenance belongs to exactly one manuscript
     #manu = models.ForeignKey(Manuscript, default=0, related_name="manuprovenances")
 
+    # [1] And a date: the date when this provenance has been created
+    created = models.DateTimeField(default=get_current_datetime)
+
     # Definitions for download/upload
     specification = [
         {'name': 'Name',        'type': 'field',    'path': 'name'},
-        {'name': 'Description', 'type': 'field',    'path': 'description'},
+        {'name': 'Location',    'type': 'func',     'path': 'location'},
         {'name': 'Date',        'type': 'func',     'path': 'date' },
-        {'name': 'Manuscripts', 'type': 'func',     'path': 'manucount' },
-        {'name': 'Canwits',     'type': 'func',     'path': 'canwitcount' },
-        {'name': 'Austats',     'type': 'func',     'path': 'austatcount' },
-        {'name': 'Histcols',    'type': 'func',     'path': 'hccount' },
+        {'name': 'Manuscripts', 'type': 'func',     'path': 'manuscripts' },
         ]
 
     def __str__(self):
@@ -5971,15 +6045,15 @@ class Provenance(models.Model, Custom):
 
             # Use if - elif - else to check the *path* defined in *specification*
             if path == "date":
-                sBack = self.get_saved()
-            elif path == "short":
-                sBack = self.get_short()
-            elif path == "full":
-                sBack = self.get_full()
+                sBack = self.get_created()
+            elif path == "location":
+                sBack = self.get_location()
+            elif path == "manuscripts":
+                sBack = self.get_manuscripts(plain=True)
 
         except:
             msg = oErr.get_error_message()
-            oErr.DoError("Litref/custom_get")
+            oErr.DoError("Provenance/custom_get")
         return sBack
 
     def find_or_create(sName,  city=None, country=None, note=None):
@@ -6004,11 +6078,33 @@ class Provenance(models.Model, Custom):
         return hit
 
     def get_location(self):
+        sBack = "-"
         if self.location:
             sBack = self.location.name
-        else:
-            sBack = "-"
+        # Return what was found
+        return sBack
 
+    def get_manuscripts(self, plain=False):
+
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            # Multiple connections possible
+            # One provenance may be connected to any number of manuscripts!
+            lManu = []
+            for obj in self.manuscripts_provenances.all():
+                # Add the shelfmark of this one
+                manu = obj.manuscript
+                if plain:
+                    lManu.append("{}".format(manu.idno))
+                else:
+                    url = reverse("manuscript_details", kwargs = {'pk': manu.id})
+                    shelfmark = manu.idno[:20]
+                    lManu.append("<span class='badge signature cl'><a href='{}'>{}</a></span>".format(url, manu.idno))
+            sBack = ", ".join(lManu)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Provenance/get_manuscripts")
         return sBack
 
 
@@ -6349,6 +6445,10 @@ class Auwork(models.Model, Custom):
         sBack = ", ".join(lHtml)
         return sBack
 
+    def get_lilacode(self):
+        sBack = self.key
+        return sBack
+
     def get_signatures(self, bUseHtml=True):
         """Get a list of all signatures tied to me"""
 
@@ -6400,7 +6500,7 @@ class AuworkGenre(models.Model):
 
     def __str__(self):
         # Just provide the idno
-        sItem = "{}:{}".format(self.auwork.key, self.auwork.genre)
+        sItem = "{}:{}".format(self.auwork.key, self.genre.name)
         return sItem
 
 
@@ -6820,10 +6920,10 @@ class Austat(models.Model, Custom):
                     if genre is None:
                         genre = Genre.objects.create(name=sGenre)
                     # Double check to see if there is no link between [self] and [genre] yet
-                    obj = AustatGenre.objects.filter(equal=self, genre=genre).first()
+                    obj = AustatGenre.objects.filter(austat=self, genre=genre).first()
                     if obj is None:
                         # Create that link
-                        obj = AustatGenre.objects.create(equal=self, genre=genre)
+                        obj = AustatGenre.objects.create(austat=self, genre=genre)
             elif path == "keywords":
                 keywords = value_lst
                 for kw in keywords:
@@ -6873,95 +6973,7 @@ class Austat(models.Model, Custom):
                     # Collection.objects.create(collection=collection, sermon=self, order=order)
                     Caned.objects.create(collection=collection, austat=self, order=order)
 
-            #elif path == "austatlinks":
-            #    austatlink_names = value_lst #  get_json_list(value)
-            #    for austat_code in austatlink_names:
-            #        # Get this Austat
-            #        austat = Austat.objects.filter(code__iexact=austat_code).first()
-
-            #        if austat == None:
-            #            # Indicate that we didn't find it in the notes
-            #            intro = ""
-            #            if self.note != "": intro = "{}. ".format(self.note)
-            #            self.note = "{}Please set manually the Austat link [{}]".format(intro, austat_code)
-            #            self.save()
-            #        else:
-            #            # Make link between SSG and Austat
-            #            CanwitAustat.objects.create(canwit=self, austat=austat, linktype="eqs")
-            #    # Ready
-            #elif path == "austat_one":
-            #    oValue = value
-            #    austat_note = oValue.get('austat_note', "")
-            #    austat_coll = oValue.get('austat_coll')
-            #    austat_code = oValue['austat_link']
-
-            #    # Double check that the code is actually something
-            #    if not austat_code is None:
-            #        if ";" in austat_code:
-            #            austat_codes = [x.strip() for x in austat_code.split(";")]
-            #        else:
-            #            austat_codes = [ austat_code ]
-
-            #        # Figure out what the collection is (if any)
-            #        collection = None
-            #        if not austat_coll is None:
-            #            # Find a collection with this name
-            #            collection = Collection.objects.filter(name__iexact=austat_coll, type="austat", settype="hc").first()
-            #            if collection is None:
-            #                # Create a collection with this name
-            #                collection = Collection.objects.create(type="austat", name=austat_coll, settype="hc", scope="publ")
-
-            #        # Walk all of them
-            #        for austat_code in austat_codes:
-            #            # Get this Austat
-            #            austat = Austat.objects.filter(keycode__iexact=austat_code).first()
-
-            #            if austat == None:
-            #                if austat_method == "create_if_not_existing":
-            #                    # Make sure Author is set correctly
-            #                    author = self.author
-            #                    if author is None:
-            #                        author = Author.objects.filter(name__iexact="undecided").first()
-            #                    # Create it
-            #                    austat = Austat.objects.create(
-            #                        keycode=austat_code,atype="acc", stype="imp",
-            #                        ftext=self.ftext, ftrans=self.ftrans,
-            #                        author=author)
-            #                    # See if a Auwork can be determined
-            #                    if "." in austat_code:
-            #                        auwork_key = ".".join( austat_code.split(".")[0:-1])
-            #                        if auwork_key != "":
-            #                            # Check if it exists already
-            #                            auwork = Auwork.objects.filter(key__iexact=auwork_key).first()
-            #                            if auwork is None:
-            #                                auwork = Auwork.objects.create(key=auwork_key)
-            #                            # Set a link to this
-            #                            austat.auwork = auwork
-            #                            # Also correct the austat keycode
-            #                            austat.keycode = austat_code.split(".")[-1]
-            #                            # Now we ae able to save it
-            #                            austat.save()
-
-            #                else:
-            #                    # Indicate that we didn't find it in the notes
-            #                    intro = ""
-            #                    if self.note != "": intro = "{}. ".format(self.note)
-            #                    self.note = "{}Please set manually the Austat link [{}]".format(intro, austat_code)
-            #                    self.save()
-
-            #            # Try again: should we make a link?
-            #            if not austat is None:
-            #                # Make link between Austat and Austat
-            #                obj = CanwitAustat.objects.create(canwit=self, austat=austat, linktype="eqs")
-            #                if not obj is None and not austat_note is None and austat_note != "":
-            #                    obj.note = austat_note
-            #                    obj.save()
-
-            #                # If there is a collection, then link Austat to that collection
-            #                if not collection is None:
-            #                    coll_link = Caned.objects.filter(austat=austat, collection=collection).first()
-            #                    if coll_link is None:
-            #                        coll_link = Caned.objects.create(austat=austat, collection=collection)
+ 
             #        # Ready
             else:
                 # Figure out what to do in this case
@@ -6977,6 +6989,36 @@ class Austat(models.Model, Custom):
         sBack = "not specified"
         if self.author:
             sBack = self.author.name
+        return sBack
+
+    def get_breadcrumb(self):
+        """Get breadcrumbs to show where this canwit exists:
+       
+        1 - Authoritative work
+        3 - lila code (and a link to it)"""
+
+        sBack = ""
+        html = []
+        oErr = ErrHandle()
+        try:
+            # (1) Authoritative work
+            auwork = self.auwork
+            if not auwork is None:
+                url_auwork = reverse('auwork_details', kwargs={'pk': auwork.id})
+                txt_auwork = auwork.get_lilacode()
+                html.append("<span class='badge signature cl' title='Authoritative work'><a href='{}' style='color: inherit'>{}</a></span>".format(
+                    url_auwork, txt_auwork))
+
+            # (2) austat itself
+            url_austat = reverse('austat_details', kwargs={'pk': self.id})
+            txt_austat = self.get_keycode()
+            html.append("<span class='badge signature gr' title='Authoritative statement'><a href='{}' style='color: inherit'>{}</a></span>".format(
+                url_austat, txt_austat))
+
+            sBack = "<span style='font-size: small;'>{}</span>".format(" > ".join(html))
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Austat/get_breadcrumb")
         return sBack
 
     def get_code(self):
@@ -7085,7 +7127,7 @@ class Austat(models.Model, Custom):
             search = self.srchftext
             sBack = "<div>{}</div><div class='searchincexp'>{}</div>".format(parsed, search)
         elif incexp_type == "actual":
-            sBack = adapt_markdown(self.ftext)
+            sBack = adapt_markdown(self.ftext, lowercase=False)
         elif incexp_type == "search":
             sBack = adapt_markdown(self.srchftext)
         return sBack
@@ -7570,22 +7612,32 @@ class AustatKeyword(models.Model):
     """Relation between an Austat and a Keyword"""
 
     # [1] The link is between a Austat instance ...
-    equal = models.ForeignKey(Austat, related_name="equal_kw", on_delete=models.CASCADE)
+    austat = models.ForeignKey(Austat, related_name="austat_kw", on_delete=models.CASCADE) 
     # [1] ...and a keyword instance
-    keyword = models.ForeignKey(Keyword, related_name="equal_kw", on_delete=models.CASCADE)
+    keyword = models.ForeignKey(Keyword, related_name="austat_kw", on_delete=models.CASCADE)
     # [1] And a date: the date of saving this relation
     created = models.DateTimeField(default=get_current_datetime)
+
+    def __str__(self):
+        # Just provide the idno
+        sItem = "{}:{}".format(self.austat.keycodefull, self.keyword.name)
+        return sItem
 
 
 class AustatGenre(models.Model):
     """Relation between an Austat and a Keyword"""
 
     # [1] The link is between a Austat instance ...
-    equal = models.ForeignKey(Austat, related_name="equal_genre", on_delete=models.CASCADE)
+    austat = models.ForeignKey(Austat, related_name="austat_genre", on_delete=models.CASCADE)
     # [1] ...and a keyword instance
-    genre = models.ForeignKey(Genre, related_name="equal_genre", on_delete=models.CASCADE)
+    genre = models.ForeignKey(Genre, related_name="austat_genre", on_delete=models.CASCADE)
     # [1] And a date: the date of saving this relation
     created = models.DateTimeField(default=get_current_datetime)
+
+    def __str__(self):
+        # Just provide the idno
+        sItem = "{}:{}".format(self.austat.keycodefull, self.genre.name)
+        return sItem
 
 
 class AustatProject(models.Model):
@@ -7657,7 +7709,7 @@ class ManuscriptExt(models.Model):
 # =========================== COLLECTION RELATED ===================================
 
 
-class Collection(models.Model):
+class Collection(models.Model, Custom):
     """A collection can contain one or more sermons, manuscripts, gold sermons or super super golds"""
     
     # [1] Each collection has only 1 name 
@@ -7705,6 +7757,20 @@ class Collection(models.Model):
 
     # [m] Many-to-many: one (historical) collection can belong to one or more projects
     projects = models.ManyToManyField(Project, through="CollectionProject", related_name="project_collection")
+
+    # Definitions for download/upload
+    specification = [
+        {'name': 'Name',        'type': 'field',    'path': 'name'},
+        {'name': 'LiLaC code',  'type': 'field',    'path': 'lilacode'},
+        {'name': 'Date',        'type': 'field',    'path': 'date' },
+        {'name': "Description", 'type': 'func',     'path': 'descr'},
+        {'name': 'Authors',     'type': 'func',     'path': 'authors' },
+        {'name': 'Owner',       'type': 'func',     'path': 'owner' },
+        {'name': 'Size',        'type': 'func',     'path': 'size' },
+        {'name': 'Projects',    'type': 'func',     'path': 'projects' },
+        {'name': 'Created',     'type': 'func',     'path': 'created' },
+        {'name': 'Saved',       'type': 'func',     'path': 'saved' },
+        ]
 
     
     def __str__(self):
@@ -7758,6 +7824,35 @@ class Collection(models.Model):
 
         return "\n".join(html)
 
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            # Use if - elif - else to check the *path* defined in *specification*
+            if path == "descr":
+                sBack = self.get_descr()
+            elif path == "authors":
+                sBack = self.get_authors_markdown(plain=True)
+            elif path == "owner":
+                sBack = self.get_owner()
+            elif path == "size":
+                sBack = self.get_size_markdown(plain=True)
+            elif path == "projects":
+                sBack = self.get_project_markdown2(plain=True)
+            elif path == "created":
+                sBack = self.get_created()
+            elif path == "saved":
+                sBack = self.get_saved()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Collection/custom_get")
+        return sBack
+
     def freqcanwit(self):
         """Frequency in canon witnesses"""
         freq = self.collections_canwit.all().count()
@@ -7778,14 +7873,23 @@ class Collection(models.Model):
         freq = self.collections_austat.all().count()
         return freq
 
-    def get_authors_markdown(self):
-        html = []
-        if self.settype == "hc":
-            ssg_id = self.austat_col.all().values('austat__id')
-            for author in Author.objects.filter(Q(author_austats__id__in=ssg_id)).order_by('name').distinct():
-                dots = "" if len(author.name) < 20 else "..."
-                html.append("<span class='authorname' title='{}'>{}{}</span>".format(author.name, author.name[:20], dots))
-        sBack = ", ".join(html)
+    def get_authors_markdown(self, plain=False):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            html = []
+            if self.settype == "hc":
+                ssg_id = self.austat_col.all().values('austat__id')
+                for author in Author.objects.filter(Q(author_austats__id__in=ssg_id)).order_by('name').distinct():
+                    if plain:
+                        html.append("{}".format(author.name))
+                    else:
+                        dots = "" if len(author.name) < 20 else "..."
+                        html.append("<span class='authorname' title='{}'>{}{}</span>".format(author.name, author.name[:20], dots))
+            sBack = ", ".join(html)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Collection/get_authors_markdown")
         return sBack
         
     def get_created(self):
@@ -7841,7 +7945,7 @@ class Collection(models.Model):
             lstQ = []
             lstQ.append(Q(codicoitems__itemsermons__austats__collections=self))
             lstQ.append(Q(manuscript__mtype="man"))
-            iBack = Codico.objects.filter(*lstQ).count()
+            iBack = Codico.objects.filter(*lstQ).distinct().count()
         except:
             msg = oErr.get_error_message()
             oErr.DoError("Collection/get_count_codico")
@@ -7867,151 +7971,6 @@ class Collection(models.Model):
         html.append("<span class='glyphicon glyphicon-share-alt'></span></a>")
         html.append("<span>Turn this dataset into a historical collection</span>")
         sBack = "\n".join(html)
-        return sBack
-
-    def get_label(self):
-        """Return an appropriate name or label"""
-
-        return self.name
-
-    def get_lilacode(self):
-        """Return LiLaC code, which is manuscript code + collection code"""
-
-        sBack = ""
-        oErr = ErrHandle()
-        try:
-            html = []
-            # Find out what collection we link to
-            if not self.lilacode is None:
-                html.append(self.lilacode)
-            # Combine it all
-            sBack = ".".join(html)
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("Codico/get_lilacode")
-        return sBack
-
-    def get_litrefs_markdown(self):
-        lHtml = []
-        # Visit all literature references
-        for litref in self.collection_litrefcols.all().order_by('reference__short'):
-            # Determine where clicking should lead to
-            url = "{}#lit_{}".format(reverse('literature_list'), litref.reference.id)
-            # Create a display for this item
-            lHtml.append("<span class='badge signature cl'><a href='{}'>{}</a></span>".format(url,litref.get_short_markdown()))
-
-        sBack = ", ".join(lHtml)
-        return sBack
-
-    def get_manuscript_link(self):
-        """Return a piece of HTML with the manuscript link for the user"""
-
-        sBack = ""
-        html = []
-        if self.settype == "hc":
-            # Creation of a new template based on this historical collection:
-            url = reverse('collhist_temp', kwargs={'pk': self.id})
-            html.append("<a href='{}' title='Create a template based on this historical collection'><span class='badge signature ot'>Create a Template based on this historical collection</span></a>".format(url))
-            # Creation of a new manuscript based on this historical collection:
-            url = reverse('collhist_manu', kwargs={'pk': self.id})
-            html.append("<a href='{}' title='Create a manuscript based on this historical collection'><span class='badge signature gr'>Create a Manuscript based on this historical collection</span></a>".format(url))
-            # Combine response
-            sBack = "\n".join(html)
-        return sBack
-
-    def get_project_markdown2(self): 
-        lHtml = []
-        # Visit all project items
-        for project in self.projects.all().order_by('name'):
-            # Determine where clicking should lead to
-            url = "{}?hist-projlist={}".format(reverse('collhist_list'), project.id) 
-            # Create a display for this topic            
-            lHtml.append("<span class='project'><a href='{}'>{}</a></span>".format(url, project.name))
-        sBack = ", ".join(lHtml)
-        return sBack
-
-    def get_readonly_display(self):
-        response = "yes" if self.readonly else "no"
-        return response
-        
-    def get_scoped_queryset(type, username, team_group, settype="pd", scope = None):
-        """Get a filtered queryset, depending on type and username"""
-        
-        # Initialisations
-        if scope == None or scope == "":
-            non_private = ['publ', 'team']
-        elif scope == "priv":
-            non_private = ['team']
-        if settype == None or settype == "":
-            settype="pd"
-        oErr = ErrHandle()
-        try:
-            # Validate
-            if scope == "publ":
-                filter = Q(scope="publ")
-            elif username and team_group and username != "" and team_group != "":
-                # First filter on owner
-                owner = Profile.get_user_profile(username)
-                filter = Q(owner=owner)
-                # Now check for permissions
-                is_team = (owner.user.groups.filter(name=team_group).first() != None)
-                # Adapt the filter accordingly
-                if is_team:
-                    # User is part of the team: may not see 'private' from others
-                    if type:
-                        filter = ( filter & Q(type=type)) | ( Q(scope__in=non_private) & Q(type=type) )
-                    else:
-                        filter = ( filter ) | ( Q(scope__in=non_private)  )
-                elif scope == "priv":
-                    # THis is a general user: may only see the public ones
-                    if type:
-                        filter = ( filter & Q(type=type))
-                else:
-                    # THis is a general user: may only see the public ones
-                    if type:
-                        filter = ( filter & Q(type=type)) | ( Q(scope="publ") & Q(type=type) )
-                    else:
-                        filter = ( filter ) | ( Q(scope="publ")  )
-            else:
-                filter = Q(type=type)
-            # Make sure the settype is consistent
-            filter = ( filter ) & Q(settype=settype)
-            # Apply the filter
-            qs = Collection.objects.filter(filter)
-        except:
-            msg = oErr.get_error_message()
-            oErr.DoError("get_scoped_queryset")
-            qs = Collection.objects.all()
-        # REturn the result
-        return qs
-
-    def get_size_markdown(self):
-        """Count the items that belong to me, depending on my type
-        
-        Create a HTML output
-        """
-
-        size = 0
-        lHtml = []
-        if self.type == "sermo":
-            size = self.freqcanwit()
-            # Determine where clicking should lead to
-            url = "{}?sermo-collist_s={}".format(reverse('canwit_list'), self.id)
-        elif self.type == "manu":
-            size = self.freqmanu()
-            # Determine where clicking should lead to
-            url = "{}?manu-collist_m={}".format(reverse('manuscript_list'), self.id)
-        elif self.type == "austat":
-            size = self.freqsuper()
-            # Determine where clicking should lead to
-            if self.settype == "hc":
-                url = "{}?ssg-collist_hist={}".format(reverse('austat_list'), self.id)
-            else:
-                url = "{}?ssg-collist_ssg={}".format(reverse('austat_list'), self.id)
-        if size > 0:
-            # Create a display for this topic
-            lHtml.append("<span class='badge signature gr'><a href='{}'>{}</a></span>".format(url,size))
-        sBack = ", ".join(lHtml)
         return sBack
 
     def get_hctemplate_copy(self, username, mtype):
@@ -8079,14 +8038,86 @@ class Collection(models.Model):
         # Return the manuscript or the template that has been created
         return obj
 
-    def get_view(self):
-        """Get the name of the collection and a URL to it"""
+    def get_label(self):
+        """Return an appropriate name or label"""
+
+        return self.name
+
+    def get_lilacode(self):
+        """Return LiLaC code, which is manuscript code + collection code"""
 
         sBack = ""
-        lhtml = []
-        url = reverse('collhist_details', kwargs={'pk': self.id})
-        lhtml.append("<span class='collection'><a href='{}'>{}</a></span>".format(url,self.name))
-        sBack = "\n".join(lhtml)
+        oErr = ErrHandle()
+        try:
+            html = []
+            # Find out what collection we link to
+            if not self.lilacode is None:
+                html.append(self.lilacode)
+            # Combine it all
+            sBack = ".".join(html)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Codico/get_lilacode")
+        return sBack
+
+    def get_litrefs_markdown(self):
+        lHtml = []
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            # Visit all literature references
+            for litref in self.collection_litrefcols.all().order_by('reference__short'):
+                # Determine where clicking should lead to
+                url = "{}#lit_{}".format(reverse('literature_list'), litref.reference.id)
+                # Create a display for this item
+                lHtml.append("<span class='badge signature cl'><a href='{}'>{}</a></span>".format(url,litref.get_short_markdown()))
+
+            sBack = ", ".join(lHtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_litrefs_markdown")
+        return sBack
+
+    def get_manuscript_link(self):
+        """Return a piece of HTML with the manuscript link for the user"""
+
+        sBack = ""
+        html = []
+        if self.settype == "hc":
+            # Creation of a new template based on this historical collection:
+            url = reverse('collhist_temp', kwargs={'pk': self.id})
+            html.append("<a href='{}' title='Create a template based on this historical collection'><span class='badge signature ot'>Create a Template based on this historical collection</span></a>".format(url))
+            # Creation of a new manuscript based on this historical collection:
+            url = reverse('collhist_manu', kwargs={'pk': self.id})
+            html.append("<a href='{}' title='Create a manuscript based on this historical collection'><span class='badge signature gr'>Create a Manuscript based on this historical collection</span></a>".format(url))
+            # Combine response
+            sBack = "\n".join(html)
+        return sBack
+
+    def get_owner(self):
+        sBack = "-"
+        if not self.owner is None:
+            sBack = self.owner.user.username
+        return sBack
+
+    def get_project_markdown2(self, plain=False): 
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            lHtml = []
+            # Visit all project items
+            for project in self.projects.all().order_by('name'):
+                if plain:
+                    lHtml.append(project.name)
+                else:
+                    # Determine where clicking should lead to
+                    url = "{}?hist-projlist={}".format(reverse('collhist_list'), project.id) 
+                    # Create a display for this topic            
+                    lHtml.append("<span class='project'><a href='{}'>{}</a></span>".format(url, project.name))
+            sBack = ", ".join(lHtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Collection/get_project_markdown2")
         return sBack
 
     def set_projects(self, projects):
@@ -8107,6 +8138,114 @@ class Collection(models.Model):
             bBack = False
         return bBack
 
+    def get_readonly_display(self):
+        response = "yes" if self.readonly else "no"
+        return response
+        
+    def get_saved(self):
+        """REturn the saved date in a readable form"""
+
+        sDate = self.saved.strftime("%d/%b/%Y %H:%M")
+        return sDate
+
+    def get_scoped_queryset(type, username, team_group, settype="pd", scope = None):
+        """Get a filtered queryset, depending on type and username"""
+        
+        # Initialisations
+        if scope == None or scope == "":
+            non_private = ['publ', 'team']
+        elif scope == "priv":
+            non_private = ['team']
+        if settype == None or settype == "":
+            settype="pd"
+        oErr = ErrHandle()
+        try:
+            # Validate
+            if scope == "publ":
+                filter = Q(scope="publ")
+            elif username and team_group and username != "" and team_group != "":
+                # First filter on owner
+                owner = Profile.get_user_profile(username)
+                filter = Q(owner=owner)
+                # Now check for permissions
+                is_team = (owner.user.groups.filter(name=team_group).first() != None)
+                # Adapt the filter accordingly
+                if is_team:
+                    # User is part of the team: may not see 'private' from others
+                    if type:
+                        filter = ( filter & Q(type=type)) | ( Q(scope__in=non_private) & Q(type=type) )
+                    else:
+                        filter = ( filter ) | ( Q(scope__in=non_private)  )
+                elif scope == "priv":
+                    # THis is a general user: may only see the public ones
+                    if type:
+                        filter = ( filter & Q(type=type))
+                else:
+                    # THis is a general user: may only see the public ones
+                    if type:
+                        filter = ( filter & Q(type=type)) | ( Q(scope="publ") & Q(type=type) )
+                    else:
+                        filter = ( filter ) | ( Q(scope="publ")  )
+            else:
+                filter = Q(type=type)
+            # Make sure the settype is consistent
+            filter = ( filter ) & Q(settype=settype)
+            # Apply the filter
+            qs = Collection.objects.filter(filter)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_scoped_queryset")
+            qs = Collection.objects.all()
+        # REturn the result
+        return qs
+
+    def get_size_markdown(self, plain=False):
+        """Count the items that belong to me, depending on my type
+        
+        Create a HTML output
+        """
+
+        size = 0
+        sBack = ""
+        lHtml = []
+        oErr = ErrHandle()
+        try:
+            if self.type == "sermo":
+                size = self.freqcanwit()
+                # Determine where clicking should lead to
+                url = "{}?sermo-collist_s={}".format(reverse('canwit_list'), self.id)
+            elif self.type == "manu":
+                size = self.freqmanu()
+                # Determine where clicking should lead to
+                url = "{}?manu-collist_m={}".format(reverse('manuscript_list'), self.id)
+            elif self.type == "austat":
+                size = self.freqsuper()
+                # Determine where clicking should lead to
+                if self.settype == "hc":
+                    url = "{}?ssg-collist_hist={}".format(reverse('austat_list'), self.id)
+                else:
+                    url = "{}?ssg-collist_ssg={}".format(reverse('austat_list'), self.id)
+            if size > 0:
+                if plain:
+                    lHtml.append("{}".format(size))
+                else:
+                    # Create a display for this topic
+                    lHtml.append("<span class='badge signature gr'><a href='{}'>{}</a></span>".format(url,size))
+            sBack = ", ".join(lHtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Collection/get_size_markdown")
+        return sBack
+
+    def get_view(self):
+        """Get the name of the collection and a URL to it"""
+
+        sBack = ""
+        lhtml = []
+        url = reverse('collhist_details', kwargs={'pk': self.id})
+        lhtml.append("<span class='collection'><a href='{}'>{}</a></span>".format(url,self.name))
+        sBack = "\n".join(lhtml)
+        return sBack
 
 
 # =========================== MSITEM RELATED ===================================
@@ -9542,6 +9681,45 @@ class Canwit(models.Model, Custom):
         # Return what we have
         return sBack
 
+    def get_breadcrumb(self):
+        """Get breadcrumbs to show where this canwit exists:
+       
+        1 - Manuscript link
+        2 - Collection witness link
+        3 - lila code (and a link to it)"""
+
+        sBack = ""
+        html = []
+        oErr = ErrHandle()
+        try:
+            # (1) Manuscript
+            manu = self.get_manuscript()
+            if not manu is None:
+                url_manu = reverse('manuscript_details', kwargs={'pk': manu.id})
+                txt_manu = manu.get_lilacode()
+                html.append("<span class='badge signature ot' title='Manuscript'><a href='{}' style='color: inherit'>{}</a></span>".format(
+                    url_manu, txt_manu))
+
+            # (2) Collection witness
+            colwit = self.colwit
+            if not colwit is None:
+                url_colwit = reverse('colwit_details', kwargs={'pk': colwit.id})
+                txt_colwit = colwit.get_lilacode()
+                html.append("<span class='colwit' title='Collection Witness'><a href='{}' style='color: inherit'>{}</a></span>".format(
+                    url_colwit, txt_colwit))
+
+            # (3) Canwit itself
+            url_canwit = reverse('canwit_details', kwargs={'pk': self.id})
+            txt_canwit = self.get_lilacode()
+            html.append("<span class='badge signature cl' title='Canon Witness'><a href='{}' style='color: inherit'>{}</a></span>".format(
+                url_canwit, txt_canwit))
+
+            sBack = "<span style='font-size: small;'>{}</span>".format(" > ".join(html))
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_breadcrumb")
+        return sBack
+
     def get_caput(self):
         """Get the Caput (if defined) and display it as a Roman number"""
 
@@ -9890,7 +10068,7 @@ class Canwit(models.Model, Custom):
             if self.srchftext == None or self.srchftext == "":
                 Canwit.init_latin()
 
-        return adapt_markdown(self.ftext)
+        return adapt_markdown(self.ftext, lowercase=False)
 
     def get_keywords_plain(self):
         lHtml = []
@@ -9943,36 +10121,48 @@ class Canwit(models.Model, Custom):
         """Get all the keywords attached to the SSG of which I am part"""
 
         lHtml = []
-        # Get all the SSGs to which I link with equality
-        # ssg_id = Austat.objects.filter(canwit_austat__canwit=self, canwit_austat__linktype=LINK_EQUAL).values("id")
-        ssg_id = self.austats.all().values("id")
-        # Get all keywords attached to these SGs
-        qs = Keyword.objects.filter(equal_kw__equal__id__in=ssg_id).order_by("name").distinct()
-        # Visit all keywords
-        for keyword in qs:
-            # Determine where clicking should lead to
-            url = "{}?ssg-kwlist={}".format(reverse('austat_list'), keyword.id)
-            # Create a display for this topic
-            lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,keyword.name))
+        oErr = ErrHandle()
+        sBack = ""
+        try:
+            # Get all the SSGs to which I link with equality
+            # ssg_id = Austat.objects.filter(canwit_austat__canwit=self, canwit_austat__linktype=LINK_EQUAL).values("id")
+            ssg_id = self.austats.all().values("id")
+            # Get all keywords attached to these SGs
+            qs = Keyword.objects.filter(austat_kw__austat__id__in=ssg_id).order_by("name").distinct()
+            # Visit all keywords
+            for keyword in qs:
+                # Determine where clicking should lead to
+                url = "{}?ssg-kwlist={}".format(reverse('austat_list'), keyword.id)
+                # Create a display for this topic
+                lHtml.append("<span class='keyword'><a href='{}'>{}</a></span>".format(url,keyword.name))
 
-        sBack = ", ".join(lHtml)
+            sBack = ", ".join(lHtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Canwit/get_keywords_ssg_markdown")
         return sBack
 
     def get_keywords_ssg_plain(self):
         """Get all the keywords attached to the SSG of which I am part"""
 
         lHtml = []
-        # Get all the SSGs to which I link with equality
-        # ssg_id = Austat.objects.filter(canwit_austat__canwit=self, canwit_austat__linktype=LINK_EQUAL).values("id")
-        ssg_id = self.austats.all().values("id")
-        # Get all keywords attached to these SGs
-        qs = Keyword.objects.filter(equal_kw__equal__id__in=ssg_id).order_by("name").distinct()
-        # Visit all keywords
-        for keyword in qs:
-            # Create a display for this topic
-            lHtml.append("<span class='keyword'>{}</span>".format(keyword.name))
+        oErr = ErrHandle()
+        sBack = ""
+        try:
+            # Get all the SSGs to which I link with equality
+            # ssg_id = Austat.objects.filter(canwit_austat__canwit=self, canwit_austat__linktype=LINK_EQUAL).values("id")
+            ssg_id = self.austats.all().values("id")
+            # Get all keywords attached to these SGs
+            qs = Keyword.objects.filter(austat_kw__austat__id__in=ssg_id).order_by("name").distinct()
+            # Visit all keywords
+            for keyword in qs:
+                # Create a display for this topic
+                lHtml.append("<span class='keyword'>{}</span>".format(keyword.name))
 
-        sBack = ", ".join(lHtml)
+            sBack = ", ".join(lHtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Canwit/get_keywords_ssg_plain")
         return sBack
 
     def get_lilacode(self):
@@ -10082,7 +10272,7 @@ class Canwit(models.Model, Custom):
         return sBack
 
     def get_austat_lilacode_markdown(self):
-        """Get the lila code (and a link to it)"""
+        """Get the  lila code (and a link to it)"""
 
         sBack = ""
         # Get the first austat
@@ -11285,8 +11475,16 @@ class LitrefCol(models.Model):
         response = None
         # Double check the ESSENTIALS (pages may be empty)
         if self.collection_id and self.reference_id:
-            # Do the saving initially
-            response = super(LitrefCol, self).save(force_insert, force_update, using, update_fields)
+            # Check that it is not there already
+            qs = LitrefCol.objects.filter(collection_id=self.collection_id, reference_id=self.reference_id)
+            if qs.count() == 0:
+                # Do the saving initially
+                response = super(LitrefCol, self).save(force_insert, force_update, using, update_fields)
+            elif qs.count() > 1:
+                # Remove all but one of them
+                id_list = [x['id'] for x in qs.values('id')]
+                id_list = id_list[1:]
+                qs.delete(id__in=id_list)
         # Then return the response: should be "None"
         return response
 
@@ -11459,7 +11657,7 @@ class CollectionMan(models.Model):
 # =========================== CANED RELATED ===================================
 
 
-class Caned(models.Model):
+class Caned(models.Model, Custom):
     """The link between a collection item and a Austat (authoritative statement)"""
 
     # [1] The Austat to which the collection item refers
@@ -11479,27 +11677,91 @@ class Caned(models.Model):
     # [0-1] The order number for this Austat within the collection
     order = models.IntegerField("Order", default = -1)
 
+    # Definitions for download/upload
+    specification = [
+        {'name': 'Authoritative statement', 'type': 'func',  'path': 'austat'   },
+        {'name': 'Historical collection',   'type': 'func',  'path': 'histcol'  },
+        {'name': 'LiLaC code',              'type': 'func',  'path': 'lilacode' },
+        {'name': 'Order in HC',             'type': 'field', 'path': 'order'    },
+        {'name': 'Full text',               'type': 'field', 'path': 'ftext'    },
+        {'name': 'Translation',             'type': 'field', 'path': 'ftrans'   },
+        ]
+
     def __str__(self):
         # Just provide the idno
         sItem = self.idno
         return sItem
 
-    def get_austat(self):
+    def custom_get(self, path, **kwargs):
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            profile = kwargs.get("profile")
+            username = kwargs.get("username")
+            team_group = kwargs.get("team_group")
+
+            # Use if - elif - else to check the *path* defined in *specification*
+            if path == "austat":
+                sBack = self.get_austat(plain=True)
+            elif path == "histcol":
+                sBack = self.get_collection(plain=True)
+            elif path == "lilacode":
+                sBack = self.get_lilacode()
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Caned/custom_get")
+        return sBack
+
+    def get_austat(self, plain=False):
         """Get a string representation of the Austat that I link to"""
 
         sBack = ""
         oErr = ErrHandle()
         try:
             sAustat = self.austat.get_keycode()
-            url = reverse('austat_details', kwargs={'pk': self.austat.id})
-            sBack = "<span class='badge signature ot'><a href='{}' class='nostyle'>{}</a></span>".format(
-                url, sAustat)
+            if plain:
+                sBack = sAustat
+            else:
+                url = reverse('austat_details', kwargs={'pk': self.austat.id})
+                sBack = "<span class='badge signature ot'><a href='{}' class='nostyle'>{}</a></span>".format(
+                    url, sAustat)
         except:
             msg = oErr.get_error_message()
             oErr.DoError("Caned/get_austat")
         return sBack
 
-    def get_collection(self):
+    def get_breadcrumb(self):
+        """Get breadcrumbs to show where this caned exists:
+       
+        1 - Historical collection
+        2 - lila code (and a link to it)"""
+
+        sBack = ""
+        html = []
+        oErr = ErrHandle()
+        try:
+            # (1) Historical Collection
+            hc = self.collection
+            if not hc is None:
+                url_hc = reverse('collhist_details', kwargs={'pk': hc.id})
+                txt_hc = hc.get_lilacode()
+                html.append("<span class='badge signature ot' title='Historical Collection'><a href='{}' style='color: inherit'>{}</a></span>".format(
+                    url_hc, txt_hc))
+
+            # (2) Caned itself
+            url_caned = reverse('caned_details', kwargs={'pk': self.id})
+            txt_caned = self.get_lilacode()
+            html.append("<span class='badge signature cl' title='Canon Edition'><a href='{}' style='color: inherit'>{}</a></span>".format(
+                url_caned, txt_caned))
+
+            sBack = "<span style='font-size: small;'>{}</span>".format(" > ".join(html))
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_breadcrumb")
+        return sBack
+
+    def get_collection(self, plain=False):
         """Get a string representation of the Collection that I link to"""
 
         sBack = ""
@@ -11509,9 +11771,12 @@ class Caned(models.Model):
                 sHC = "Coll_{}".format(self.collection.id)
             else:
                 sHC = "{}".format(self.collection.lilacode)
-            url = reverse("collhist_details", kwargs={'pk': self.collection.id})
-            sBack = "<span class='badge signature gr'><a href='{}' class='nostyle'>{}</a></span>".format(
-                url, sHC)
+            if plain:
+                sBack = sHC
+            else:
+                url = reverse("collhist_details", kwargs={'pk': self.collection.id})
+                sBack = "<span class='badge signature gr'><a href='{}' class='nostyle'>{}</a></span>".format(
+                    url, sHC)
         except:
             msg = oErr.get_error_message()
             oErr.DoError("Caned/get_collection")
@@ -11538,7 +11803,7 @@ class Caned(models.Model):
             search = self.srchftext
             sBack = "<div>{}</div><div class='searchincexp'>{}</div>".format(parsed, search)
         elif incexp_type == "actual":
-            sBack = adapt_markdown(self.ftext)
+            sBack = adapt_markdown(self.ftext, lowercase=False)
         elif incexp_type == "search":
             sBack = adapt_markdown(self.srchftext)
         return sBack

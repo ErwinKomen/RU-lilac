@@ -530,8 +530,14 @@ class ManuscriptEdit(BasicDetails):
     def get_provenance_markdown(self, instance):
         """Calculate a collapsible table view of the provenances for this manuscript, for Manu details view"""
 
-        context = dict(manu=instance)
-        sBack = render_to_string("seeker/manu_provs.html", context, self.request)
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            context = dict(manu=instance)
+            sBack = render_to_string("seeker/manu_provs.html", context, self.request)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("get_provenance_markdown")
         return sBack
 
     def process_formset(self, prefix, request, formset):
@@ -2392,8 +2398,75 @@ class ColwitDetails(ColwitEdit):
         oErr = ErrHandle()
 
         try:
+            if instance != None and instance.id != None:
+                context['sections'] = []
 
-            pass
+                # Lists of related objects
+                related_objects = []
+                resizable = True
+                sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_end = '</span>'
+
+                username = self.request.user.username
+                team_group = app_editor
+                profile = Profile.get_user_profile(username=username)
+
+                ## ============= List of historical collections related to the Austat  ==============================
+                #collections = dict(title="Historical collections", prefix="hist", gridclass="resizable", classes="")
+
+                ## Get all historical collections (including private ones)
+                #qs_hc = instance.collections.filter(settype="hc").order_by("name")
+                #qs_hc = Caned.objects.filter(austat=instance).order_by(
+                #    "collection__name")
+                #rel_list = []
+                #for obj in qs_hc:
+                #    rel_item = []
+                #    # The [obj] is a Caned. Now get to the actual Collection
+                #    item = obj.collection
+                    
+                #    # Make sure we have the link to the HC
+                #    url = reverse("collhist_details", kwargs={'pk': item.id})
+
+                #    # HC: Order of Austat within collection
+                #    add_rel_item(rel_item, obj.order, False, align="right")
+
+                #    # HC: Name of collection
+                #    add_rel_item(rel_item, self.get_field_value("collection", item, "name"), resizable, link=url)
+
+                #    # HC: Manuscript + Canonical witness linked to collection
+                #    add_rel_item(rel_item, self.get_field_value("collection", item, "canwits"), resizable, main=True, nowrap=False)
+
+                #    # HC: Owner of collection
+                #    add_rel_item(rel_item, self.get_field_value("collection", item, "owner"), resizable, link=url)
+
+                #    # HC: Scope of collection
+                #    add_rel_item(rel_item, self.get_field_value("collection", item, "scope"), resizable, link=url)
+
+                #    # HC: Number of authors
+                #    add_rel_item(rel_item, self.get_field_value("collection", item, "authnum"), resizable, link=url, align="right")
+
+
+                #    # Add this line to the list
+                #    rel_list.append(dict(id=item.id, cols=rel_item))
+
+                #collections['rel_list'] = rel_list
+
+                #collections['columns'] = [
+                #    '{}<span title="Order">Order<span>{}'.format(sort_start_int, sort_end),
+                #    '{}<span title="Name of the historical collection">Name</span>{}'.format(sort_start_int, sort_end), 
+                #    '{}<span title="Manuscripts with canonical witnesses in this collection">Manuscripts</span>{}'.format(sort_start_int, sort_end), 
+                #    '{}<span title="Owner">Owner</span>{}'.format(sort_start_int, sort_end), 
+                #    '{}<span title="Scope">Scope</span>{}'.format(sort_start_int, sort_end), 
+                #    '{}<span title="Number of Authoritative Statement authors">Authors</span>{}'.format(sort_start_int, sort_end), 
+                #    ]
+
+                ## Add the manuscript to the related objects
+                #related_objects.append(collections)
+
+                context['related_objects'] = related_objects
+
         except:
             msg = oErr.get_error_message()
             oErr.DoError("ColwitDetails/add_to_context")
@@ -3140,7 +3213,7 @@ class CanwitEdit(BasicDetails):
                 idno = "(unknown)"
             context['topleftbuttons'] = topleftlist
             # Add something right to the CanwitDetails title
-            context['title_addition'] = instance.get_austat_lilacode_markdown()
+            context['title_addition'] = instance.get_breadcrumb() # instance.get_austat_lilacode_markdown()
 
             # Add the manuscript's IDNO completely right
             title_right = ["<span class='manuscript-idno' title='Manuscript'>{}</span>".format(
@@ -4033,6 +4106,9 @@ class CanedEdit(BasicDetails):
                  'field_key': 'ftrans', 'key_ta': 'srmexplicit-key'}, 
                 ]
 
+            # Add something right to the CanEd title
+            context['title_addition'] = instance.get_breadcrumb()
+
             # Signal that we have select2
             context['has_select2'] = True
 
@@ -4291,6 +4367,9 @@ class AustatEdit(BasicDetails):
                 lhtml.append(render_to_string("seeker/comment_add.html", context, self.request))
                 context['after_details'] = "\n".join(lhtml)
 
+            # Add something right to the AustatDetails title
+            context['title_addition'] = instance.get_breadcrumb()
+
             # Signal that we have select2
             context['has_select2'] = True
 
@@ -4416,7 +4495,7 @@ class AustatEdit(BasicDetails):
 
             # (3) 'genres'
             genrelist = form.cleaned_data['genrelist']
-            adapt_m2m(AustatGenre, instance, "equal", genrelist, "genre")
+            adapt_m2m(AustatGenre, instance, "austat", genrelist, "genre")
 
             # (3) 'keywords'
             kwlist = form.cleaned_data['kwlist']
@@ -4709,6 +4788,7 @@ class AustatDetails(AustatEdit):
                 related_objects = []
                 resizable = True
                 sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
                 sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
                 sort_end = '</span>'
 
@@ -4716,12 +4796,12 @@ class AustatDetails(AustatEdit):
                 team_group = app_editor
                 profile = Profile.get_user_profile(username=username)
 
-                # Make sure to delete any previous corpora of mine
-                AustatCorpus.objects.filter(profile=profile, ssg=instance).delete()
+                ## Make sure to delete any previous corpora of mine
+                #AustatCorpus.objects.filter(profile=profile, ssg=instance).delete()
 
-                # Old, extinct
-                ManuscriptCorpus.objects.filter(austat=instance).delete()
-                ManuscriptCorpusLock.objects.filter(profile=profile, austat=instance).delete()
+                ## Old, extinct
+                #ManuscriptCorpus.objects.filter(austat=instance).delete()
+                #ManuscriptCorpusLock.objects.filter(profile=profile, austat=instance).delete()
 
                 # ============= List of manuscripts related to the Austat via canwit descriptions ==================
                 manuscripts = dict(title="Canonical witnesses in their Manuscripts", prefix="manu", gridclass="resizable", classes="hidden")
@@ -4791,7 +4871,7 @@ class AustatDetails(AustatEdit):
                     '{}<span title="Origin/Provenance">or./prov.</span>{}'.format(sort_start_int, sort_end), 
                     '{}<span title="Date range">date</span>{}'.format(sort_start_int, sort_end), 
                     '{}<span title="Collection name">coll.</span>{}'.format(sort_start_int, sort_end), 
-                    '{}<span title="Item">item</span>{}'.format(sort_start_int, sort_end), 
+                    '{}<span title="Item">item</span>{}'.format(sort_start_mix, sort_end), 
                     '{}<span title="Folio number">ff.</span>{}'.format(sort_start_int, sort_end), 
                     '{}<span title="Attributed author">auth.</span>{}'.format(sort_start_int, sort_end), 
                     '{}<span title="Full text">txt.</span>{}'.format(sort_start_int, sort_end), 
@@ -4949,7 +5029,7 @@ class AustatDetails(AustatEdit):
                 sBack = instance.get_collections_markdown(username, team_group)
             elif custom == "canwit":
                 manu = instance.msitem.manu
-                sBack = "{}/{}".format(instance.msitem.order, manu.get_canwit_count())
+                sBack = "{}/{}: {}".format(instance.msitem.order, manu.get_canwit_count(), instance.get_lilacode())
             elif custom == "locus":
                 sBack = instance.locus
             elif custom == "author":
@@ -4965,7 +5045,9 @@ class AustatDetails(AustatEdit):
             if custom == "name":
                 sBack = instance.name
             elif custom == "canwits":
-                austat_ids = [x.austat.id for x in Caned.objects.filter(collection=instance)]
+                # austat_ids = [x.austat.id for x in Caned.objects.filter(collection=instance)]
+                # We should just look at ONE SINGLE austat id!!
+                austat_ids = [ instance.id ]
                 canwits = [x.canwit for x in CanwitAustat.objects.filter(austat__id__in=austat_ids)]
                 html = []
                 for obj in canwits:
@@ -5428,9 +5510,16 @@ class CollAnyEdit(BasicDetails):
 
     def custom_init(self, instance):
         if instance != None and instance.settype == "hc":
-            self.formset_objects.append(
-                {'formsetClass': self.ClitFormSet,  'prefix': 'clit',  
-                 'readonly': False, 'noinit': True, 'linkfield': 'collection'})
+            # First check if the 'clit' is already in the formset_objects or not
+            bFound = False
+            for oItem in self.formset_objects:
+                if oItem['prefix'] == "clit":
+                    bFound = True
+                    break
+            if not bFound:
+                self.formset_objects.append(
+                    {'formsetClass': self.ClitFormSet,  'prefix': 'clit',  
+                     'readonly': False, 'noinit': True, 'linkfield': 'collection'})
         if instance != None:
             self.datasettype = instance.type
         return None
@@ -5731,10 +5820,15 @@ class CollAnyEdit(BasicDetails):
                     if oneref:
                         litref = cleaned['oneref']
                         # Check if all is in order
-                        if litref:
-                            form.instance.reference = litref
-                            if newpages:
-                                form.instance.pages = newpages
+                        if not litref is None:
+                            # Check that this link is not there already
+                            obj = LitrefCol.objects.filter(reference=oneref, collection=instance, pages=newpages).first()
+
+                            if obj is None:
+                                # Continue
+                                form.instance.reference = litref
+                                if newpages:
+                                    form.instance.pages = newpages
                     # Note: it will get saved with form.save()
 
             else:
@@ -6023,6 +6117,7 @@ class CollPrivDetails(CollAnyEdit):
         resizable = True
         index = 1
         sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+        sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
         sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
         sort_end = '</span>'
 
@@ -6183,7 +6278,7 @@ class CollPrivDetails(CollAnyEdit):
                 supers['columns'] = [
                     '{}<span title="Default order">Order</span>{}'.format(sort_start_int, sort_end),
                     '{}<span title="Author">Author</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="Key code">lila</span>{}'.format(sort_start, sort_end), 
+                    '{}<span title="Key code">lila</span>{}'.format(sort_start_mix, sort_end), 
                     '{}<span title="Full text">ftext</span>{}'.format(sort_start, sort_end), 
                     '{}<span title="Number of Sermons Gold part of this set">Size</span>{}'.format(sort_start_int, sort_end), 
                     ''
@@ -6346,6 +6441,7 @@ class CollHistDetails(CollHistEdit):
             if bMayEdit:
                 sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
                 sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
                 sort_end = '</span>'
 
             # In all cases: Get all the SSGs that are part of this historical collection:
@@ -6400,8 +6496,8 @@ class CollHistDetails(CollHistEdit):
                 supers['columns'] = [
                     '{}<span title="Default order">Order<span>{}'.format(sort_start_int, sort_end),
                     '{}<span title="Author">Author</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="CanEd code">CanEd</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="Austat code">Austat</span>{}'.format(sort_start, sort_end), 
+                    '{}<span title="CanEd code">CanEd</span>{}'.format(sort_start_mix, sort_end), 
+                    '{}<span title="Austat code">Austat</span>{}'.format(sort_start_mix, sort_end), 
                     '{}<span title="Full text">ftext</span>{}'.format(sort_start, sort_end), 
                     '{}<span title="Number of Canon witnesses part of this set">Size</span>{}'.format(sort_start_int, sort_end), 
                     ''

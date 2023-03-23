@@ -40,6 +40,16 @@
     <DefaultItemExcludes>migrations/**;$(DefaultItemExcludes)</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="lila\cms\admin.py" />
+    <Compile Include="lila\cms\apps.py" />
+    <Compile Include="lila\cms\forms.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="lila\cms\migrations\__init__.py" />
+    <Compile Include="lila\cms\models.py" />
+    <Compile Include="lila\cms\tests.py" />
+    <Compile Include="lila\cms\views.py" />
+    <Compile Include="lila\cms\__init__.py" />
     <Compile Include="lila\lict\admin.py" />
     <Compile Include="lila\lict\apps.py" />
     <Compile Include="lila\lict\migrations\__init__.py" />
@@ -179,6 +189,11 @@
     <Folder Include="lila\basic\templates\basic\" />
     <Folder Include="lila\bible\" />
     <Folder Include="lila\bible\templates\" />
+    <Folder Include="lila\bible\templates\bible\" />
+    <Folder Include="lila\cms\" />
+    <Folder Include="lila\cms\migrations\" />
+    <Folder Include="lila\cms\templates\" />
+    <Folder Include="lila\cms\templates\cms\" />
     <Folder Include="lila\lict\" />
     <Folder Include="lila\lict\migrations\" />
     <Folder Include="lila\lict\templates\" />

@@ -123,6 +123,7 @@ INSTALLED_APPS = [
     'lila.basic',
     'lila.bible',
     'lila.lict',
+    'lila.cms',
     'lila.reader',
     'lila.seeker'
 ]

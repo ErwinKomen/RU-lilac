@@ -88,6 +88,7 @@ from lila.reader.views import reader_uploads
 from lila.bible.models import Reference
 from lila.seeker.adaptations import listview_adaptations, adapt_codicocopy, add_codico_to_manuscript
 from lila.seeker.views_utils import lila_action_add, lila_get_history
+from lila.cms.views import add_cms_contents
 
 # ======= from RU-Basic ========================
 from lila.basic.views import BasicPart, BasicList, BasicDetails, make_search_list, add_rel_item, adapt_search
@@ -756,6 +757,9 @@ def home(request, errortype=None):
     # Gather pie-chart data
     context['pie_data'] = get_pie_data()
 
+    # Add context items from the CMS system
+    context = add_cms_contents('home', context)
+
     # Render and return the page
     return render(request, template_name, context)
 
@@ -922,6 +926,9 @@ def about(request):
     people_lst = [{"count": v, "person": k} for k,v in people.items()]
     people_lst = sorted(people_lst, key = lambda x: x['count'], reverse=True)
     context['people'] = people_lst
+
+    # Add context items from the CMS system
+    context = add_cms_contents('about', context)
 
     # Process this visit
     context['breadcrumbs'] = get_breadcrumbs(request, "About", True)
@@ -1425,22 +1432,20 @@ class GenreListView(BasicList):
         sTitle = ""
         if custom == "links":
             html = []
-            # Get the HTML code for the links of this instance
-            #number = instance.freqcanwit()
-            #if number > 0:
-            #    url = reverse('canwit_list')
-            #    html.append("<a href='{}?sermo-genrelist={}'>".format(url, instance.id))
-            #    html.append("<span class='badge jumbo-1 clickable' title='Frequency in manifestation sermons'>{}</span></a>".format(number))
-            #number = instance.freqmanu()
-            #if number > 0:
-            #    url = reverse('manuscript_list')
-            #    html.append("<a href='{}?manu-genrelist={}'>".format(url, instance.id))
-            #    html.append("<span class='badge jumbo-3 clickable' title='Frequency in manuscripts'>{}</span></a>".format(number))
+
+            # Look at the Austat frequency
             number = instance.freqsuper()
             if number > 0:
                 url = reverse('austat_list')
                 html.append("<a href='{}?as-genrelist={}'>".format(url, instance.id))
-                html.append("<span class='badge jumbo-4 clickable' title='Frequency in manuscripts'>{}</span></a>".format(number))
+                html.append("<span class='badge jumbo-4 clickable' title='Frequency in Authoritative Statements'>{}</span></a>".format(number))
+
+            # Look at the Auwork frequency
+            number = instance.freqauwork()
+            if number > 0:
+                url = reverse('auwork_list')
+                html.append("<a href='{}?as-genrelist={}'>".format(url, instance.id))
+                html.append("<span class='badge jumbo-3 clickable' title='Frequency in Authoritative Works'>{}</span></a>".format(number))
             # Combine the HTML code
             sBack = "\n".join(html)
 
@@ -1717,6 +1722,7 @@ class AuworkDetails(AuworkEdit):
             index = 1
             sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
             sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
+            sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
             sort_end = '</span>'
 
             # List of Sermons that link to this feast (with an FK)
@@ -1743,9 +1749,9 @@ class AuworkDetails(AuworkEdit):
                 keycode_txt = item.get_keycode()
                 add_rel_item(rel_item, keycode_txt, False, main=False, link=url)
 
-                # Work
-                work_txt = item.get_work()
-                add_rel_item(rel_item, work_txt, False, main=True, link=url)
+                # Full text
+                full_txt = item.get_ftext_markdown(incexp_type = "actual")
+                add_rel_item(rel_item, full_txt, False, main=True, link=url, nowrap=False)
 
 
                 # Add this line to the list
@@ -1756,8 +1762,8 @@ class AuworkDetails(AuworkEdit):
             austats['columns'] = [
                 '{}<span>#</span>{}'.format(sort_start_int, sort_end), 
                 '{}<span>Author</span>{}'.format(sort_start, sort_end), 
-                '{}<span>Key code</span>{}'.format(sort_start, sort_end), 
-                '{}<span>Work</span>{}'.format(sort_start_int, sort_end)
+                '{}<span>Key code</span>{}'.format(sort_start_mix, sort_end), 
+                '{}<span>Full text</span>{}'.format(sort_start_int, sort_end)
                 ]
             related_objects.append(austats)
 
@@ -2270,6 +2276,7 @@ class ProvenanceDetails(ProvenanceEdit):
         resizable = True
         index = 1
         sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+        sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
         sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
         sort_end = '</span>'
 
@@ -2349,7 +2356,7 @@ class ProvenanceDetails(ProvenanceEdit):
         codicos['columns'] = [
             '{}<span>#</span>{}'.format(sort_start_int, sort_end), 
             '{}<span>Manuscript</span>{}'.format(sort_start, sort_end), 
-            '{}<span>codicological unit</span>{}'.format(sort_start, sort_end), 
+            '{}<span>codicological unit</span>{}'.format(sort_start_mix, sort_end), 
             '{}<span>Note</span>{}'.format(sort_start, sort_end)
             ]
         related_objects.append(codicos)
@@ -2412,32 +2419,10 @@ class ProvenanceListView(BasicList):
         sBack = ""
         sTitle = ""
         if custom == "manuscript":
-            # Multiple connections possible
-            # One provenance may be connected to any number of manuscripts!
-            lManu = []
-            for obj in instance.manuscripts_provenances.all():
-                # Add the shelfmark of this one
-                manu = obj.manuscript
-                url = reverse("manuscript_details", kwargs = {'pk': manu.id})
-                shelfmark = manu.idno[:20]
-                lManu.append("<span class='badge signature cl'><a href='{}'>{}</a></span>".format(url, manu.idno))
-            sBack = ", ".join(lManu)
-            # Issue #289: the innovation below is turned back to the original above
-            ## find the shelfmark
-            #manu = instance.manu
-            #if manu != None:
-            #    # Get the URL to the manu details
-            #    url = reverse("manuscript_details", kwargs = {'pk': manu.id})
-            #    shelfmark = manu.idno[:20]
-            #    sBack = "<span class='badge signature cl'><a href='{}'>{}</a></span>".format(url, manu.idno)
+            sBack = instance.get_manuscripts()
         elif custom == "location":
-            sBack = ""
-            if instance.location:
-                sBack = instance.location.name
-        #elif custom == "note":
-        #    sBack = ""
-        #    if instance.note:
-        #        sBack = instance.note[:40]
+            sBack = instance.get_location()
+
         return sBack, sTitle
 
     def adapt_search(self, fields):

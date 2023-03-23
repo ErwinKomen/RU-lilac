@@ -65,7 +65,7 @@
               <thead><tr><th class="hidden">id</th><th>Short reference</th><th>Full reference</th><th><!-- Buttons --></th></tr></thead>
               <tbody>
               
-               {% for litref in object_list %}  
+               {% for litref in collection_list %}  
                 
                 <tr class="dict-entry">
                   <td><span class="short reference tdnowrap"><a name="lit_{{litref.pk}}"></a>{{litref.get_short_markdown|safe}}</span></td>
