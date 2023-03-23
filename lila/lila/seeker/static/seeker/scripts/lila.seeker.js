@@ -2882,7 +2882,7 @@ var ru = (function ($, ru) {
     return {
 
       /**
-       *  codico_toggle
+       *  codico_dragenter
        *      Sermon enters codico
        *
        */
@@ -3082,6 +3082,173 @@ var ru = (function ($, ru) {
           }
         } catch (ex) {
           private_methods.errMsg("codico_toggle", ex);
+        }
+      },
+
+
+      /**
+       *  collection_dragenter
+       *      Sermon enters collection
+       *
+       */
+      collection_dragenter: function (ev) {
+        try {
+          // Prevent default handling
+          ev.preventDefault();
+
+          if ($(ev.target).hasClass("collection-target")) {
+            $(ev.target).addClass("dragover");
+            console.log("Collection dragenter");
+          }
+          
+        } catch (ex) {
+          private_methods.errMsg("collection_dragenter", ex);
+        }
+      },
+
+      /**
+       *  collection_dragleave
+       *      Sermon leaves this collection
+       *
+       */
+      collection_dragleave: function (ev) {
+        try {
+          // Prevent default handling
+          ev.preventDefault();
+
+          if ($(ev.target).hasClass("collection-target")) {
+            $(ev.target).removeClass("dragover");
+            console.log("Collection dragleave");
+          }
+  
+        } catch (ex) {
+          private_methods.errMsg("collection_dragleave", ex);
+        }
+      },
+
+      /**
+       *  collection_drop
+       *      Austat gets dropped into a collection
+       *
+       */
+      collection_drop: function (ev) {
+        var elTable = null,
+          elRoot = null,
+          bChanged = false,
+          orderSrc = "",
+          orderDst = "",
+          divSrc = null,  // The div.collection-unit
+          divDst = null,  // THe div.collection-unit
+          divSrcId = "",
+          divDstId = "";
+
+        try {
+          // Prevent default handling
+          ev.preventDefault();
+
+          if ($(ev.target).hasClass("collection-target")) {
+            // Remove the dragover class
+            $(ev.target).removeClass("dragover");
+
+            // Figure out what the source and destination is
+            divSrcId = ev.originalEvent.dataTransfer.getData("text");
+            // divSrcId = ev.dataTransfer.getData("text");
+
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("collection_drop", ex);
+        }
+      },
+
+      /**
+       *  austat_dragend
+       *      Completely finishing the dragging - report to server
+       *
+       */
+      austat_dragend: function (ev) {
+        var divSrcId = "";
+
+        try {
+          // Prevent default handling
+          ev.preventDefault();
+
+          // Show that this is happening
+          console.log("Austat dragend");
+
+          // Figure out what the source and destination is
+          divSrcId = ev.dataTransfer.getData("text");
+
+          // Send message to the server
+
+          if ($(ev.target).hasClass("collection-target")) {
+            $(ev.target).removeClass("dragover");
+          }
+
+        } catch (ex) {
+          private_methods.errMsg("austat_dragend", ex);
+        }
+      },
+
+      /**
+       *  austat_drag
+       *      Austat starts being dragged
+       *
+       */
+      austat_drag: function (ev) {
+        var elStart = null,
+            targeturl = null,
+            data = null,
+            frm = null,
+            divId = "";
+
+        try {
+          elStart = $(ev.target);
+          divId = elStart.attr("austatid");
+
+          console.log("Austat drag: " + divId);
+
+          ev.dataTransfer.setData("text", divId);
+
+          // Get to the form
+          frm = $(elStart).closest('form');
+          // Get the data from the form
+          data = frm.serializeArray();
+          // The url is in the ajaxurl
+          targeturl = $(elStart).attr("targeturl");
+
+          // Notify the server that this austat is being dragged
+          // Call the ajax POST method
+          $.post(targeturl, data, function (response) {
+            // Action depends on the response
+            if (response === undefined || response === null || !("status" in response)) {
+              private_methods.errMsg("No status returned");
+            } else {
+              switch (response.status) {
+                case "ready":
+                case "ok":
+                  // Try to get the (adapted) list of comments
+                  comment_list = response.comment_list;
+                  if (comment_list !== undefined && comment_list !== null && comment_list.length > 0) {
+                    // There actually *is* a list!
+                    $(divList).html(comment_list);
+                  }
+                  // Clear the previously made comment
+                  $(divContent).val("");
+                  break;
+                case "error":
+                  // Show the error
+                  if ('msg' in response) {
+                    $(target).html(response.msg);
+                  } else {
+                    $(target).html("An error has occurred (lila.seeker comment_send)");
+                  }
+                  break;
+              }
+            }
+          });
+        } catch (ex) {
+          private_methods.errMsg("austat_drag", ex);
         }
       },
 

@@ -8,6 +8,15 @@
         <a class="btn btn-xs jumbo-1" data-toggle="collapse" data-target="#colladdinfo">
           <span class="glyphicon glyphicon-plus"></span>Add {{pl_name}} to this personal dataset
         </a>
+
+        <!-- This is where items could be dragged to -->
+        <span class="collection-target" draggable="true"
+              ondrop="ru.lila.seeker.collection_drop(event);"
+              ondragover="ru.lila.seeker.collection_dragenter(event);"
+              ondragleave="ru.lila.seeker.collection_dragleave(event);"
+              ondragstart="ru.lila.seeker.collection_drag(event);" >
+          Drag an item here
+        </span>
       </div>
 
       <div id="colladdinfo" class="collapse row">

@@ -113,6 +113,7 @@ urlpatterns = [
     url(r'^austat/graph(?:/(?P<pk>\d+))?/$', AustatGraph.as_view(), name='austat_graph'),
     url(r'^austat/trans(?:/(?P<pk>\d+))?/$', AustatTrans.as_view(), name='austat_trans'),
     url(r'^austat/overlap(?:/(?P<pk>\d+))?/$', AustatOverlap.as_view(), name='austat_overlap'),
+    url(r'^austat/exchange/$', AustatExchange.as_view(), name='austat_exchange'),
 
     url(r'^austat/scount/histo/download', AustatScountDownload.as_view(), name='austat_scount_download'),
     url(r'^austat/graph/download(?:/(?P<pk>\d+))?/$', AustatGraphDownload.as_view(), name='austat_graph_download'),

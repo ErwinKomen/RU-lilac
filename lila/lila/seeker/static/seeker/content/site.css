@@ -1937,3 +1937,20 @@ table.dct-view tr td div.toolbox.dct .tooltip-inner tr td {
     color: red;
 }
 
+/* Dragging collections */
+.coll-draggable:hover {
+    cursor: grab;
+    border: 1px dotted red;
+    background-color: lightgoldenrodyellow;
+}
+
+.collection-target {
+    border: 1px dashed darkblue;
+    width: 100%;
+    display: ruby;
+}
+.collection-target.dragover {
+    background-color:lightcyan;
+    color: darkblue;
+}
+

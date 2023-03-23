@@ -5088,7 +5088,7 @@ class AustatListView(BasicList):
         {'name': 'Author',                  'order': 'o=1', 'type': 'str', 'custom': 'author', 'linkdetails': True},
         #{'name': 'Gryson/Clavis',           'order': 'o=3', 'type': 'str', 'custom': 'sig',    'allowwrap': True, 'options': "abcd",
         # 'title': "The Gryson/Clavis codes of all the Sermons Gold in this equality set"},
-        {'name': 'Key',                     'order': 'o=2', 'type': 'str', 'custom': 'keycode', 'linkdetails': True},
+        {'name': 'Key',                     'order': 'o=2', 'type': 'str', 'custom': 'keycode'}, # 'linkdetails': True},
         {'name': 'Full text',               'order': 'o=3', 'type': 'str', 'custom': 'ftext',  'main': True, 'linkdetails': True,
          'title': "The full text that has been chosen for this Authoritative statement"},
         {'name': 'HC', 'title': "Historical collections associated with this Authoritative statement", 
@@ -5278,9 +5278,18 @@ class AustatListView(BasicList):
                 sAuWorkCode = instance.auwork.key
                 if not sAuWorkCode in sKeyCode:
                     sKeyCode = "{}.{}".format(sAuWorkCode, sKeyCode)
-            url = reverse("austat_details", kwargs={'pk': instance.id})
-            html.append("<span class='badge signature'><a class='nostyle' href='{}'>{}</a></span>".format(
-                url, sKeyCode))
+
+            # ============= Unnecessary code ===================
+            #url = reverse("austat_details", kwargs={'pk': instance.id})
+            #html.append("<span class='badge signature'><a class='nostyle' href='{}'>{}</a></span>".format(
+            #    url, sKeyCode))
+            # ==================================================
+
+            # Get the url to do what is needed
+            url = reverse('austat_exchange')
+            localcontext = dict(austatid=instance.id, targeturl=url, austatkey=sKeyCode)
+            html.append(render_to_string("seeker/austat_exchange.html", localcontext, self.request))
+
         elif custom == "status":
             # Provide the status traffic light
             html.append(instance.get_stype_light())
@@ -5406,6 +5415,40 @@ class AustatScountDownload(BasicPart):
             output.close()
 
         return sData
+
+
+class AustatExchange(BasicPart):
+    """Exchange an Austat using drag and drop """
+
+    MainModel = Austat
+
+    def custom_init(self):
+        """Figure out what is going on"""
+
+        oErr = ErrHandle()
+        try:
+            qd = self.qd
+            # Does this come with an austatid?
+            austatid = qd.get("austatid")
+            mode = qd.get("mode")
+            if austatid is None:
+                # This doesn't have the austatid, so I am to pass it back
+                pass
+            else:
+                # This has the austatid, so I need to store it for the user or what have you
+                if mode == "start":
+                    # THe austatid must be stored in the user information
+                    pass
+                elif mode == "stop":
+                    # The austatid must be removed from the user information
+                    pass
+                # Probably some other code is needed here too.
+                pass
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("AustatExchange/custom_init")
+
+        return None
 
 
 class AustatVisDownload(BasicPart):
@@ -6006,7 +6049,7 @@ class CollHistEdit(CollAnyEdit):
         bBack = True
         msg = ""
         try:
-            if instance != None:
+            if not instance is None and not instance.id is None:
                 # Need to know who is 'talking'...
                 username = self.request.user.username
                 profile = Profile.get_user_profile(username)
@@ -6376,19 +6419,20 @@ class CollHistDetails(CollHistEdit):
     def custom_init(self, instance):
         # First do the original custom init
         response = super(CollHistDetails, self).custom_init(instance)
-        # Now continue
-        if instance.settype != "hc":
-            # Someone does as if this is a historical collection...
-            # Determine what kind of dataset/collection this is
-            if instance.owner == Profile.get_user_profile(self.request.user.username):
-                # Private dataset
-                self.redirectpage = reverse("collpriv_details", kwargs={'pk': instance.id})
-            else:
-                # Public dataset
-                self.redirectpage = reverse("collpubl_details", kwargs={'pk': instance.id})
+        if not instance is None:
+            # Now continue
+            if instance.settype != "hc":
+                # Someone does as if this is a historical collection...
+                # Determine what kind of dataset/collection this is
+                if instance.owner == Profile.get_user_profile(self.request.user.username):
+                    # Private dataset
+                    self.redirectpage = reverse("collpriv_details", kwargs={'pk': instance.id})
+                else:
+                    # Public dataset
+                    self.redirectpage = reverse("collpubl_details", kwargs={'pk': instance.id})
 
-        # Check for hlist saving
-        self.check_hlist(instance)
+            # Check for hlist saving
+            self.check_hlist(instance)
         return None
 
     def add_to_context(self, context, instance):

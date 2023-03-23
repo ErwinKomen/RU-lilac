@@ -1,0 +1,12 @@
+<form method="post">
+  {% csrf_token %}
+  <div class="hidden">
+    <input type="text" name="austatid" value="{{austatid}}" />
+    <input type="text" name="mode" value="start" />
+  </div>
+  <div draggable="true" class="coll-draggable"
+       ondragstart="ru.lila.seeker.austat_drag(event);"
+       ondragend="ru.lila.seeker.austat_dragend(event);"
+       targeturl="{{targeturl}}"
+       austatid="{{austatid}}">{{austatkey}}</div>
+</form>

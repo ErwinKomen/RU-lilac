@@ -1224,6 +1224,23 @@ table.compact-table td:hover {
     background-color: gray;
 }
 
+.colwit {
+    color: darkmagenta;
+    font-family: monospace;
+    background-color: lightgray;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 90%;
+    padding: 0px 4px;
+}
+
+.colwit:hover {
+    color: whitesmoke;
+    background-color: darkmagenta;
+    cursor: pointer;
+}
+
+
 .project {
     color: black;
     font-family: monospace;
@@ -1243,6 +1260,25 @@ table.compact-table td:hover {
 
 .sermon-author {
   color: darkblue;
+}
+.austat-work {
+    font-size: smaller;
+    color: blue;
+    background-color: lightgray;
+}
+.austat-work:hover {
+    color: white;
+    background-color: darkblue;
+}
+.austat-note {
+    font-size: smaller;
+    color: darkblue;
+    background-color: lightgray;
+}
+.austat-note:hover {
+    color: white;
+    background-color: darkblue;
+    cursor: pointer;
 }
 
 div.selected {
@@ -1422,6 +1458,11 @@ div.view-mode a, div.any-mode a {
   text-decoration: none;
   color: inherit;
 }
+div.view-mode a.retain, div.any-mode a.retain {
+    /*text-decoration: underline; */
+    color: blue;
+}
+
 
 tr.selected > td.selectable {
   background-color: yellow;
@@ -1894,5 +1935,22 @@ table.dct-view tr td div.toolbox.dct .tooltip-inner tr td {
 
 .warning {
     color: red;
+}
+
+/* Dragging collections */
+.coll-draggable:hover {
+    cursor: grab;
+    border: 1px dotted red;
+    background-color: lightgoldenrodyellow;
+}
+
+.collection-target {
+    border: 1px dashed darkblue;
+    width: 100%;
+    display: ruby;
+}
+.collection-target.dragover {
+    background-color:lightcyan;
+    color: darkblue;
 }
 
