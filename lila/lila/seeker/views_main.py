@@ -6916,206 +6916,213 @@ class CollectionListView(BasicList):
         ]
 
     def initializations(self):
-        if self.prefix == "sermo":
-            self.plural_name = "Sermon collections"
-            self.sg_name = "Sermon collection"
-            self.searches[0]['filterlist'][1]['keyList'] = "collist_s"
-        elif self.prefix == "manu":
-            self.plural_name = "Manuscript Collections"
-            self.sg_name = "Manuscript collection"
-            self.searches[0]['filterlist'][1]['keyList'] = "collist_m"
-        elif self.prefix == "gold":
-            self.plural_name = "Gold sermons Collections"
-            self.sg_name = "Sermon gold collection"
-            self.searches[0]['filterlist'][1]['keyList'] = "collist_sg"
-        elif self.prefix == "austat":
-            self.plural_name = "Authoritative statement Collections"
-            self.sg_name = "Authoritative statement collection"        
-            self.searches[0]['filterlist'][1]['keyList'] = "collist_ssg"
-        elif self.prefix == "any":
-            self.new_button = False
-            self.plural_name = "All types Collections"
-            self.sg_name = "Collection"  
-            self.order_cols = ['type', 'scope', 'name', 'created', 'owner__user__username', '']
-            self.order_default = self.order_cols
-            self.order_heads  = [
-                {'name': 'Type',        'order': 'o=1', 'type': 'str', 'custom': 'type'},
-                {'name': 'Scope',       'order': 'o=2', 'type': 'str', 'custom': 'scope'},
-                {'name': 'Dataset',     'order': 'o=3', 'type': 'str', 'field': 'name', 'linkdetails': True, 'main': True},
-                {'name': 'Created',     'order': 'o=4', 'type': 'str', 'custom': 'created'},
-                {'name': 'Owner',       'order': 'o=5', 'type': 'str', 'custom': 'owner'},
-                {'name': 'Frequency',   'order': '',    'type': 'str', 'custom': 'links'}
-            ]  
-        elif self.prefix == "priv":
-            self.new_button = False
-            self.titlesg = "Personal Dataset"
-            self.plural_name = "My Datasets"
-            self.sg_name = "My Dataset"  
-            self.order_cols = ['type', 'name', 'scope', 'owner__user__username', 'created', '']
-            self.order_default = self.order_cols
-            self.order_heads  = [
-                {'name': 'Type',        'order': 'o=1', 'type': 'str', 'custom': 'type'},
-                {'name': 'Dataset',     'order': 'o=2', 'type': 'str', 'field': 'name', 'linkdetails': True, 'main': True},
-                {'name': 'Scope',       'order': 'o=3', 'type': 'str', 'custom': 'scope'},
-                {'name': 'Owner',       'order': 'o=4', 'type': 'str', 'custom': 'owner'},
-                {'name': 'Created',     'order': 'o=5', 'type': 'str', 'custom': 'created'},
-                {'name': 'Frequency',   'order': '',    'type': 'str', 'custom': 'links'}
-            ]  
-            self.filters = [ {"name": "My dataset", "id": "filter_collection", "enabled": False}]
-            self.searches = [
-                {'section': '', 'filterlist': [
-                    {'filter': 'collection','dbfield': 'name',   'keyS': 'collection_ta', 'keyList': 'collist', 'infield': 'name'}]},
-                {'section': 'other', 'filterlist': [
-                    {'filter': 'owner',     'fkfield': 'owner',  'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id' },
-                    {'filter': 'coltype',   'dbfield': 'type',   'keyS': 'type',  'keyList': 'typelist' },
-                    {'filter': 'settype',   'dbfield': 'settype','keyS': 'settype'},
-                    {'filter': 'scope',     'dbfield': 'scope',  'keyS': 'scope'}]}
-                ]
-        elif self.prefix == "publ":
-            self.new_button = False
-            self.plural_name = "Public Datasets"
-            self.sg_name = "Public Dataset"  
-            self.order_cols = ['type', 'name', 'created',  'owner__user__username', '']
-            self.order_default = self.order_cols
-            self.order_heads  = [
-                {'name': 'Type',        'order': 'o=1', 'type': 'str', 'custom': 'type'},
-                {'name': 'Dataset',     'order': 'o=2', 'type': 'str', 'field': 'name', 'linkdetails': True, 'main': True},
-                {'name': 'Created',     'order': 'o=3', 'type': 'str', 'custom': 'created'},
-                {'name': 'Owner',       'order': 'o=4', 'type': 'str', 'custom': 'owner'},
-                {'name': 'Frequency',   'order': '',    'type': 'str', 'custom': 'links'}
-            ]  
-            self.filters = [ {"name": "Public dataset", "id": "filter_collection", "enabled": False}]
-            self.searches = [
-                {'section': '', 'filterlist': [
-                    {'filter': 'collection','dbfield': 'name',   'keyS': 'collection_ta', 'keyList': 'collist', 'infield': 'name'},
-                    {'filter': 'owner',     'fkfield': 'owner',  'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id' }]},
-                {'section': 'other', 'filterlist': [
-                    {'filter': 'coltype',   'dbfield': 'type',   'keyS': 'type',  'keyList': 'typelist' },
-                    {'filter': 'settype',   'dbfield': 'settype','keyS': 'settype'},
-                    {'filter': 'scope',     'dbfield': 'scope',  'keyS': 'scope'}]}
-                ]
-        elif self.prefix == "hist":
-            self.new_button = False
-            self.settype = "hc"
-            self.plural_name = "Historical Collections"
-            self.sg_name = "Historical Collection"  
-            self.order_cols = ['name', 'lilacode', '', 'ssgauthornum', 'owner__user__username', 'created']
-            self.order_default = self.order_cols
-            self.order_heads  = [
-                {'name': 'Historical Collection',   'order': 'o=1', 'type': 'str', 'field': 'name',     'linkdetails': True},
-                {'name': 'LiLaC',                   'order': 'o=2', 'type': 'str', 'custom': 'lilacode', 'linkdetails': True},
-                {'name': 'Authors',                 'order': '',    'type': 'str', 'custom': 'authors', 'allowwrap': True, 'main': True},
-                {'name': 'Author count',            'order': 'o=4', 'type': 'int', 'custom': 'authcount'},
-                {'name': 'Owner',                   'order': 'o=5', 'type': 'str', 'custom': 'owner'},
-                {'name': 'Created',                 'order': 'o=6', 'type': 'str', 'custom': 'created'},
-            ]  
-            # Add if user is app editor
-            if user_is_authenticated(self.request) and user_is_ingroup(self.request, app_editor):
-                self.order_heads.append({'name': 'Manuscript', 'order': '', 'type': 'str', 'custom': 'manuscript'})
-                # Must also add to the order_cols and he order_default
-                if len(self.order_default) < len(self.order_heads):
-                    self.order_default.append("")
-            self.filters = [ 
-                {"name": "Collection",                  "id": "filter_collection",  "enabled": False},
-                {"name": "Project",                     "id": "filter_project",     "enabled": False},
-                {"name": "Authoritative statement...",  "id": "filter_austat",      "enabled": False, "head_id": "none"},
-                {"name": "Canon witness...",            "id": "filter_canwit",      "enabled": False, "head_id": "none"},
-                {"name": "Manuscript...",               "id": "filter_manu",        "enabled": False, "head_id": "none"},
-                # Section SSG = AuStat
-                {"name": "Author",          "id": "filter_ssgauthor",       "enabled": False, "head_id": "filter_austat"},
-                {"name": "Full text",       "id": "filter_ssgftext",        "enabled": False, "head_id": "filter_austat"},
-                {"name": "Translation",     "id": "filter_ssgftrans",       "enabled": False, "head_id": "filter_austat"},
-                {"name": "Lila code",       "id": "filter_ssgcode",         "enabled": False, "head_id": "filter_austat"},
-                {"name": "Number",          "id": "filter_ssgnumber",       "enabled": False, "head_id": "filter_austat"},
-                # {"name": "Gryson/Clavis",   "id": "filter_ssgsignature",  "enabled": False, "head_id": "filter_austat"},
-                {"name": "Keyword",         "id": "filter_ssgkeyword",      "enabled": False, "head_id": "filter_austat"},
-                {"name": "Status",          "id": "filter_ssgstype",        "enabled": False, "head_id": "filter_austat"},
-                # Section S
-                {"name": "Lila code",       "id": "filter_canwitcode",      "enabled": False, "head_id": "filter_canwit"},
-                {"name": "Author",          "id": "filter_canwitauthor",    "enabled": False, "head_id": "filter_canwit"},
-                {"name": "Full text",       "id": "filter_canwitftext",     "enabled": False, "head_id": "filter_canwit"},
-                {"name": "Translation",     "id": "filter_canwitftrans",    "enabled": False, "head_id": "filter_canwit"},
-                {"name": "Keyword",         "id": "filter_canwitkeyword",   "enabled": False, "head_id": "filter_canwit"}, 
-                #{"name": "Feast",           "id": "filter_canwitfeast",    "enabled": False, "head_id": "filter_canwit"},
-                #{"name": "Bible reference", "id": "filter_bibref",         "enabled": False, "head_id": "filter_canwit"},
-                {"name": "Note",            "id": "filter_canwitnote",      "enabled": False, "head_id": "filter_canwit"},
-                {"name": "Status",          "id": "filter_canwitstype",     "enabled": False, "head_id": "filter_canwit"},
-                # Section M
-                {"name": "Shelfmark",       "id": "filter_manuid",          "enabled": False, "head_id": "filter_manu"},
-                {"name": "Country",         "id": "filter_manucountry",     "enabled": False, "head_id": "filter_manu"},
-                {"name": "City",            "id": "filter_manucity",        "enabled": False, "head_id": "filter_manu"},
-                {"name": "Library",         "id": "filter_manulibrary",     "enabled": False, "head_id": "filter_manu"},
-                {"name": "Origin",          "id": "filter_manuorigin",      "enabled": False, "head_id": "filter_manu"},
-                {"name": "Provenance",      "id": "filter_manuprovenance",  "enabled": False, "head_id": "filter_manu"},
-                {"name": "Date range",      "id": "filter_manudaterange",   "enabled": False, "head_id": "filter_manu"},
-                {"name": "Keyword",         "id": "filter_manukeyword",     "enabled": False, "head_id": "filter_manu"},
-                {"name": "Status",          "id": "filter_manustype",       "enabled": False, "head_id": "filter_manu"},
-                ]
-            self.searches = [
-                {'section': '', 'filterlist': [
-                    {'filter': 'collection',    'dbfield': 'name',   'keyS': 'collection_ta', 'keyList': 'collist', 'infield': 'name'},
-                    {'filter': 'project',       'fkfield': 'projects', 'keyFk': 'name', 'keyList': 'projlist', 'infield': 'name'},
-                    ]},
-                # Section SSG = Austat
-                {'section': 'austat', 'filterlist': [
-                    {'filter': 'ssgauthor',    'fkfield': 'austat_col__austat__author',            
-                     'keyS': 'ssgauthorname', 'keyFk': 'name', 'keyList': 'ssgauthorlist', 'infield': 'id', 'external': 'gold-authorname' },
-                    {'filter': 'ssgftext',     'dbfield': 'austat_col__austat__srchftext',   'keyS': 'ssgftext'},
-                    {'filter': 'ssgftrans',    'dbfield': 'austat_col__austat__srchftrans',  'keyS': 'ssgftrans'},
-                    {'filter': 'ssgcode',      'fkfield': 'austat_col__austat', 'keyFk': 'keycodefull',           
-                     'keyS': 'ssgcode', 'keyList': 'ssglilalist', 'infield': 'id'},
-                    {'filter': 'ssgnumber',    'dbfield': 'austat_col__austat__number',       'keyS': 'ssgnumber'},
-                    {'filter': 'ssgkeyword',   'fkfield': 'austat_col__austat__keywords',          
-                     'keyFk': 'name', 'keyList': 'ssgkwlist', 'infield': 'id'},
-                    {'filter': 'ssgstype',     'dbfield': 'austat_col__austat__stype',             
-                     'keyList': 'ssgstypelist', 'keyType': 'fieldchoice', 'infield': 'abbr' },
-                    ]},
-                # Section S
-                {'section': 'canwit', 'filterlist': [
-                    {'filter': 'canwitftext',    'dbfield': 'austat_col__austat__austat_canwits__srchftext',   'keyS': 'canwitftext'},
-                    {'filter': 'canwitftrans',   'dbfield': 'austat_col__austat__austat_canwits__srchftrans',  'keyS': 'canwitftrans'},
-                    {'filter': 'canwitcode',     'dbfield': 'austat_col__austat__austat_canwits__lilacodefull',
-                     'keyS': 'canwitcode', 'keyList': 'canwitlilalist', 'infield': 'id'},
-                    #{'filter': 'canwitfeast',    'dbfield': 'austat_col__austat__austat_canwits__feast',         'keyS': 'canwitfeast'},
-                    #{'filter': 'bibref',        'dbfield': '$dummy',                                             'keyS': 'bibrefbk'},
-                    #{'filter': 'bibref',        'dbfield': '$dummy',                                             'keyS': 'bibrefchvs'},
-                    {'filter': 'canwitnote',     'dbfield': 'austat_col__austat__austat_canwits__additional',    'keyS': 'canwitnote'},
-                    {'filter': 'canwitauthor',   'fkfield': 'austat_col__austat__austat_canwits__author',            
-                     'keyS': 'canwitauthorname', 'keyFk': 'name', 'keyList': 'canwitauthorlist', 'infield': 'id', 'external': 'canwit-authorname' },
-                    {'filter': 'canwitkeyword',  'fkfield': 'austat_col__austat__austat_canwits__keywords',          
-                     'keyFk': 'name', 'keyList': 'canwitkwlist', 'infield': 'id' }, 
-                    {'filter': 'canwitstype',    'dbfield': 'austat_col__austat__austat_canwits__stype',             
-                     'keyList': 'canwitstypelist', 'keyType': 'fieldchoice', 'infield': 'abbr' }                    ]},
-                # Section M
-                {'section': 'manu', 'filterlist': [
-                    {'filter': 'manuid',        'fkfield': 'austat_col__austat__austat_canwits__msitem__manu',                   
-                     'keyS': 'manuidno',    'keyFk': "idno", 'keyList': 'manuidlist', 'infield': 'id'},
-                    {'filter': 'manulibrary',       'fkfield': 'austat_col__austat__austat_canwits__msitem__manu__library',                
-                     'keyS': 'libname_ta',    'keyId': 'library',     'keyFk': "name"},
-                    {'filter': 'manukeyword',       'fkfield': 'austat_col__austat__austat_canwits__msitem__manu__keywords',               
-                     'keyFk': 'name', 'keyList': 'manukwlist', 'infield': 'name' },
-                    {'filter': 'manustype',         'dbfield': 'austat_col__austat__austat_canwits__msitem__manu__stype',                  
-                     'keyList': 'manustypelist', 'keyType': 'fieldchoice', 'infield': 'abbr' },
-                    {'filter': 'manuprovenance',    'fkfield': 'austat_col__austat__austat_canwits__msitem__codico__provenances__location',  
-                     'keyS': 'prov_ta',       'keyId': 'prov',        'keyFk': "name"},
-                    {'filter': 'manuorigin',        'fkfield': 'austat_col__austat__austat_canwits__msitem__codico__origin',                 
-                     'keyS': 'origin_ta',     'keyId': 'origin',      'keyFk': "name"},
-                    {'filter': 'manudaterange',     'dbfield': 'austat_col__austat__austat_canwits__msitem__codico__codico_dateranges__yearstart__gte',         
-                     'keyS': 'date_from'},
-                    {'filter': 'manudaterange',     'dbfield': 'austat_col__austat__austat_canwits__msitem__codico__codico_dateranges__yearfinish__lte',        
-                     'keyS': 'date_until'},
-                    ]},
-                # Section Other
-                {'section': 'other', 'filterlist': [
-                    {'filter': 'owner',     'fkfield': 'owner',  'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id' },
-                    {'filter': 'coltype',   'dbfield': 'type',   'keyS': 'type',  'keyList': 'typelist' },
-                    {'filter': 'settype',   'dbfield': 'settype','keyS': 'settype'},
-                    {'filter': 'atype',    'dbfield': 'austat_col__austat__atype',    'keyS': 'atype'}, 
-                    {'filter': 'scope',     'dbfield': 'scope',  'keyS': 'scope'}]}
-                ]
-                # ======== One-time adaptations ==============
+        oErr = ErrHandle()
+        try:
+            if self.prefix == "sermo":
+                self.plural_name = "Sermon collections"
+                self.sg_name = "Sermon collection"
+                self.searches[0]['filterlist'][1]['keyList'] = "collist_s"
+            elif self.prefix == "manu":
+                self.plural_name = "Manuscript Collections"
+                self.sg_name = "Manuscript collection"
+                self.searches[0]['filterlist'][1]['keyList'] = "collist_m"
+            elif self.prefix == "gold":
+                self.plural_name = "Gold sermons Collections"
+                self.sg_name = "Sermon gold collection"
+                self.searches[0]['filterlist'][1]['keyList'] = "collist_sg"
+            elif self.prefix == "austat":
+                self.plural_name = "Authoritative statement Collections"
+                self.sg_name = "Authoritative statement collection"        
+                self.searches[0]['filterlist'][1]['keyList'] = "collist_ssg"
+            elif self.prefix == "any":
+                self.new_button = False
+                self.plural_name = "All types Collections"
+                self.sg_name = "Collection"  
+                self.order_cols = ['type', 'scope', 'name', 'created', 'owner__user__username', '']
+                self.order_default = self.order_cols
+                self.order_heads  = [
+                    {'name': 'Type',        'order': 'o=1', 'type': 'str', 'custom': 'type'},
+                    {'name': 'Scope',       'order': 'o=2', 'type': 'str', 'custom': 'scope'},
+                    {'name': 'Dataset',     'order': 'o=3', 'type': 'str', 'field': 'name', 'linkdetails': True, 'main': True},
+                    {'name': 'Created',     'order': 'o=4', 'type': 'str', 'custom': 'created'},
+                    {'name': 'Owner',       'order': 'o=5', 'type': 'str', 'custom': 'owner'},
+                    {'name': 'Frequency',   'order': '',    'type': 'str', 'custom': 'links'}
+                ]  
+            elif self.prefix == "priv":
+                self.new_button = False
+                self.titlesg = "Personal Dataset"
+                self.plural_name = "My Datasets"
+                self.sg_name = "My Dataset"  
+                self.order_cols = ['type', 'name', 'scope', 'owner__user__username', 'created', '']
+                self.order_default = self.order_cols
+                self.order_heads  = [
+                    {'name': 'Type',        'order': 'o=1', 'type': 'str', 'custom': 'type'},
+                    {'name': 'Dataset',     'order': 'o=2', 'type': 'str', 'field': 'name', 'linkdetails': True, 'main': True},
+                    {'name': 'Scope',       'order': 'o=3', 'type': 'str', 'custom': 'scope'},
+                    {'name': 'Owner',       'order': 'o=4', 'type': 'str', 'custom': 'owner'},
+                    {'name': 'Created',     'order': 'o=5', 'type': 'str', 'custom': 'created'},
+                    {'name': 'Frequency',   'order': '',    'type': 'str', 'custom': 'links'}
+                ]  
+                self.filters = [ {"name": "My dataset", "id": "filter_collection", "enabled": False}]
+                self.searches = [
+                    {'section': '', 'filterlist': [
+                        {'filter': 'collection','dbfield': 'name',   'keyS': 'collection_ta', 'keyList': 'collist', 'infield': 'name'}]},
+                    {'section': 'other', 'filterlist': [
+                        {'filter': 'owner',     'fkfield': 'owner',  'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id' },
+                        {'filter': 'coltype',   'dbfield': 'type',   'keyS': 'type',  'keyList': 'typelist' },
+                        {'filter': 'settype',   'dbfield': 'settype','keyS': 'settype'},
+                        {'filter': 'scope',     'dbfield': 'scope',  'keyS': 'scope'}]}
+                    ]
+            elif self.prefix == "publ":
+                self.new_button = False
+                self.plural_name = "Public Datasets"
+                self.sg_name = "Public Dataset"  
+                self.order_cols = ['type', 'name', 'created',  'owner__user__username', '']
+                self.order_default = self.order_cols
+                self.order_heads  = [
+                    {'name': 'Type',        'order': 'o=1', 'type': 'str', 'custom': 'type'},
+                    {'name': 'Dataset',     'order': 'o=2', 'type': 'str', 'field': 'name', 'linkdetails': True, 'main': True},
+                    {'name': 'Created',     'order': 'o=3', 'type': 'str', 'custom': 'created'},
+                    {'name': 'Owner',       'order': 'o=4', 'type': 'str', 'custom': 'owner'},
+                    {'name': 'Frequency',   'order': '',    'type': 'str', 'custom': 'links'}
+                ]  
+                self.filters = [ {"name": "Public dataset", "id": "filter_collection", "enabled": False}]
+                self.searches = [
+                    {'section': '', 'filterlist': [
+                        {'filter': 'collection','dbfield': 'name',   'keyS': 'collection_ta', 'keyList': 'collist', 'infield': 'name'},
+                        {'filter': 'owner',     'fkfield': 'owner',  'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id' }]},
+                    {'section': 'other', 'filterlist': [
+                        {'filter': 'coltype',   'dbfield': 'type',   'keyS': 'type',  'keyList': 'typelist' },
+                        {'filter': 'settype',   'dbfield': 'settype','keyS': 'settype'},
+                        {'filter': 'scope',     'dbfield': 'scope',  'keyS': 'scope'}]}
+                    ]
+            elif self.prefix == "hist":
+                # OLD: self.new_button = False
+                # See issue #47
+                self.new_button = True
+                self.settype = "hc"
+                self.plural_name = "Historical Collections"
+                self.sg_name = "Historical Collection"  
+                self.order_cols = ['name', 'lilacode', '', 'ssgauthornum', 'owner__user__username', 'created']
+                self.order_default = self.order_cols
+                self.order_heads  = [
+                    {'name': 'Historical Collection',   'order': 'o=1', 'type': 'str', 'field': 'name',     'linkdetails': True},
+                    {'name': 'LiLaC',                   'order': 'o=2', 'type': 'str', 'custom': 'lilacode', 'linkdetails': True},
+                    {'name': 'Authors',                 'order': '',    'type': 'str', 'custom': 'authors', 'allowwrap': True, 'main': True},
+                    {'name': 'Author count',            'order': 'o=4', 'type': 'int', 'custom': 'authcount'},
+                    {'name': 'Owner',                   'order': 'o=5', 'type': 'str', 'custom': 'owner'},
+                    {'name': 'Created',                 'order': 'o=6', 'type': 'str', 'custom': 'created'},
+                ]  
+                # Add if user is app editor
+                if user_is_authenticated(self.request) and user_is_ingroup(self.request, app_editor):
+                    self.order_heads.append({'name': 'Manuscript', 'order': '', 'type': 'str', 'custom': 'manuscript'})
+                    # Must also add to the order_cols and he order_default
+                    if len(self.order_default) < len(self.order_heads):
+                        self.order_default.append("")
+                self.filters = [ 
+                    {"name": "Collection",                  "id": "filter_collection",  "enabled": False},
+                    {"name": "Project",                     "id": "filter_project",     "enabled": False},
+                    {"name": "Authoritative statement...",  "id": "filter_austat",      "enabled": False, "head_id": "none"},
+                    {"name": "Canon witness...",            "id": "filter_canwit",      "enabled": False, "head_id": "none"},
+                    {"name": "Manuscript...",               "id": "filter_manu",        "enabled": False, "head_id": "none"},
+                    # Section SSG = AuStat
+                    {"name": "Author",          "id": "filter_ssgauthor",       "enabled": False, "head_id": "filter_austat"},
+                    {"name": "Full text",       "id": "filter_ssgftext",        "enabled": False, "head_id": "filter_austat"},
+                    {"name": "Translation",     "id": "filter_ssgftrans",       "enabled": False, "head_id": "filter_austat"},
+                    {"name": "Lila code",       "id": "filter_ssgcode",         "enabled": False, "head_id": "filter_austat"},
+                    {"name": "Number",          "id": "filter_ssgnumber",       "enabled": False, "head_id": "filter_austat"},
+                    # {"name": "Gryson/Clavis",   "id": "filter_ssgsignature",  "enabled": False, "head_id": "filter_austat"},
+                    {"name": "Keyword",         "id": "filter_ssgkeyword",      "enabled": False, "head_id": "filter_austat"},
+                    {"name": "Status",          "id": "filter_ssgstype",        "enabled": False, "head_id": "filter_austat"},
+                    # Section S
+                    {"name": "Lila code",       "id": "filter_canwitcode",      "enabled": False, "head_id": "filter_canwit"},
+                    {"name": "Author",          "id": "filter_canwitauthor",    "enabled": False, "head_id": "filter_canwit"},
+                    {"name": "Full text",       "id": "filter_canwitftext",     "enabled": False, "head_id": "filter_canwit"},
+                    {"name": "Translation",     "id": "filter_canwitftrans",    "enabled": False, "head_id": "filter_canwit"},
+                    {"name": "Keyword",         "id": "filter_canwitkeyword",   "enabled": False, "head_id": "filter_canwit"}, 
+                    #{"name": "Feast",           "id": "filter_canwitfeast",    "enabled": False, "head_id": "filter_canwit"},
+                    #{"name": "Bible reference", "id": "filter_bibref",         "enabled": False, "head_id": "filter_canwit"},
+                    {"name": "Note",            "id": "filter_canwitnote",      "enabled": False, "head_id": "filter_canwit"},
+                    {"name": "Status",          "id": "filter_canwitstype",     "enabled": False, "head_id": "filter_canwit"},
+                    # Section M
+                    {"name": "Shelfmark",       "id": "filter_manuid",          "enabled": False, "head_id": "filter_manu"},
+                    {"name": "Country",         "id": "filter_manucountry",     "enabled": False, "head_id": "filter_manu"},
+                    {"name": "City",            "id": "filter_manucity",        "enabled": False, "head_id": "filter_manu"},
+                    {"name": "Library",         "id": "filter_manulibrary",     "enabled": False, "head_id": "filter_manu"},
+                    {"name": "Origin",          "id": "filter_manuorigin",      "enabled": False, "head_id": "filter_manu"},
+                    {"name": "Provenance",      "id": "filter_manuprovenance",  "enabled": False, "head_id": "filter_manu"},
+                    {"name": "Date range",      "id": "filter_manudaterange",   "enabled": False, "head_id": "filter_manu"},
+                    {"name": "Keyword",         "id": "filter_manukeyword",     "enabled": False, "head_id": "filter_manu"},
+                    {"name": "Status",          "id": "filter_manustype",       "enabled": False, "head_id": "filter_manu"},
+                    ]
+                self.searches = [
+                    {'section': '', 'filterlist': [
+                        {'filter': 'collection',    'dbfield': 'name',   'keyS': 'collection_ta', 'keyList': 'collist', 'infield': 'name'},
+                        {'filter': 'project',       'fkfield': 'projects', 'keyFk': 'name', 'keyList': 'projlist', 'infield': 'name'},
+                        ]},
+                    # Section SSG = Austat
+                    {'section': 'austat', 'filterlist': [
+                        {'filter': 'ssgauthor',    'fkfield': 'austat_col__austat__author',            
+                         'keyS': 'ssgauthorname', 'keyFk': 'name', 'keyList': 'ssgauthorlist', 'infield': 'id', 'external': 'gold-authorname' },
+                        {'filter': 'ssgftext',     'dbfield': 'austat_col__austat__srchftext',   'keyS': 'ssgftext'},
+                        {'filter': 'ssgftrans',    'dbfield': 'austat_col__austat__srchftrans',  'keyS': 'ssgftrans'},
+                        {'filter': 'ssgcode',      'fkfield': 'austat_col__austat', 'keyFk': 'keycodefull',           
+                         'keyS': 'ssgcode', 'keyList': 'ssglilalist', 'infield': 'id'},
+                        {'filter': 'ssgnumber',    'dbfield': 'austat_col__austat__number',       'keyS': 'ssgnumber'},
+                        {'filter': 'ssgkeyword',   'fkfield': 'austat_col__austat__keywords',          
+                         'keyFk': 'name', 'keyList': 'ssgkwlist', 'infield': 'id'},
+                        {'filter': 'ssgstype',     'dbfield': 'austat_col__austat__stype',             
+                         'keyList': 'ssgstypelist', 'keyType': 'fieldchoice', 'infield': 'abbr' },
+                        ]},
+                    # Section S
+                    {'section': 'canwit', 'filterlist': [
+                        {'filter': 'canwitftext',    'dbfield': 'austat_col__austat__austat_canwits__srchftext',   'keyS': 'canwitftext'},
+                        {'filter': 'canwitftrans',   'dbfield': 'austat_col__austat__austat_canwits__srchftrans',  'keyS': 'canwitftrans'},
+                        {'filter': 'canwitcode',     'dbfield': 'austat_col__austat__austat_canwits__lilacodefull',
+                         'keyS': 'canwitcode', 'keyList': 'canwitlilalist', 'infield': 'id'},
+                        #{'filter': 'canwitfeast',    'dbfield': 'austat_col__austat__austat_canwits__feast',         'keyS': 'canwitfeast'},
+                        #{'filter': 'bibref',        'dbfield': '$dummy',                                             'keyS': 'bibrefbk'},
+                        #{'filter': 'bibref',        'dbfield': '$dummy',                                             'keyS': 'bibrefchvs'},
+                        {'filter': 'canwitnote',     'dbfield': 'austat_col__austat__austat_canwits__additional',    'keyS': 'canwitnote'},
+                        {'filter': 'canwitauthor',   'fkfield': 'austat_col__austat__austat_canwits__author',            
+                         'keyS': 'canwitauthorname', 'keyFk': 'name', 'keyList': 'canwitauthorlist', 'infield': 'id', 'external': 'canwit-authorname' },
+                        {'filter': 'canwitkeyword',  'fkfield': 'austat_col__austat__austat_canwits__keywords',          
+                         'keyFk': 'name', 'keyList': 'canwitkwlist', 'infield': 'id' }, 
+                        {'filter': 'canwitstype',    'dbfield': 'austat_col__austat__austat_canwits__stype',             
+                         'keyList': 'canwitstypelist', 'keyType': 'fieldchoice', 'infield': 'abbr' }                    ]},
+                    # Section M
+                    {'section': 'manu', 'filterlist': [
+                        {'filter': 'manuid',        'fkfield': 'austat_col__austat__austat_canwits__msitem__manu',                   
+                         'keyS': 'manuidno',    'keyFk': "idno", 'keyList': 'manuidlist', 'infield': 'id'},
+                        {'filter': 'manulibrary',       'fkfield': 'austat_col__austat__austat_canwits__msitem__manu__library',                
+                         'keyS': 'libname_ta',    'keyId': 'library',     'keyFk': "name"},
+                        {'filter': 'manukeyword',       'fkfield': 'austat_col__austat__austat_canwits__msitem__manu__keywords',               
+                         'keyFk': 'name', 'keyList': 'manukwlist', 'infield': 'name' },
+                        {'filter': 'manustype',         'dbfield': 'austat_col__austat__austat_canwits__msitem__manu__stype',                  
+                         'keyList': 'manustypelist', 'keyType': 'fieldchoice', 'infield': 'abbr' },
+                        {'filter': 'manuprovenance',    'fkfield': 'austat_col__austat__austat_canwits__msitem__codico__provenances__location',  
+                         'keyS': 'prov_ta',       'keyId': 'prov',        'keyFk': "name"},
+                        {'filter': 'manuorigin',        'fkfield': 'austat_col__austat__austat_canwits__msitem__codico__origin',                 
+                         'keyS': 'origin_ta',     'keyId': 'origin',      'keyFk': "name"},
+                        {'filter': 'manudaterange',     'dbfield': 'austat_col__austat__austat_canwits__msitem__codico__codico_dateranges__yearstart__gte',         
+                         'keyS': 'date_from'},
+                        {'filter': 'manudaterange',     'dbfield': 'austat_col__austat__austat_canwits__msitem__codico__codico_dateranges__yearfinish__lte',        
+                         'keyS': 'date_until'},
+                        ]},
+                    # Section Other
+                    {'section': 'other', 'filterlist': [
+                        {'filter': 'owner',     'fkfield': 'owner',  'keyS': 'owner', 'keyFk': 'id', 'keyList': 'ownlist', 'infield': 'id' },
+                        {'filter': 'coltype',   'dbfield': 'type',   'keyS': 'type',  'keyList': 'typelist' },
+                        {'filter': 'settype',   'dbfield': 'settype','keyS': 'settype'},
+                        {'filter': 'atype',    'dbfield': 'austat_col__austat__atype',    'keyS': 'atype'}, 
+                        {'filter': 'scope',     'dbfield': 'scope',  'keyS': 'scope'}]}
+                    ]
+                    # ======== One-time adaptations ==============
         
-        listview_adaptations("collhist_list")
+            listview_adaptations("collhist_list")
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("CollectionListView/initializations")
         
         return None
 

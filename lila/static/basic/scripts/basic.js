@@ -10,7 +10,6 @@ var $ = jQuery;
       // Initialize event listeners
       ru.basic.init_events();
       // ru.basic.init_typeahead();
-
       // Initialize Bootstrap popover
       // Note: this is used when hovering over the question mark button
       $('[data-toggle="popover"]').popover();
@@ -50,6 +49,52 @@ var ru = (function ($, ru) {
           'hist-svg': 'application/svg',
           'hist-png': 'image/png',
         },
+        loc_multil_row = {
+          "observation": 356,
+          "short_cite": "Syrett et al. (2017), Exp 2",
+          "published": "yes",
+          "data_collection": "Syrett2017",
+          "task_number": 2,
+          "target_language": "spanish",
+          "other_language": "english",
+          "task_type": "offline_comprehension",
+          "task_detailed": "picture_selection",
+          "linguistic_property": "quantifier",
+          "linguistic_property_detailed": "unos",
+          "bilingual_group": "syr2",
+          "monolingual_group": "syr_mono1",
+          "surface_overlap_author": "not_discussed",
+          "target_or_child_system": "NA",
+          "dominance": "?",
+          "language_home": "?",
+          "societal_language": "other_language",
+          "CLI_predicted": "yes",
+          "predicted_direction_difference_2L1": "lower",
+          "mean_age_2L1": 52,
+          "sd_age_2L1": "MD",
+          "age_min_2L1": 40,
+          "age_max_2L1": 65,
+          "mean_age_L1": 49,
+          "sd_age_L1": "MD",
+          "age_min_L1": 39,
+          "age_max_L1": 57,
+          "n_2L1": 36,
+          "n_L1": 22,
+          "mean_2L1": 33.3,
+          "mean_L1": 37.9,
+          "SD_2L1": 29.6,
+          "SD_L1": 27.5,
+          "mean_difference": -4.600000000000001,
+          "t": null,
+          "t_correct_sign": null,
+          "d": 0.1595536329149569,
+          "g": 0.15740717148560768,
+          "g_correct_sign": 0.15740717148560768,
+          "g_var": 0.07246364266582991,
+          "g_SE": 0.2691907180157405,
+          "g_W": 13.800023890760711,
+          "num_trials": 3
+        },
         dummy = 1;
 
     // Private methods specification
@@ -62,7 +107,7 @@ var ru = (function ($, ru) {
         return "something";
       },
 
-      copyToClipboard: function(elem) {
+      copyToClipboard: function (elem) {
         // create hidden text element, if it doesn't already exist
         var targetId = "_hiddenCopyText_";
         var elConfirm = "";
@@ -124,7 +169,7 @@ var ru = (function ($, ru) {
             // clear temporary content
             target.textContent = "";
           }
-          
+
           return succeed;
         } catch (ex) {
           private_methods.errMsg("copyToClipboard", ex);
@@ -158,8 +203,8 @@ var ru = (function ($, ru) {
        */
       colwrap_switch: function (colnum, set) {
         var lColWrap = null,
-            elW = null,
-            idx = -1;
+          elW = null,
+          idx = -1;
 
         try {
           // Get the current value
@@ -337,6 +382,9 @@ var ru = (function ($, ru) {
 
           // Get the table height and the table width
           tableHeight = elTable.offsetHeight;
+          if (tableHeight === undefined) {
+            tableHeight = $(elTable).height();
+          }
           // Add a div with a listener
           for (var i = 0; i < cols.length; i++) {
             div = private_methods.createDiv(tableHeight, i);
@@ -1161,58 +1209,87 @@ var ru = (function ($, ru) {
        */
       filter_click: function (el) {
         var target = null,
+            targetadd = null,
+            target_item = null,
+            i = 0,
+            sLabel = "",
+            lst_target = [],
             specs = null;
 
         try {
+          // Find out which target to show
           target = $(this).attr("targetid");
+          // Check if there is any other target to show
+          sLabel = $(this).attr("targetaddid");
+          if (sLabel !== undefined && sLabel !== null && sLabel !== "") {
+            targetadd = $("#" + sLabel);
+          }
+          // Start showing the target
           if (target !== undefined && target !== null && target !== "") {
             target = $("#" + target);
+            // Create a list of targets
+            lst_target.push(target);
+            if (targetadd !== null && $(targetadd).length > 0) {
+              lst_target.push(targetadd);
+            }
             // Action depends on checking or not
             if ($(this).hasClass("on")) {
               // it is on, switch it off
               $(this).removeClass("on");
               $(this).removeClass("jumbo-3");
               $(this).addClass("jumbo-1");
-              // Must hide it and reset target
-              $(target).addClass("hidden");
 
-              // Check if target has a targetid
-              specs = $(target).attr("targetid");
-              if (specs !== undefined && specs !== "") {
-                // Reset related badges
-                $(target).find("span.badge").each(function (idx, elThis) {
-                  var subtarget = "";
+              for (i = 0; i < lst_target.length; i++) {
+                // Treat this item
+                target_item = lst_target[i];
 
-                  $(elThis).removeClass("on");
-                  $(elThis).removeClass("jumbo-3");
-                  $(elThis).removeClass("jumbo-2");
-                  $(elThis).addClass("jumbo-1");
-                  subtarget = $(elThis).attr("targetid");
-                  if (subtarget !== undefined && subtarget !== "") {
-                    $("#" + subtarget).addClass("hidden");
-                  }
+                // Must hide it and reset target
+                $(target_item).addClass("hidden");
+
+                // Check if target has a targetid
+                specs = $(target_item).attr("targetid");
+                if (specs !== undefined && specs !== "") {
+                  // Reset related badges
+                  $(target_item).find("span.badge").each(function (idx, elThis) {
+                    var subtarget = "";
+
+                    $(elThis).removeClass("on");
+                    $(elThis).removeClass("jumbo-3");
+                    $(elThis).removeClass("jumbo-2");
+                    $(elThis).addClass("jumbo-1");
+                    subtarget = $(elThis).attr("targetid");
+                    if (subtarget !== undefined && subtarget !== "") {
+                      $("#" + subtarget).addClass("hidden");
+                    }
+                  });
+                  // Re-define the target
+                  target_item = $("#" + specs);
+                }
+
+                $(target_item).find("input").each(function (idx, elThis) {
+                  $(elThis).val("");
                 });
-                // Re-define the target
-                target = $("#" + specs);
+                // Also reset all select 2 items
+                $(target_item).find("select").each(function (idx, elThis) {
+                  $(elThis).val("").trigger("change");
+                });
+
               }
 
-              $(target).find("input").each(function (idx, elThis) {
-                $(elThis).val("");
-              });
-              // Also reset all select 2 items
-              $(target).find("select").each(function (idx, elThis) {
-                $(elThis).val("").trigger("change");
-              });
 
             } else {
-              // Must show target
-              $(target).removeClass("hidden");
+              // Must show target[s]
+              for (i = 0; i < lst_target.length; i++) {
+                // Treat this item
+                target_item = lst_target[i];
+                $(target_item).removeClass("hidden");
+              }
+
               // it is off, switch it on
               $(this).addClass("on");
               $(this).removeClass("jumbo-1");
               $(this).addClass("jumbo-3");
             }
-
           }
         } catch (ex) {
           private_methods.errMsg("filter_click", ex);
@@ -1673,6 +1750,36 @@ var ru = (function ($, ru) {
 
             }
 
+          });
+
+          // Related clicking behaviour
+          $("[related-target]").unbind("click").on("click", function (evt) {
+            var elThis = $(this),
+                elButton = null,
+                elRoot = null;
+
+            // Find the root
+            elRoot = $(elThis).attr("related-target");
+            elButton = $(elThis).find("a.btn").first();
+            // Action depends on root visibility
+            if ($(elRoot).hasClass("hidden")) {
+              // it is not visible: show it
+              $(elRoot).removeClass("hidden");
+
+              // Change the color of the button??
+              $(elButton).removeClass("jumbo-1");
+              $(elButton).addClass("jumbo-3");
+
+              // Call resizable grid
+              private_methods.resizableGrid($(elRoot));
+            } else {
+              // It is already showing: hide it
+              $(elRoot).addClass("hidden");
+
+              // Change the color of the button??
+              $(elButton).removeClass("jumbo-3");
+              $(elButton).addClass("jumbo-1");
+            }
           });
 
           // Resizable table columns
@@ -2327,13 +2434,25 @@ var ru = (function ($, ru) {
             elMultilCheck = "",
             sAwsList = "rkxy8021l6",
             sAwsForest = "34kb2ospsg",
+            bCheckForest = true,
+            bCheckAddDel = false,
+            multil_row = null,
+            multil_obs = null,
+            edit_key = "TOBEFILLEDIN",
             url_list = "",
+            url_add = "",
+            url_delete = "",
             url_forest = "";
 
         try {
           // Create the URLs
           url_list = url_base.replace("{aws}", sAwsList).replace("{mode}", "list");
+          url_add = url_base.replace("{aws}", sAwsList).replace("{mode}", "add");
+          url_delete = url_base.replace("{aws}", sAwsList).replace("{mode}", "delete");
           url_forest = url_base.replace("{aws}", sAwsForest).replace("{mode}", "rforest");
+
+          multil_row = loc_multil_row;
+          multil_obs = multil_row['observation'];
 
           // Before we start
           elMultilCheck = $(elStart).closest(".multil-main").find(".multil-check").first();
@@ -2344,6 +2463,9 @@ var ru = (function ($, ru) {
             var data = null,
                 html = [],
                 features = null,
+                dsetclean = [],
+                item = null,
+                i = 0,
                 dataset = null;
 
             // Action depends on the response
@@ -2368,23 +2490,79 @@ var ru = (function ($, ru) {
                   // SHow the message
                   $(elMultilCheck).html(html.join("\n"));
 
-                  // Now call the /rforest method
-                  data = { calling: "usedatafilter", dataset: dataset };
-                  $.post(url_forest, data, function (post_response) {
-                    var verder = null;
+                  if (bCheckAddDel) {
+                    // Now call the /add method
+                    data = JSON.stringify({ edit_key: edit_key, data: [multil_row] });
 
-                    // Action depends on the response
-                    if (post_response === undefined || post_response === null || !("status" in post_response)) {
-                      private_methods.errMsg("No status returned");
-                    } else {
-                      switch (post_response.status) {
-                        case "ready":
-                        case "ok":
-                          verder = post_response;
-                          break;
+                    $.post(url_add, data, function (post_add) {
+                      var verder = null;
+
+                      // Action depends on the response
+                      if (post_add === undefined || post_add === null || !("status" in post_add)) {
+                        private_methods.errMsg("No status returned");
+                      } else {
+                        switch (post_add.status) {
+                          case "ready":
+                          case "ok":
+                            verder = post_add;
+
+                            // Now calling the /delete method
+                            data = JSON.stringify({ edit_key: edit_key, observations: [multil_obs] });
+                            $.post(url_delete, data, function (post_delete) {
+                              var verder = null;
+
+                              // Action depends on the response
+                              if (post_delete === undefined || post_delete === null || !("status" in post_delete)) {
+                                private_methods.errMsg("No status returned");
+                              } else {
+                                switch (post_delete.status) {
+                                  case "ready":
+                                  case "ok":
+                                    verder = post_delete;
+                                    break;
+                                }
+                              }
+                            });
+
+                            break;
+                        }
+                      }
+                    });
+
+                  }
+
+                  if (bCheckForest) {
+                    // Now call the /rforest method
+
+                    // First clean up the dataset to something where there are no "MD" in SD_L1
+                    for (i = 0; i < dataset.length; i++) {
+                      item = dataset[i];
+                      if (item['SD_L1'] !== "MD" && item['SD_L1'] !== "NA") {
+                        // We may copy it
+                        dsetclean.push(item);
                       }
                     }
-                  });
+
+                    // UNCLEAN: data = { calling: "usedatafilter", dataset: dataset };
+                    // Using CLEANED data
+                    data = { calling: "usedatafilter", dataset: dsetclean };
+                    // Make sure to STRINGIFY the data, so that it is in the body
+                    $.post(url_forest, JSON.stringify(data), function (post_response) {
+                      var rfiltermsg = null;
+
+                      // Action depends on the response
+                      if (post_response === undefined || post_response === null) {
+                        private_methods.errMsg("empty response");
+                      } else if (post_response.errorMessage !== undefined) {
+                        // Some kind of error occurred
+                        rfiltermsg = post_response.errorMessage;
+                        $(elMultilCheck).html(rfiltermsg);
+                      } else {
+                        // We will have received an array of values
+                        $(elMultilCheck).html(post_response, null, "  ");
+                      }
+                    });
+                  }
 
                   break;
               }
@@ -2435,6 +2613,11 @@ var ru = (function ($, ru) {
 
           if (options !== undefined && "waitclass" in options) {
             waitclass = "." + options.waitclass;
+          }
+
+          // look for the correct downloadstatus
+          if ($(dstatus).length === 0) {
+            dstatus = "#exceldownloadstatus";
           }
 
           // Gather the information
@@ -2600,7 +2783,12 @@ var ru = (function ($, ru) {
                   xhr.open("POST", ajaxurl);
                   // Set the response type to BLOB, since that's what we are expecting back
                   xhr.responseType = "blob";
+                  // Add parameter action=download to form
                   formData = new FormData(frm[0]);
+                  formData.append("action", "download");
+                  if (dtype !== undefined && dtype !== "") {
+                    formData.append("dtype", dtype);
+                  }
                   xhr.send(formData);
 
                   // Make sure we know how to handle this
@@ -2866,26 +3054,46 @@ var ru = (function ($, ru) {
         try {
           // Clear filters
           $(".badge.filter").each(function (idx, elThis) {
-            var target;
+            var target,
+              targetadd,
+              targetitem,
+              i,
+              lst_target = [];
 
             target = $(elThis).attr("targetid");
+            targetadd = $(elThis).attr("targetaddid");
             if (target !== undefined && target !== null && target !== "") {
               target = $("#" + target);
+              lst_target.push(target);
+              if (targetadd !== undefined && targetadd !== null && targetadd !== "") {
+                lst_target.push($("#" + targetadd));
+              }
+
               // Action depends on checking or not
               if ($(elThis).hasClass("on")) {
                 // it is on, switch it off
                 $(elThis).removeClass("on");
                 $(elThis).removeClass("jumbo-3");
                 $(elThis).addClass("jumbo-1");
-                // Must hide it and reset target
-                $(target).addClass("hidden");
-                $(target).find("input").each(function (idx, elThis) {
-                  $(elThis).val("");
-                });
-                // Also reset all select 2 items
-                $(target).find("select").each(function (idx, elThis) {
-                  $(elThis).val("").trigger("change");
-                });
+
+                // Must hide it and reset all associated targets
+                for (i = 0; i < lst_target.length; i++) {
+                  targetitem = lst_target[i];
+                  $(targetitem).addClass("hidden");
+
+                  // Process the <input> element
+                  $(targetitem).find("input").each(function (idx, elLocal) {
+                    $(elLocal).val("");
+                  });
+                  // Process the <textarea> element
+                  $(targetitem).find("textarea").each(function (idx, elLocal) {
+                    $(elLocal).val("");
+                  });
+                  // Also reset all select 2 items
+                  $(targetitem).find("select").each(function (idx, elLocal) {
+                    $(elLocal).val("").trigger("change");
+                  });
+                }
               }
             }
           });
