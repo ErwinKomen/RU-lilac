@@ -1185,6 +1185,8 @@ class Profile(models.Model, Custom):
     basketitems_manu = models.ManyToManyField("Manuscript", through="BasketMan", related_name="basketitems_user_manu")
     # Many-to-many field for the contents of a search basket per user (austats)
     basketitems_austat = models.ManyToManyField("Austat", through="BasketAustat", related_name="basketitems_user_austat")
+    # Many-to-many field for the currently being dragged Austat items for this user
+    dragged_austats = models.ManyToManyField("Austat", through="DraggingAustat", related_name="dragging_user_austat")
 
     # Many-to-many field that links this person/profile with particular projects
     projects = models.ManyToManyField("Project", through="ProjectEditor", related_name="projects_profile")
@@ -7925,7 +7927,7 @@ class Collection(models.Model, Custom):
                 # Copy SSGs
                 qs = Caned.objects.filter(collection=self).order_by("order")
                 for obj in qs:
-                    Caned.objects.create(collection=new_copy, super=obj.austat, order=obj.order)
+                    Caned.objects.create(collection=new_copy, austat=obj.austat, order=obj.order)
 
             # Change the name
             new_copy.name = "{}_{}".format(new_copy.name, new_copy.id)
@@ -8246,6 +8248,25 @@ class Collection(models.Model, Custom):
         lhtml.append("<span class='collection'><a href='{}'>{}</a></span>".format(url,self.name))
         sBack = "\n".join(lhtml)
         return sBack
+
+    def reorder(self):
+        """Re-order this collection of Austats, if needed"""
+
+        oErr = ErrHandle()
+        bResult = False
+        try:
+            order = 1
+            # Put them into current order
+            for obj in self.austat_col.all().order_by('order'):
+                if obj.order != order:
+                    obj.order = order
+                    obj.save()
+                order += 1
+            bResult = True
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("")
+        return bResult
 
 
 # =========================== MSITEM RELATED ===================================
@@ -11297,7 +11318,7 @@ class CanwitSignature(models.Model):
         return response
 
 
-# =========================== BASKET RELATED ===================================
+# =========================== BASKET and DRAGGING RELATED ===================================
 
 
 class Basket(models.Model):
@@ -11309,7 +11330,7 @@ class Basket(models.Model):
     profile = models.ForeignKey(Profile, related_name="basket_contents", on_delete=models.CASCADE)
 
     def __str__(self):
-        combi = "{}_s{}".format(self.profile.user.username, self.sermon.id)
+        combi = "{}_cnw{}".format(self.profile.user.username, self.canwit.id)
         return combi
 
 
@@ -11322,7 +11343,7 @@ class BasketMan(models.Model):
     profile = models.ForeignKey(Profile, related_name="basket_contents_manu", on_delete=models.CASCADE)
 
     def __str__(self):
-        combi = "{}_s{}".format(self.profile.user.username, self.sermon.id)
+        combi = "{}_man{}".format(self.profile.user.username, self.manu.id)
         return combi
 
 
@@ -11335,7 +11356,20 @@ class BasketAustat(models.Model):
     profile = models.ForeignKey(Profile, related_name="basket_contents_super", on_delete=models.CASCADE)
 
     def __str__(self):
-        combi = "{}_s{}".format(self.profile.user.username, self.sermon.id)
+        combi = "{}_aus{}".format(self.profile.user.username, self.austat.id)
+        return combi
+    
+
+class DraggingAustat(models.Model):
+    """The austat item(s) that are currently being dragged"""
+    
+    # [1] The SSG / Authority file / Authoritative statement
+    austat = models.ForeignKey(Austat, related_name="dragging_contents", on_delete=models.CASCADE)
+    # [1] The user
+    profile = models.ForeignKey(Profile, related_name="dragging_contents", on_delete=models.CASCADE)
+
+    def __str__(self):
+        combi = "{}_aus{}".format(self.profile.user.username, self.austat.id)
         return combi
     
 

@@ -1,0 +1,11 @@
+{% spaceless %}
+<form method="post">
+  {% csrf_token %}
+  <!-- This is where items could be dragged to -->
+  <span class="collection-target" draggable="true"
+        targeturl="{{targeturl}}"
+        ondragover="ru.lila.seeker.collection_dragenter(event);"
+        ondragleave="ru.lila.seeker.collection_dragleave(event);"
+        ondrop="ru.lila.seeker.collection_drop(event);">Drop an item here</span>
+</form>
+{% endspaceless %}

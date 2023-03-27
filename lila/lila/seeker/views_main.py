@@ -38,7 +38,7 @@ from io import StringIO
 from lila.utils import ErrHandle
 from lila.bible.models import Reference
 from lila.lict.models import ResearchSet, SetList
-from lila.seeker.models import LitrefAustat, get_crpp_date, get_current_datetime, process_lib_entries, get_searchable, get_now_time, \
+from lila.seeker.models import DraggingAustat, LitrefAustat, get_crpp_date, get_current_datetime, process_lib_entries, get_searchable, get_now_time, \
     add_gold2equal, add_equal2equal, add_ssg_equal2equal, get_helptext, Information, Country, City, Author, Manuscript, \
     User, Group, Origin, Canwit, MsItem, Codhead, CanwitKeyword, CanwitAustat, NewsItem, \
     SourceInfo, AustatKeyword, AustatGenre, ManuscriptExt, Colwit, Free, LitrefAustat, \
@@ -2396,6 +2396,10 @@ class ColwitDetails(ColwitEdit):
         context = super(ColwitDetails, self).add_to_context(context, instance)
 
         oErr = ErrHandle()
+        sort_start = ""
+        sort_start_mix = ""
+        sort_start_int = ""
+        sort_end = ""
 
         try:
             if instance != None and instance.id != None:
@@ -2404,14 +2408,20 @@ class ColwitDetails(ColwitEdit):
                 # Lists of related objects
                 related_objects = []
                 resizable = True
-                sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
-                sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
-                sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
-                sort_end = '</span>'
 
                 username = self.request.user.username
                 team_group = app_editor
                 profile = Profile.get_user_profile(username=username)
+
+                # Authorization: only app-editors may edit!
+                bMayEdit = user_is_ingroup(self.request, team_group)
+            
+                # All PDs: show the content
+                if bMayEdit:
+                    sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                    sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                    sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                    sort_end = '</span>'
 
                 ## ============= List of historical collections related to the Austat  ==============================
                 #collections = dict(title="Historical collections", prefix="hist", gridclass="resizable", classes="")
@@ -4780,28 +4790,30 @@ class AustatDetails(AustatEdit):
         context = super(AustatDetails, self).add_to_context(context, instance)
 
         oErr = ErrHandle()
+        related_objects = []
+        resizable = True
+        sort_start = ""
+        sort_start_mix = ""
+        sort_start_int = ""
+        sort_end = ""
         try:
             if instance != None and instance.id != None:
                 context['sections'] = []
-
-                # Lists of related objects
-                related_objects = []
-                resizable = True
-                sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
-                sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
-                sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
-                sort_end = '</span>'
 
                 username = self.request.user.username
                 team_group = app_editor
                 profile = Profile.get_user_profile(username=username)
 
-                ## Make sure to delete any previous corpora of mine
-                #AustatCorpus.objects.filter(profile=profile, ssg=instance).delete()
+                # Authorization: only app-editors may edit!
+                bMayEdit = user_is_ingroup(self.request, team_group)
+            
+                # Anyone may sort the contents, even non-editors
+                # Lists of related objects
+                sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_end = '</span>'
 
-                ## Old, extinct
-                #ManuscriptCorpus.objects.filter(austat=instance).delete()
-                #ManuscriptCorpusLock.objects.filter(profile=profile, austat=instance).delete()
 
                 # ============= List of manuscripts related to the Austat via canwit descriptions ==================
                 manuscripts = dict(title="Canonical witnesses in their Manuscripts", prefix="manu", gridclass="resizable", classes="hidden")
@@ -5248,53 +5260,67 @@ class AustatListView(BasicList):
         sBack = ""
         sTitle = ""
         html = []
-        if custom == "author": 
-            # Get a good name for the author
-            if instance.author:
-                html.append(instance.author.name)
-            else:
-                html.append("<i>(not specified)</i>")
-        elif custom == "scount":
-            sCount = instance.scount
-            if sCount == None: sCount = 0
-            html.append("{}".format(sCount))
-        elif custom == "ssgcount":
-            sCount = instance.ssgcount
-            if sCount == None: sCount = 0
-            html.append("{}".format(sCount))
-        elif custom == "hccount":
-            html.append("{}".format(instance.hccount))
-        elif custom == "hclist":
-            html.append(instance.get_hclist_markdown())
-        elif custom == "code":
-            sCode = "-" if instance.code  == None else instance.code
-            html.append("{}".format(sCode))
-        elif custom == "ftext":
-            html.append("<span>{}</span>".format(instance.get_ftext_markdown()))
-        elif custom == "keycode":
-            sKeyCode = "-" if instance.keycode  == None else instance.keycode
-            if not instance.auwork is None:
-                # Prepend the AuWork, if needed
-                sAuWorkCode = instance.auwork.key
-                if not sAuWorkCode in sKeyCode:
-                    sKeyCode = "{}.{}".format(sAuWorkCode, sKeyCode)
+        oErr = ErrHandle()
+        try:
+            if custom == "author": 
+                # Get a good name for the author
+                if instance.author:
+                    html.append(instance.author.name)
+                else:
+                    html.append("<i>(not specified)</i>")
+            elif custom == "scount":
+                sCount = instance.scount
+                if sCount == None: sCount = 0
+                html.append("{}".format(sCount))
+            elif custom == "ssgcount":
+                sCount = instance.ssgcount
+                if sCount == None: sCount = 0
+                html.append("{}".format(sCount))
+            elif custom == "hccount":
+                html.append("{}".format(instance.hccount))
+            elif custom == "hclist":
+                html.append(instance.get_hclist_markdown())
+            elif custom == "code":
+                sCode = "-" if instance.code  == None else instance.code
+                html.append("{}".format(sCode))
+            elif custom == "ftext":
+                html.append("<span>{}</span>".format(instance.get_ftext_markdown()))
+            elif custom == "keycode":
+                sKeyCode = "-" if instance.keycode  is None else instance.keycode
+                if not instance.auwork is None:
+                    # Prepend the AuWork, if needed
+                    sAuWorkCode = instance.auwork.key
+                    if not sAuWorkCode in sKeyCode:
+                        sKeyCode = "{}.{}".format(sAuWorkCode, sKeyCode)
+                # We also need the URL of austat details
+                url = reverse("austat_details", kwargs={'pk': instance.id})
 
-            # ============= Unnecessary code ===================
-            #url = reverse("austat_details", kwargs={'pk': instance.id})
-            #html.append("<span class='badge signature'><a class='nostyle' href='{}'>{}</a></span>".format(
-            #    url, sKeyCode))
-            # ==================================================
+                maydragdrop = False if self is None else ( user_is_authenticated(self.request) and user_is_ingroup(self.request, app_editor) )
 
-            # Get the url to do what is needed
-            url = reverse('austat_exchange')
-            localcontext = dict(austatid=instance.id, targeturl=url, austatkey=sKeyCode)
-            html.append(render_to_string("seeker/austat_exchange.html", localcontext, self.request))
+                if self is None or not maydragdrop:
+                    html.append("<span class='badge signature'><a class='nostyle' href='{}'>{}</a></span>".format(
+                        url, sKeyCode))
+                else:
+                    # Get the url to do what is needed
+                    url_start = reverse('austat_drag_start', kwargs={'pk': instance.id})
+                    url_end = reverse('austat_drag_end', kwargs={'pk': instance.id})
+                    localcontext = dict(
+                        keycode=sKeyCode,
+                        url=url,
+                        targeturl_start=url_start, 
+                        targeturl_end=url_end, 
+                        austatid=instance.id, 
+                        austatkey=sKeyCode)
+                    html.append(render_to_string("seeker/austat_exchange.html", localcontext, self.request))
 
-        elif custom == "status":
-            # Provide the status traffic light
-            html.append(instance.get_stype_light())
+            elif custom == "status":
+                # Provide the status traffic light
+                html.append(instance.get_stype_light())
 
-        sBack = "\n".join(html) 
+            sBack = "\n".join(html) 
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("AustatListView/get_field_value")
         return sBack, sTitle
 
     def adapt_search(self, fields):
@@ -5417,8 +5443,8 @@ class AustatScountDownload(BasicPart):
         return sData
 
 
-class AustatExchange(BasicPart):
-    """Exchange an Austat using drag and drop """
+class AustatDragStart(BasicPart):
+    """Start of dragging one particular Austat item"""
 
     MainModel = Austat
 
@@ -5427,29 +5453,131 @@ class AustatExchange(BasicPart):
 
         oErr = ErrHandle()
         try:
-            qd = self.qd
-            # Does this come with an austatid?
-            austatid = qd.get("austatid")
-            mode = qd.get("mode")
-            if austatid is None:
-                # This doesn't have the austatid, so I am to pass it back
-                pass
+            # if all is right, the austat should be in [obj]
+            austat = self.obj
+            # User must be signed in and authenticated for editing
+            if user_is_authenticated(self.request) and user_is_ingroup(self.request, app_editor):
+                # Figure out who I am
+                profile = self.request.user.user_profiles.first()
+                if not profile is None:
+                    if not austat is None:
+                        # First delete any 'stale' objects
+                        DraggingAustat.objects.filter(profile=profile).delete()
+
+                        # Check if it already is available in my 'dragged_austat' items
+                        if profile.dragged_austats.filter(id=austat.id).first() is None:
+                            # Add it to my dragged austats
+                            try:
+                                DraggingAustat.objects.create(profile=profile, austat=austat)
+                                # ========== DEBUGGING =====================
+                                oErr.Status("Started dragging profile={} austat={}".format(profile.id, austat.id))
+                                # ==========================================
+                            except:
+                                oErr.Status("Could not create combination profile={} austat={}".format(profile.id, austat.id))
+                else:
+                    iStop = 1
             else:
-                # This has the austatid, so I need to store it for the user or what have you
-                if mode == "start":
-                    # THe austatid must be stored in the user information
-                    pass
-                elif mode == "stop":
-                    # The austatid must be removed from the user information
-                    pass
-                # Probably some other code is needed here too.
-                pass
+                # A non-user or non-editor attempts to change something
+                username = "non-user" if self.request.user is None else self.request.user.username
+                oErr.Status("User [{}] illegally tried to drag austat {}".format(username, austat.id))
+
         except:
             msg = oErr.get_error_message()
-            oErr.DoError("AustatExchange/custom_init")
+            oErr.DoError("AustatDragStart/custom_init")
 
         return None
 
+
+class AustatDragDrop(BasicPart):
+    """Drop the currently 'dragged' Austat item into this Collection"""
+
+    MainModel = Collection
+
+    def custom_init(self):
+        """Figure out what is going on"""
+
+        oErr = ErrHandle()
+        try:
+            # If all is right, the Collection should be in[obj]
+            collection = self.obj
+
+            # User must be signed in and authenticated for editing
+            if user_is_authenticated(self.request) and user_is_ingroup(self.request, app_editor):
+                # Figure out who I am
+                profile = self.request.user.user_profiles.first()
+                if not profile is None:
+
+                    if collection is None:
+                        # Something is wrong here
+                        iStop = 2
+                    else:
+                        # Be sure to re-order the collection, if needed
+                        collection.reorder()
+
+                        # Get the url for this collection view, depending on what kind of collection this is
+                        if collection.scope == "priv":
+                            url = reverse('collpriv_details', kwargs={'pk': collection.id})
+                        elif collection.scope == "publ":
+                            url = reverse('collpubl_details', kwargs={'pk': collection.id})
+                        else:
+                            url = reverse('collany_details', kwargs={'pk': collection.id})
+
+                        # And there should be one or more Austat items that have been dragged
+                        austats = profile.dragged_austats.all()
+
+                        # Walk all the austats
+                        for austat in austats:
+                            # Add them into the collection if they are not already there
+                            caned = Caned.objects.filter(collection=collection, austat=austat).first()
+                            if caned is None:
+                                # add the austat to this collection (the [Caned]
+                                order = Caned.objects.filter(collection=collection).count() + 1
+                                caned = Caned.objects.create(collection=collection, austat=austat, order=order)
+                                oErr.Status("Dragging added austat={} to collection={} as caned={}".format(austat.id, collection.id, caned.id))
+                                # Make sure that we re-load the Collection view that we are part of
+                                self.redirectpage = url
+                else:
+                    iStop = 1
+            else:
+                # A non-user or non-editor attempts to change something
+                username = "non-user" if self.request.user is None else self.request.user.username
+                oErr.Status("User [{}] illegally tried to drop into collection {}".format(username, collection.id))
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("AustatDragDrop/custom_init")
+
+        return None
+
+
+class AustatDragEnd(BasicPart):
+    """Stop dragging the currently 'dragged' Austat item"""
+
+    MainModel = Austat
+
+    def custom_init(self):
+        """Figure out what is going on"""
+
+        oErr = ErrHandle()
+        try:
+            # Figure out who I am
+            profile = self.request.user.user_profiles.first()
+            if not profile is None:
+                # if all is right, the austat should be in [obj]
+                austat = self.obj
+                if not austat is None:
+                    # Delete all 'dragged' austats
+                    DraggingAustat.objects.filter(profile=profile).delete()
+                    # ========== DEBUGGING =====================
+                    oErr.Status("Dragging: deleted all austats for profile={}".format(profile.id))
+                    # ==========================================
+            else:
+                iStop = 1
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("AustatDragEnd/custom_init")
+
+        return None
+    
 
 class AustatVisDownload(BasicPart):
     """Generic treatment of Visualization downloads for SSGs"""
@@ -5681,6 +5809,8 @@ class CollAnyEdit(BasicDetails):
                 context['mainitems'].append(
                 {'type': 'plain', 'label': "Readonly:",    'value': instance.readonly, 'field_key': 'readonly'})
 
+            bMayEdit = user_is_ingroup(self.request, app_editor)
+
             # This is only for private PDs:
             if self.prefix == "priv" and instance != None and instance.settype == "pd" and instance.id != None:
                 name_choice = dict(
@@ -5694,9 +5824,19 @@ class CollAnyEdit(BasicDetails):
                 context['pl_name'] = name_choice[instance.type]['pl_name']
             
                 context['size'] = instance.get_size_markdown()
+
+                # Any target url for dropping an austat
+                context['targeturl'] = reverse('austat_drag_drop', kwargs={'pk': instance.id})
                 size_value = render_to_string("seeker/collpriv.html", context, self.request)
             else:
-                size_value = instance.get_size_markdown()
+                if instance.settype == "hc" and bMayEdit:
+                    context['size'] = instance.get_size_markdown()
+
+                    # Any target url for dropping an austat
+                    context['targeturl'] = reverse('austat_drag_drop', kwargs={'pk': instance.id})
+                    size_value = render_to_string("seeker/collsize.html", context, self.request)
+                else:
+                    size_value = instance.get_size_markdown()
         
             # Always add Created and Size
             context['mainitems'].append( {'type': 'plain', 'label': "Created:",     'value': instance.get_created})
@@ -6153,20 +6293,31 @@ class CollPrivDetails(CollAnyEdit):
                         obj.order = idx + 1
                         obj.save()
 
-        # All PDs: show the content
+        oErr = ErrHandle()
         related_objects = []
         lstQ = []
         rel_list =[]
         resizable = True
         index = 1
-        sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
-        sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
-        sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
-        sort_end = '</span>'
-
-        oErr = ErrHandle()
+        sort_start = ""
+        sort_start_mix = ""
+        sort_start_int = ""
+        sort_end = ""
 
         try:
+            username = self.request.user.username
+            team_group = app_editor
+
+            # Authorization: only app-editors may edit!
+            bMayEdit = user_is_ingroup(self.request, team_group)
+            
+            # All PDs: show the content
+            if bMayEdit:
+                sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
+                sort_end = '</span>'
+
 
             # Action depends on instance.type: M/S/SG/SSG
             if instance.type == "manu":
@@ -6207,8 +6358,9 @@ class CollPrivDetails(CollAnyEdit):
                     # Number of sermons in this manuscript
                     add_one_item(rel_item, self.get_field_value("manu", item, "sermons"), False, align="right")
 
-                    # Actions that can be performed on this item
-                    add_one_item(rel_item, self.get_actions())
+                    if bMayEdit:
+                        # Actions that can be performed on this item
+                        add_one_item(rel_item, self.get_actions())
 
                     # Add this line to the list
                     rel_list.append(dict(id=item.id, cols=rel_item))
@@ -6221,9 +6373,10 @@ class CollPrivDetails(CollAnyEdit):
                     '{}<span title="Name">Name</span>{}'.format(sort_start, sort_end), 
                     '{}<span title="Origin/Provenance">or./prov.</span>{}'.format(sort_start, sort_end), 
                     '{}<span title="Date range">date</span>{}'.format(sort_start_int, sort_end), 
-                    '{}<span title="Sermons in this manuscript">sermons</span>{}'.format(sort_start_int, sort_end),
-                    ''
+                    '{}<span title="Sermons in this manuscript">sermons</span>{}'.format(sort_start_int, sort_end)
                     ]
+                if bMayEdit:
+                    manuscript['columns'].append("")
                 related_objects.append(manuscripts)
 
             elif instance.type == "sermo":
@@ -6262,8 +6415,9 @@ class CollPrivDetails(CollAnyEdit):
                     # S: Locus
                     add_one_item(rel_item, item.locus, False)
 
-                    # Actions that can be performed on this item
-                    add_one_item(rel_item, self.get_actions())
+                    if bMayEdit:
+                        # Actions that can be performed on this item
+                        add_one_item(rel_item, self.get_actions())
 
                     # Add this line to the list
                     rel_list.append(dict(id=item.id, cols=rel_item))
@@ -6275,9 +6429,9 @@ class CollPrivDetails(CollAnyEdit):
                     '{}<span title="Gryson or Clavis code">Signature</span>{}'.format(sort_start, sort_end), 
                     '{}<span title="Incipit and explicit">inc...expl</span>{}'.format(sort_start, sort_end), 
                     '{}<span title="Manuscript shelfmark">Manuscript</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="Location within the manuscript">Locus</span>{}'.format(sort_start_int, sort_end),
-                    ''
+                    '{}<span title="Location within the manuscript">Locus</span>{}'.format(sort_start_int, sort_end)
                     ]
+                if bMayEdit: sermons['columns'].append("")
                 related_objects.append(sermons)
 
             elif instance.type == "austat":
@@ -6311,8 +6465,9 @@ class CollPrivDetails(CollAnyEdit):
                     # SSG: Size (number of SG in equality set)
                     add_one_item(rel_item, self.get_field_value("austat", item, "scount"), False)
 
-                    # Actions that can be performed on this item
-                    add_one_item(rel_item, self.get_actions())
+                    if bMayEdit:
+                        # Actions that can be performed on this item
+                        add_one_item(rel_item, self.get_actions())
 
                     # Add this line to the list
                     rel_list.append(dict(id=item.id, cols=rel_item))
@@ -6323,9 +6478,9 @@ class CollPrivDetails(CollAnyEdit):
                     '{}<span title="Author">Author</span>{}'.format(sort_start, sort_end), 
                     '{}<span title="Key code">lila</span>{}'.format(sort_start_mix, sort_end), 
                     '{}<span title="Full text">ftext</span>{}'.format(sort_start, sort_end), 
-                    '{}<span title="Number of Sermons Gold part of this set">Size</span>{}'.format(sort_start_int, sort_end), 
-                    ''
+                    '{}<span title="Number of Sermons Gold part of this set">Size</span>{}'.format(sort_start_int, sort_end)
                     ]
+                if bMayEdit: supers['columns'].append("")
                 related_objects.append(supers)
 
                 context['histogram_data'] = self.get_histogram_data(instance, 
@@ -6478,6 +6633,7 @@ class CollHistDetails(CollHistEdit):
             index = 1
             sort_start = ""
             sort_start_int = ""
+            sort_start_mix = ""
             sort_end = ""
             show_codico = True  # See issue #363
             show_manu = False   # See issue #363

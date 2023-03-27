@@ -5,18 +5,13 @@
     <td valign="top" style="min-width: 20px;">{% if size %}{{size|safe}}{% else %}&nbsp;{% endif %}</td>
     <td valign="top" >
       <div>
+        {% spaceless %}
         <a class="btn btn-xs jumbo-1" data-toggle="collapse" data-target="#colladdinfo">
           <span class="glyphicon glyphicon-plus"></span>Add {{pl_name}} to this personal dataset
         </a>
 
-        <!-- This is where items could be dragged to -->
-        <span class="collection-target" draggable="true"
-              ondrop="ru.lila.seeker.collection_drop(event);"
-              ondragover="ru.lila.seeker.collection_dragenter(event);"
-              ondragleave="ru.lila.seeker.collection_dragleave(event);"
-              ondragstart="ru.lila.seeker.collection_drag(event);" >
-          Drag an item here
-        </span>
+        {% include 'seeker/colldrop.html' with targeturl=targeturl %}
+        {% endspaceless %}
       </div>
 
       <div id="colladdinfo" class="collapse row">

@@ -1714,16 +1714,28 @@ class AuworkDetails(AuworkEdit):
         context['sections'] = []
 
         oErr = ErrHandle()
+        related_objects = []
+        resizable = True
+        sort_start = ""
+        sort_start_mix = ""
+        sort_start_int = ""
+        sort_end = ""
         try:
+            username = self.request.user.username
+            team_group = app_editor
+            profile = Profile.get_user_profile(username=username)
 
-            # Lists of related objects
-            related_objects = []
-            resizable = True
-            index = 1
+            # Authorization: only app-editors may edit!
+            bMayEdit = user_is_ingroup(self.request, team_group)
+            
+            # Anyone may sort the contents, even non-editors
             sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
             sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
             sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
             sort_end = '</span>'
+
+            # Lists of related objects
+            index = 1
 
             # List of Sermons that link to this feast (with an FK)
             austats = dict(title="Authorative statements with this work", prefix="austat")
@@ -2269,100 +2281,119 @@ class ProvenanceDetails(ProvenanceEdit):
         # First get the 'standard' context
         context = super(ProvenanceDetails, self).add_to_context(context, instance)
 
-        context['sections'] = []
-
-        # Lists of related objects
+        oErr = ErrHandle()
         related_objects = []
         resizable = True
-        index = 1
-        sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
-        sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
-        sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
-        sort_end = '</span>'
+        sort_start = ""
+        sort_start_mix = ""
+        sort_start_int = ""
+        sort_end = ""
+        try:
+            # Need to know who this is
+            username = self.request.user.username
+            team_group = app_editor
 
-        # List of Manuscripts that use this provenance
-        manuscripts = dict(title="Manuscripts with this provenance", prefix="mprov")
-        if resizable: manuscripts['gridclass'] = "resizable"
+            # Authorization: only app-editors may edit!
+            bMayEdit = user_is_ingroup(self.request, team_group)
+            
+            context['sections'] = []
 
-        rel_list =[]
-        qs = instance.manuscripts_provenances.all().order_by('manuscript__idno')
-        for item in qs:
-            manu = item.manuscript
-            url = reverse('manuscript_details', kwargs={'pk': manu.id})
-            url_pm = reverse('provenanceman_details', kwargs={'pk': item.id})
-            rel_item = []
+            # Lists of related objects
+            index = 1
 
-            # S: Order number for this manuscript
-            add_rel_item(rel_item, index, False, align="right")
-            index += 1
+            # Anyone may sort the contents, even non-editors
+            sort_start = '<span class="sortable"><span class="fa fa-sort sortshow"></span>&nbsp;'
+            sort_start_mix = '<span class="sortable mixed"><span class="fa fa-sort sortshow"></span>&nbsp;'
+            sort_start_int = '<span class="sortable integer"><span class="fa fa-sort sortshow"></span>&nbsp;'
+            sort_end = '</span>'
 
-            # Manuscript
-            manu_full = "{}, {}, <span class='signature'>{}</span> {}".format(manu.get_city(), manu.get_library(), manu.idno, manu.name)
-            add_rel_item(rel_item, manu_full, False, main=False, link=url)
+            # List of Manuscripts that use this provenance
+            manuscripts = dict(title="Manuscripts with this provenance", prefix="mprov")
+            if resizable: manuscripts['gridclass'] = "resizable"
 
-            # Note for this provenance
-            note = "(none)" if item.note == None or item.note == "" else item.note
-            add_rel_item(rel_item, note, False, nowrap=False, main=True, link=url_pm,
-                         title="Note for this provenance-manuscript relation")
+            rel_list =[]
+            qs = instance.manuscripts_provenances.all().order_by('manuscript__idno')
+            for item in qs:
+                manu = item.manuscript
+                url = reverse('manuscript_details', kwargs={'pk': manu.id})
+                url_pm = reverse('provenanceman_details', kwargs={'pk': item.id})
+                rel_item = []
 
-            # Add this line to the list
-            rel_list.append(dict(id=item.id, cols=rel_item))
+                # S: Order number for this manuscript
+                add_rel_item(rel_item, index, False, align="right")
+                index += 1
 
-        manuscripts['rel_list'] = rel_list
+                # Manuscript
+                manu_full = "{}, {}, <span class='signature'>{}</span> {}".format(manu.get_city(), manu.get_library(), manu.idno, manu.name)
+                add_rel_item(rel_item, manu_full, False, main=False, link=url)
 
-        manuscripts['columns'] = [
-            '{}<span>#</span>{}'.format(sort_start_int, sort_end), 
-            '{}<span>Manuscript</span>{}'.format(sort_start, sort_end), 
-            '{}<span>Note</span>{}'.format(sort_start, sort_end)
-            ]
-        related_objects.append(manuscripts)
+                # Note for this provenance
+                note = "(none)" if item.note == None or item.note == "" else item.note
+                add_rel_item(rel_item, note, False, nowrap=False, main=True, link=url_pm,
+                             title="Note for this provenance-manuscript relation")
 
-        # List of Codicos that use this provenance
-        codicos = dict(title="codicological unites with this provenance", prefix="mcodi")
-        if resizable: codicos['gridclass'] = "resizable"
+                # Add this line to the list
+                rel_list.append(dict(id=item.id, cols=rel_item))
 
-        rel_list =[]
-        qs = instance.codico_provenances.all().order_by('codico__manuscript__idno', 'codico__order')
-        for item in qs:
-            codico = item.codico
-            manu = codico.manuscript
-            url = reverse('manuscript_details', kwargs={'pk': manu.id})
-            url_c = reverse('codico_details', kwargs={'pk': codico.id})
-            url_pc = reverse('provenancecod_details', kwargs={'pk': item.id})
-            rel_item = []
+            manuscripts['rel_list'] = rel_list
 
-            # S: Order number for this manuscript
-            add_rel_item(rel_item, index, False, align="right")
-            index += 1
+            manuscripts['columns'] = [
+                '{}<span>#</span>{}'.format(sort_start_int, sort_end), 
+                '{}<span>Manuscript</span>{}'.format(sort_start, sort_end), 
+                '{}<span>Note</span>{}'.format(sort_start, sort_end)
+                ]
+            related_objects.append(manuscripts)
 
-            # Manuscript
-            manu_full = "{}, {}, <span class='signature'>{}</span> {}".format(manu.get_city(), manu.get_library(), manu.idno, manu.name)
-            add_rel_item(rel_item, manu_full, False, main=False, link=url)
+            # List of Codicos that use this provenance
+            codicos = dict(title="codicological unites with this provenance", prefix="mcodi")
+            if resizable: codicos['gridclass'] = "resizable"
 
-            # Codico
-            codico_full = "<span class='badge signature ot'>{}</span>".format(codico.order)
-            add_rel_item(rel_item, codico_full, False, main=False, link=url_c)
+            rel_list =[]
+            qs = instance.codico_provenances.all().order_by('codico__manuscript__idno', 'codico__order')
+            for item in qs:
+                codico = item.codico
+                manu = codico.manuscript
+                url = reverse('manuscript_details', kwargs={'pk': manu.id})
+                url_c = reverse('codico_details', kwargs={'pk': codico.id})
+                url_pc = reverse('provenancecod_details', kwargs={'pk': item.id})
+                rel_item = []
 
-            # Note for this provenance
-            note = "(none)" if item.note == None or item.note == "" else item.note
-            add_rel_item(rel_item, note, False, nowrap=False, main=True, link=url_pc,
-                         title="Note for this provenance-codico relation")
+                # S: Order number for this manuscript
+                add_rel_item(rel_item, index, False, align="right")
+                index += 1
 
-            # Add this line to the list
-            rel_list.append(dict(id=item.id, cols=rel_item))
+                # Manuscript
+                manu_full = "{}, {}, <span class='signature'>{}</span> {}".format(manu.get_city(), manu.get_library(), manu.idno, manu.name)
+                add_rel_item(rel_item, manu_full, False, main=False, link=url)
 
-        codicos['rel_list'] = rel_list
+                # Codico
+                codico_full = "<span class='badge signature ot'>{}</span>".format(codico.order)
+                add_rel_item(rel_item, codico_full, False, main=False, link=url_c)
 
-        codicos['columns'] = [
-            '{}<span>#</span>{}'.format(sort_start_int, sort_end), 
-            '{}<span>Manuscript</span>{}'.format(sort_start, sort_end), 
-            '{}<span>codicological unit</span>{}'.format(sort_start_mix, sort_end), 
-            '{}<span>Note</span>{}'.format(sort_start, sort_end)
-            ]
-        related_objects.append(codicos)
+                # Note for this provenance
+                note = "(none)" if item.note == None or item.note == "" else item.note
+                add_rel_item(rel_item, note, False, nowrap=False, main=True, link=url_pc,
+                             title="Note for this provenance-codico relation")
 
-        # Add all related objects to the context
-        context['related_objects'] = related_objects
+                # Add this line to the list
+                rel_list.append(dict(id=item.id, cols=rel_item))
+
+            codicos['rel_list'] = rel_list
+
+            codicos['columns'] = [
+                '{}<span>#</span>{}'.format(sort_start_int, sort_end), 
+                '{}<span>Manuscript</span>{}'.format(sort_start, sort_end), 
+                '{}<span>codicological unit</span>{}'.format(sort_start_mix, sort_end), 
+                '{}<span>Note</span>{}'.format(sort_start, sort_end)
+                ]
+            related_objects.append(codicos)
+
+            # Add all related objects to the context
+            context['related_objects'] = related_objects
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("ProvenanceDetails/add_to_context")
 
         # Return the context we have made
         return context

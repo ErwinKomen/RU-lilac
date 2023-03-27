@@ -1940,7 +1940,13 @@ table.dct-view tr td div.toolbox.dct .tooltip-inner tr td {
 /* Dragging collections */
 .coll-draggable:hover {
     cursor: grab;
-    border: 1px dotted red;
+    /* border: 1px dotted red; 
+    background-color: lightgoldenrodyellow;*/
+}
+.coll-draggable.badge.signature:hover {
+    color: blue;
+}
+.coll-draggable {
     background-color: lightgoldenrodyellow;
 }
 

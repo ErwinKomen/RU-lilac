@@ -3085,7 +3085,6 @@ var ru = (function ($, ru) {
         }
       },
 
-
       /**
        *  collection_dragenter
        *      Sermon enters collection
@@ -3100,7 +3099,7 @@ var ru = (function ($, ru) {
             $(ev.target).addClass("dragover");
             console.log("Collection dragenter");
           }
-          
+
         } catch (ex) {
           private_methods.errMsg("collection_dragenter", ex);
         }
@@ -3120,7 +3119,7 @@ var ru = (function ($, ru) {
             $(ev.target).removeClass("dragover");
             console.log("Collection dragleave");
           }
-  
+
         } catch (ex) {
           private_methods.errMsg("collection_dragleave", ex);
         }
@@ -3132,13 +3131,11 @@ var ru = (function ($, ru) {
        *
        */
       collection_drop: function (ev) {
-        var elTable = null,
-          elRoot = null,
-          bChanged = false,
-          orderSrc = "",
-          orderDst = "",
-          divSrc = null,  // The div.collection-unit
-          divDst = null,  // THe div.collection-unit
+        var elStart = null,
+          targeturl = null,
+          redirect = null,  // possible redirect URL to open
+          data = null,  // The div.collection-unit
+          frm = null,  // THe div.collection-unit
           divSrcId = "",
           divDstId = "";
 
@@ -3146,14 +3143,46 @@ var ru = (function ($, ru) {
           // Prevent default handling
           ev.preventDefault();
 
-          if ($(ev.target).hasClass("collection-target")) {
+          elStart = $(ev.target)
+          if ($(elStart).hasClass("collection-target")) {
             // Remove the dragover class
-            $(ev.target).removeClass("dragover");
+            $(elStart).removeClass("dragover");
 
-            // Figure out what the source and destination is
-            divSrcId = ev.originalEvent.dataTransfer.getData("text");
-            // divSrcId = ev.dataTransfer.getData("text");
+            // Get the targeturl
+            targeturl = $(elStart).attr("targeturl");
 
+            // Get to the form
+            frm = $(elStart).closest('form');
+            // Get the data from the form
+            data = frm.serializeArray();
+            // Do we actually have some data?
+            if (targeturl !== undefined && targeturl !== null) {
+              // There is a targeturl, so let's try to call it
+              $.post(targeturl, data, function (response) {
+                // Action depends on the response
+                if (response === undefined || response === null || !("status" in response)) {
+                  private_methods.errMsg("No status returned");
+                } else {
+                  switch (response.status) {
+                    case "ready":
+                    case "ok":
+                      // Get the redirect url
+                      redirect = response.redirecturl;
+                      // Redicrect to that page
+                      window.location.href = redirect;
+                      break;
+                    case "error":
+                      // Show the error
+                      if ('msg' in response) {
+                        $(target).html(response.msg);
+                      } else {
+                        $(target).html("An error has occurred (lila.seeker austat_dragend)");
+                      }
+                      break;
+                  }
+                }
+              });
+            }
           }
 
         } catch (ex) {
@@ -3166,24 +3195,56 @@ var ru = (function ($, ru) {
        *      Completely finishing the dragging - report to server
        *
        */
-      austat_dragend: function (ev) {
-        var divSrcId = "";
+      austat_dragend: function (elStart, targeturl_end) {
+        var data = [],
+            frm = null;
 
         try {
-          // Prevent default handling
-          ev.preventDefault();
+          //// Prevent default handling
+          //ev.preventDefault();
 
           // Show that this is happening
           console.log("Austat dragend");
 
-          // Figure out what the source and destination is
-          divSrcId = ev.dataTransfer.getData("text");
+          // Get to the form
+          frm = $(elStart).closest('form');
+          // Get the data from the form
+          data = frm.serializeArray();
+
+
+          //// Figure out the targeturl from the stored information
+          //targeturl_end = ev.dataTransfer.getData("text");
+
+          // Do we actually have some data?
+          if (targeturl_end !== undefined && targeturl_end !== null) {
+            // There is a targeturl, so let's try to call it
+            $.post(targeturl_end, data, function (response) {
+              // Action depends on the response
+              if (response === undefined || response === null || !("status" in response)) {
+                private_methods.errMsg("No status returned");
+              } else {
+                switch (response.status) {
+                  case "ready":
+                  case "ok":
+                    // We are receiving an 'ok', which means that the dragging has actually finished correctly
+                    if ($(elStart).hasClass("collection-target")) {
+                      $(elStart).removeClass("dragover");
+                    }
+                    break;
+                  case "error":
+                    // Show the error
+                    if ('msg' in response) {
+                      $(target).html(response.msg);
+                    } else {
+                      $(target).html("An error has occurred (lila.seeker austat_dragend)");
+                    }
+                    break;
+                }
+              }
+            });
+          }
 
           // Send message to the server
-
-          if ($(ev.target).hasClass("collection-target")) {
-            $(ev.target).removeClass("dragover");
-          }
 
         } catch (ex) {
           private_methods.errMsg("austat_dragend", ex);
@@ -3197,29 +3258,34 @@ var ru = (function ($, ru) {
        */
       austat_drag: function (ev) {
         var elStart = null,
-            targeturl = null,
+            targeturl_start = null,
+            targeturl_end = null,
             data = null,
             frm = null,
+            drag_lifetime = 10000,  // Numer of milliseconds lifetime
             divId = "";
 
         try {
+          // Retrieve all information from [ev.target]
           elStart = $(ev.target);
+          targeturl_start = $(elStart).attr("targeturl_start");
+          targeturl_end = $(elStart).attr("targeturl_end");
           divId = elStart.attr("austatid");
 
+          // This is just a status message for myself
           console.log("Austat drag: " + divId);
 
-          ev.dataTransfer.setData("text", divId);
+          // The [setData] will contain the URL to be called with [dragend]
+          ev.dataTransfer.setData("text", targeturl_end);
 
           // Get to the form
           frm = $(elStart).closest('form');
           // Get the data from the form
           data = frm.serializeArray();
-          // The url is in the ajaxurl
-          targeturl = $(elStart).attr("targeturl");
 
           // Notify the server that this austat is being dragged
           // Call the ajax POST method
-          $.post(targeturl, data, function (response) {
+          $.post(targeturl_start, data, function (response) {
             // Action depends on the response
             if (response === undefined || response === null || !("status" in response)) {
               private_methods.errMsg("No status returned");
@@ -3227,21 +3293,15 @@ var ru = (function ($, ru) {
               switch (response.status) {
                 case "ready":
                 case "ok":
-                  // Try to get the (adapted) list of comments
-                  comment_list = response.comment_list;
-                  if (comment_list !== undefined && comment_list !== null && comment_list.length > 0) {
-                    // There actually *is* a list!
-                    $(divList).html(comment_list);
-                  }
-                  // Clear the previously made comment
-                  $(divContent).val("");
+                  // When something has been successfully dragged, it gets a lifetime before it is ended
+                  window.setTimeout(function () { ru.lila.seeker.austat_dragend(elStart, targeturl_end); }, drag_lifetime);
                   break;
                 case "error":
                   // Show the error
                   if ('msg' in response) {
                     $(target).html(response.msg);
                   } else {
-                    $(target).html("An error has occurred (lila.seeker comment_send)");
+                    $(target).html("An error has occurred (lila.seeker austat_drag)");
                   }
                   break;
               }
