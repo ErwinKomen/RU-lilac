@@ -15,6 +15,7 @@ import lxml.html
 # From own stuff
 from lila.settings import APP_PREFIX, WRITABLE_DIR, TIME_ZONE
 from lila.utils import *
+from lila.seeker.models import build_abbr_list, STATUS_TYPE
 
 LONG_STRING=255
 STANDARD_LENGTH=100
@@ -79,6 +80,11 @@ class Cpage(models.Model):
     # [0-1] The name of the page as it occurs in 'urls.py'
     urlname = models.CharField("Name in urls", null=True, blank=True, max_length=LONG_STRING)
 
+    # [1] Every manuscript has a status - this is *NOT* related to model 'Status'
+    stype = models.CharField("Status", choices=build_abbr_list(STATUS_TYPE), max_length=5, default="man")
+    # [0-1] Status note
+    snote = models.TextField("Status note(s)", default="[]")
+
     # [1] And a date: the date of saving this manuscript
     created = models.DateTimeField(default=get_current_datetime)
     saved = models.DateTimeField(null=True, blank=True)
@@ -137,6 +143,22 @@ class Cpage(models.Model):
                     sBack = "<a href='{}'><span class='badge signature cl'>{}</span></a>".format(url, sBack)
         return sBack
 
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+
+        oErr = ErrHandle()
+        try:
+            # Adapt the save date
+            self.saved = get_current_datetime()
+            response = super(Cpage, self).save(force_insert, force_update, using, update_fields)
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Cpage.save")
+            response = None
+
+        # Return the response when saving
+        return response
+
 
 class Clocation(models.Model):
     """The location of a content-item on a HTML page"""
@@ -148,6 +170,11 @@ class Clocation(models.Model):
 
     # [1] Link to the page on which this location holds
     page = models.ForeignKey(Cpage, on_delete=models.CASCADE, related_name="page_locations")
+
+    # [1] Every manuscript has a status - this is *NOT* related to model 'Status'
+    stype = models.CharField("Status", choices=build_abbr_list(STATUS_TYPE), max_length=5, default="man")
+    # [0-1] Status note
+    snote = models.TextField("Status note(s)", default="[]")
 
     # [1] And a date: the date of saving this manuscript
     created = models.DateTimeField(default=get_current_datetime)
@@ -218,6 +245,22 @@ class Clocation(models.Model):
         sSaved = get_crpp_date(self.saved, True)
         return sSaved
 
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+
+        oErr = ErrHandle()
+        try:
+            # Adapt the save date
+            self.saved = get_current_datetime()
+            response = super(Clocation, self).save(force_insert, force_update, using, update_fields)
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Clocation.save")
+            response = None
+
+        # Return the response when saving
+        return response
+
 
 class Citem(models.Model):
     """One content item for the content management system"""
@@ -227,6 +270,11 @@ class Citem(models.Model):
 
     # [0-1] the markdown contents for the information
     contents = models.TextField("Contents", null=True, blank=True)
+
+    # [1] Every manuscript has a status - this is *NOT* related to model 'Status'
+    stype = models.CharField("Status", choices=build_abbr_list(STATUS_TYPE), max_length=5, default="man")
+    # [0-1] Status note
+    snote = models.TextField("Status note(s)", default="[]")
 
     # [1] And a date: the date of saving this manuscript
     created = models.DateTimeField(default=get_current_datetime)
@@ -270,12 +318,17 @@ class Citem(models.Model):
             sBack = self.clocation.get_htmlid()
         return sBack
 
-    def get_location(self):
+    def get_location(self, bHtml=False):
         """Get the location name"""
 
         sBack = "-"
         if not self.clocation is None:
             sBack = self.clocation.get_location()
+            if bHtml:
+                html = []
+                url = reverse('clocation_details', kwargs={'pk': self.clocation.id})
+                html.append("<span class='badge signature gr'><a href='{}'>{}</a></span>".format(url, sBack))
+                sBack = "\n".join(html)
         return sBack
 
     def get_contents(self):
@@ -303,5 +356,21 @@ class Citem(models.Model):
             self.save()
         sSaved = get_crpp_date(self.saved, True)
         return sSaved
+
+    def save(self, force_insert = False, force_update = False, using = None, update_fields = None):
+
+        oErr = ErrHandle()
+        try:
+            # Adapt the save date
+            self.saved = get_current_datetime()
+            response = super(Citem, self).save(force_insert, force_update, using, update_fields)
+
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Citem.save")
+            response = None
+
+        # Return the response when saving
+        return response
 
 

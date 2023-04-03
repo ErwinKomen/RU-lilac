@@ -10,7 +10,7 @@
     <div class="col-md-6">
       <h3>Background</h3>
       <div id="background">
-        {% if cms_background %}
+        {% if cms_has_background %}
           {{cms_background|safe}}
         {% else %}
           <p>The Lilac web application is being developed as part of the ERC <a href="https://cordis.europa.eu/project/rcn/218691/en" target="_blank">Lilac project</a>.</p>
@@ -64,7 +64,7 @@
 
       <h3>Quick Reference</h3>
       <div id="quick-reference">
-        {% if cms_quick_reference %}
+        {% if cms_has_quick_reference %}
           {{cms_quick_reference|safe}}
         {% else %}
           <p>
@@ -89,7 +89,7 @@
 
       </div>
       <div id="source-code">
-        {% if cms_source_code %}
+        {% if cms_has_source_code %}
           {{cms_source_code|safe}}
         {% else %}
           <p>
@@ -112,9 +112,10 @@
 
   <div class="row">
     <div class="col-md-12">
+      {% if cms_has_bibliography and cms_bibliography|length > 0 %}
       <h4>Bibliography</h4>
       <div id="bibliography">
-        {% if cms_bibliography %}
+        {% if cms_bibliography|length > 0 %}
           {{cms_bibliography|safe}}
         {% else %}
           <div class="citation">
@@ -129,6 +130,7 @@
         {% endif %}
 
       </div>
+      {% endif %}
     </div>
   </div>
 </div>

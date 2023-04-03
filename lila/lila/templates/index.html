@@ -17,21 +17,21 @@
       </h1>
       <p class="lead">
         <span id="summary-line">
-          {% if cms_summary_line %}
+          {% if cms_has_summary_line %}
             {{cms_summary_line|safe}}
           {% else %}
             The lila web application provides search facilities for the Living Law Canon.
           {% endif %}
         </span>
         <span id="disclaimer-main" style="font-weight: bold; font-size: larger;">
-          {% if cms_disclaimer_main %}
+          {% if cms_has_disclaimer_main %}
             {{cms_disclaimer_main|safe}}
           {% else %}
             &nbsp;&nbsp;Disclaimer: 
           {% endif %}
         </span>
         <span id="disclaimer-contents" class="" style="color: red; font-weight: bold; font-size: large;">
-          {% if cms_disclaimer_contents %}
+          {% if cms_has_disclaimer_contents %}
             {{cms_disclaimer_contents|safe}}
           {% else %}
             This is a beta version
@@ -89,7 +89,7 @@
       <div class="col-md-6">
         <h2>Project</h2>
         <div id="project-description">
-          {% if cms_project_description %}
+          {% if cms_has_project_description %}
             {{cms_project_description|safe}}
           {% else %}
             <p>
@@ -114,7 +114,7 @@
 
         <h2>Getting started</h2>
         <div id="getting-started">
-          {% if cms_getting_started %}
+          {% if cms_has_getting_started %}
             {{cms_getting_started|safe}}
           {% else %}
             <p>

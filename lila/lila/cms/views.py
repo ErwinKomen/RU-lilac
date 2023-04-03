@@ -59,11 +59,14 @@ def add_cms_contents(page, context):
             # Get the htmlid for this location
             htmlid = obj.clocation.htmlid
             if not htmlid is None:
-                htmlid = "cms_{}".format(htmlid.replace("-", "_"))
+                htmlcontent = "cms_{}".format(htmlid.replace("-", "_"))
                 # Get the contents value for this, translating it from markdown
                 sContents = obj.get_contents_markdown()
                 # Add it to the context
-                context[htmlid] = sContents
+                context[htmlcontent] = sContents
+                # allowing even empty onew
+                hasid = "cms_has_{}".format(htmlid.replace("-", "_"))
+                context[hasid] = True
     except:
         msg = oErr.get_error_message()
         oErr.DoError("add_cms_contents")
@@ -83,6 +86,8 @@ class CpageEdit(BasicDetails):
     history_button = True
     mainitems = []
 
+    stype_edi_fields = ['name', 'urlname']
+        
     # How to handle the app_moderator
 
     def add_to_context(self, context, instance):
@@ -240,6 +245,8 @@ class ClocationEdit(BasicDetails):
     history_button = True
     mainitems = []
 
+    stype_edi_fields = ['name', 'htmlid', 'page']
+        
     # How to handle the app_moderator
 
     def add_to_context(self, context, instance):
@@ -396,6 +403,8 @@ class CitemEdit(BasicDetails):
     history_button = True
     mainitems = []
 
+    stype_edi_fields = ['clocation', 'contents']
+        
     # How to handle the app_moderator
 
     def add_to_context(self, context, instance):
@@ -408,7 +417,7 @@ class CitemEdit(BasicDetails):
             context['mainitems'] = [
                 {'type': 'plain', 'label': "Page:",     'value': instance.get_page()      },
                 {'type': 'line',  'label': "HTML id:",  'value': instance.get_htmlid()    },
-                {'type': 'line',  'label': "Location:", 'value': instance.get_location() },
+                {'type': 'line',  'label': "Location:", 'value': instance.get_location(True) },
                 {'type': 'line',  'label': "Contents:", 'value': instance.get_contents_markdown(retain=True)},
                 {'type': 'line',  'label': "Saved:",    'value': instance.get_saved()       },
                 {'type': 'line',  'label': "Created:",  'value': instance.get_created()     },
