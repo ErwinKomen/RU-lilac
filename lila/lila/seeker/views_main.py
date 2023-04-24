@@ -28,6 +28,7 @@ from django.views.decorators.csrf import csrf_exempt
 # Other basic imports
 import json, csv
 import copy
+import re
 import openpyxl
 from openpyxl.utils.cell import get_column_letter
 from lxml import etree as ET
@@ -38,7 +39,7 @@ from io import StringIO
 from lila.utils import ErrHandle
 from lila.bible.models import Reference
 from lila.lict.models import ResearchSet, SetList
-from lila.seeker.models import DraggingAustat, LitrefAustat, get_crpp_date, get_current_datetime, process_lib_entries, get_searchable, get_now_time, \
+from lila.seeker.models import Auwork, DraggingAustat, LitrefAustat, get_crpp_date, get_current_datetime, process_lib_entries, get_searchable, get_now_time, \
     add_gold2equal, add_equal2equal, add_ssg_equal2equal, get_helptext, Information, Country, City, Author, Manuscript, \
     User, Group, Origin, Canwit, MsItem, Codhead, CanwitKeyword, CanwitAustat, NewsItem, \
     SourceInfo, AustatKeyword, AustatGenre, ManuscriptExt, Colwit, Free, LitrefAustat, \
@@ -3276,6 +3277,15 @@ class CanwitEdit(BasicDetails):
             sermon_count = manu.get_canwit_count()
             # Make sure the new sermon gets changed
             form.instance.order = sermon_count
+        # Check project assignment
+        if instance.projects.count() == 0:
+            # Need to assign to default project
+            projects = self.request.user.user_profiles.first().get_defaults()
+            for project in projects:
+                obj = CanwitProject.objects.filter(project=project, canwit=instance).first()
+                if obj is None:
+                    obj = CanwitProject.objects.create(project=project, canwit=instance)
+
 
         # Return positively
         return True, "" 
@@ -3372,6 +3382,7 @@ class CanwitEdit(BasicDetails):
                         elif method == "nodistance":
                             newsuper = cleaned.get("newsuper", "")
                             newnote = cleaned.get("newnote")
+                            newcreate = cleaned.get("newcreate", "")
                             if newsuper != "":
                                 # Take the default linktype
                                 linktype = "uns"
@@ -3382,6 +3393,41 @@ class CanwitEdit(BasicDetails):
                                     obj_austat = Austat.objects.filter(id=newsuper).first()
                                     if obj_austat != None:
                                         # Set the right parameters for creation later on
+                                        form.instance.linktype = linktype
+                                        form.instance.fonstype = fonstype
+                                        form.instance.austat = obj_austat
+                                        if not newnote is None:
+                                            form.instance.note = newnote
+                            elif newcreate != "":
+                                # Take the default linktype
+                                linktype = "uns"
+
+                                # We are being asked to create a new austat with lilacode [newcreate]
+                                # Make sure the austat does not exist yet
+                                obj_austat = Austat.objects.filter(keycodefull__iexact=newcreate).first()
+                                if obj_austat is None:
+                                    # Indeed, doesn't exist yet: create it
+                                    parts = newcreate.rsplit(".", 1)
+                                    if len(parts) == 2:
+                                        arNumber = re.findall(r'\d+', parts[1])
+                                        if len(parts[0]) > 0 and len(arNumber) > 0:
+                                            work = parts[0]
+                                            keycode = arNumber[0]
+                                            # Get the AuWork
+                                            auwork = Auwork.objects.filter(key__iexact=work).first()
+                                            if auwork is None:
+                                                # Must create this work
+                                                auwork = Auwork.objects.create(key=work)
+                                            # Create the Austat
+                                            obj_austat = Austat.objects.create(
+                                                keycode=keycode, auwork=auwork, keycodefull=newcreate,
+                                                stype="imp", atype="acc")
+
+
+
+                                # Double check
+                                if not obj_austat is None:
+                                    # well, it is existing, so add a link to this one
                                         form.instance.linktype = linktype
                                         form.instance.fonstype = fonstype
                                         form.instance.austat = obj_austat
