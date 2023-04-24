@@ -466,6 +466,7 @@ class AustatOneWidget(ModelSelect2Widget):
     search_fields = ['keycodefull__icontains', 'id__icontains', 'author__name__icontains', 
                      'srchftext__icontains', 'srchftrans__icontains']
     MAX_LABEL_LENGTH = 80
+    atype_list = ['acc']
 
     def label_from_instance(self, obj):
         sLabel = obj.get_label(do_incexpl = True)
@@ -474,13 +475,15 @@ class AustatOneWidget(ModelSelect2Widget):
         return sLabel
 
     def get_queryset(self):
-        return Austat.objects.filter(moved__isnull=True, atype = 'acc').order_by('keycodefull', 'id').distinct()
+        # ORG: response = Austat.objects.filter(moved__isnull=True, atype = 'acc').order_by('keycodefull', 'id').distinct()
+        response = Austat.objects.filter(moved__isnull=True, atype__in=self.atype_list).order_by('keycodefull', 'id').distinct()
+        return response
 
     def filter_queryset(self, term, queryset = None, **dependent_fields):
         qs = super(AustatOneWidget, self).filter_queryset(term, queryset, **dependent_fields)
         # Adapt
         condition = Q(keycodefull__icontains=term) | Q(author__name__icontains=term) | \
-                    Q(srchftext__icontains=term) | Q(srchftrans__icontains=term) 
+                    Q(srchftext__icontains=term) | Q(srchftrans__icontains=term)
         qs = qs.annotate(
             full_string_order=Case(
                 When(condition, then=Value(1)),
@@ -2759,7 +2762,9 @@ class CanwitSuperForm(forms.ModelForm):
     # For the method "nodistance"
     newsuper    = forms.CharField(label=_("Canon witness"), required=False, help_text="editable", 
                 widget=AustatOneWidget(attrs={'data-placeholder': 'Select links...', 
-                'placeholder': 'Select an Authoritative statement...', 'style': 'width: 100%;', 'class': 'searching'}))
+                'placeholder': 'Select an Authoritative statement...', 'style': 'width: 100%;', 'class': 'searching create-button'}))
+    newcreate   = forms.CharField(label="Create", required=False, help_text="editable",
+                widget=forms.TextInput(attrs={'class': 'input-sm create', 'placeholder': 'Lilacode...',  'style': 'width: 100%;'}))
     newnote     = forms.CharField(label=_("Note"), required=False, help_text="editable", 
                widget=forms.TextInput(attrs={'class': 'input-sm', 'placeholder': 'Note...',  'style': 'width: 100%;'}))
 

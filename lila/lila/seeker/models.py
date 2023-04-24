@@ -7220,33 +7220,41 @@ class Austat(models.Model, Custom):
         """Get a string view of myself to be put on a label"""
 
         lHtml = []
+        sBack = ""
+        oErr = ErrHandle()
+        try:
+            # First check for atype
+            if self.atype == "cre":
+                # This is an idiosyncratic label
+                sBack = "Create this?"
 
-        ## Treat lila code
-        #sLabel = self.code
-        #if sLabel == None: 
-        #    sLabel = "(Undecided {})".format(self.id)
-        #lHtml.append("{} ".format(sLabel))
+            else:
 
-        # Add the keycode
-        sKeycode = "(Undecided {})".format(self.id) if self.keycodefull is None else self.keycodefull
-        lHtml.append("{} ".format(sKeycode))
+                # Add the keycode
+                sKeycode = "(Undecided {})".format(self.id) if self.keycodefull is None else self.keycodefull
+                lHtml.append("{} ".format(sKeycode))
 
-        # Treat the author
-        if self.author:
-            lHtml.append("(by {}) ".format(self.author.name))
-        else:
-            lHtml.append("(by Unknown Author) ")
+                # Treat the author
+                if self.author:
+                    lHtml.append("(by {}) ".format(self.author.name))
+                else:
+                    lHtml.append("(by Unknown Author) ")
 
-        if do_incexpl:
-            # Treat ftext
-            if self.ftext: lHtml.append("{}".format(self.srchftext))
-            # Treat intermediate dots
-            if self.ftext and self.ftrans: lHtml.append(" (")
-            # Treat ftrans
-            if self.ftrans: lHtml.append("{})".format(self.srchftrans))
+                if do_incexpl:
+                    # Treat ftext
+                    if self.ftext: lHtml.append("{}".format(self.srchftext))
+                    # Treat intermediate dots
+                    if self.ftext and self.ftrans: lHtml.append(" (")
+                    # Treat ftrans
+                    if self.ftrans: lHtml.append("{})".format(self.srchftrans))
 
-        # Return the results
-        return "".join(lHtml)
+                # Return the results
+                sBack = "".join(lHtml)
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("Austat/get_label")
+
+        return sBack
 
     def get_litrefs_markdown(self, plain=False):
         """Get all the literature references associated with this Austat"""
@@ -10199,25 +10207,26 @@ class Canwit(models.Model, Custom):
         oErr = ErrHandle()
         try:
             html = []
-            if not self.msitem.codico.manuscript.lilacode is None:
-                html.append(self.msitem.codico.manuscript.lilacode)
-            # Get the first historical collection that I am part of
-            austat_ids = self.austats.all().values("id")
+            if not self is None and not self.id is None:
+                if not self.msitem.codico.manuscript.lilacode is None:
+                    html.append(self.msitem.codico.manuscript.lilacode)
+                # Get the first historical collection that I am part of
+                austat_ids = self.austats.all().values("id")
 
-            # Get a list of HCs connected to me
-            hcs = self.get_collection_list("hc")
-            if len(hcs) > 0:
-                collection = hcs[0]
-                if not collection.lilacode is None:
-                    html.append(collection.lilacode)
-            # Add my own short code
-            if not self.lilacode is None:
-                html.append(self.lilacode)
-            # Check if anything is in here
-            if len(html) == 0:
-                html.append("(not defined)")
-            # Combine
-            sBack = ".".join(html)
+                # Get a list of HCs connected to me
+                hcs = self.get_collection_list("hc")
+                if len(hcs) > 0:
+                    collection = hcs[0]
+                    if not collection.lilacode is None:
+                        html.append(collection.lilacode)
+                # Add my own short code
+                if not self.lilacode is None:
+                    html.append(self.lilacode)
+                # Check if anything is in here
+                if len(html) == 0:
+                    html.append("(not defined)")
+                # Combine
+                sBack = ".".join(html)
         except:
             msg = oErr.get_error_message()
             oErr.DoError("get_lilacode")

@@ -1615,6 +1615,55 @@ var ru = (function ($, ru) {
             }
           }
 
+          // Look for [create] items, and add a button to switch with [create-button]
+          $(".create").each(function (idx, value) {
+            var elThis = $(this),
+                msg = "",
+              elToggle = null,
+                elRow = null,
+                elTdButton = null,
+                elCurrent = null;
+
+            // Look for the <td> with [.create_button]
+            elCurrent = $(elThis).closest("td");
+            elRow = $(elThis).closest("tr");
+            // Make sure we are not repeating ourselves
+            if ($(elRow).find("td.toggle").length === 0) {
+              elTdButton = $(elRow).find(".create-button").first().closest("td");
+              // Add the button as <td> before the [elTdButton]
+              msg = '<td class="tdnowrap toggle" style="min-width: 20px; width: 20px;"><a role="button" class="btn btn-xs jumbo-1 " title="Toggle add existing / create new">N</a></td>\n';
+              $(msg).insertBefore(elTdButton);
+              // Hide the <input> for text
+              $(elRow).find(".create").first().closest("td").addClass("hidden");
+              // $(elCurrent).css({ "min-width": "8px", "max-width": "8px" });
+              // Add a click action
+              $(elRow).find("td.toggle").unbind("click").on("click", function (evt) {
+                var elThis = $(this),
+                    elTdSelect = null,
+                    elCreate = null;
+
+                // Check where we are
+                elTdSelect = $(elThis).closest("tr").find(".create-button").first().closest("td");
+                elCreate = $(elThis).closest("tr").find(".create").first().closest("td");
+                // Check if input is hidden
+                if ($(elCreate).hasClass("hidden")) {
+                  // Show input, hide [.create-button]
+                  $(elTdSelect).addClass("hidden");
+                  $(elCreate).removeClass("hidden");
+                  // Adapt what we show
+                  $(elThis).find("a").text("S");
+                } else {
+                  // Hide input, show [.create-button]
+                  $(elTdSelect).removeClass("hidden");
+                  $(elCreate).addClass("hidden");
+                  // Adapt what we show
+                  $(elThis).find("a").text("N");
+                }
+              });
+
+            }
+          });
+
           // Make sure we catch changes
           $("input[type='range']").on("change", function (evt) {
             var el = $(this),

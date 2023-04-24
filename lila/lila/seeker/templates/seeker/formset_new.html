@@ -57,7 +57,7 @@
       <!-- Iterate over the remaining fields -->
       {% for field in this_formset.empty_form %}
         {% if field.help_text == "editable" %}
-          <td class="tdnowrap {% if unique %}unique-field{% endif %}" xxx="{{field.widget.attrs}}" yyy="{{this_formset.empty_form.widths}}"
+          <td class="tdnowrap {% if unique %}unique-field{% endif %}" 
               {% if "tdstyle" in field.widget.attrs %}style="{{field.widget.attrs.tdstyle}}"{% endif %} >
             {{field}}
           </td>
