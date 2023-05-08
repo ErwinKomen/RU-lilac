@@ -1,6 +1,8 @@
 body {
     padding-top: 50px;
     padding-bottom: 20px;
+    /* Issue #36: larger fontsize */
+    font-size: 16px;
 }
 
 /* Set padding to keep content from hitting the edges */

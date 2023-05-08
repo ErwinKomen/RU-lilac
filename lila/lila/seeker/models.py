@@ -5832,7 +5832,7 @@ class Author(models.Model, Custom):
                 if number > 0:
                     url = reverse('canwit_list')
                     html.append("<span class='badge jumbo-1' title='linked {}'>".format(title))
-                    html.append(" <a href='{}?{}-author={}'>{}</a></span>".format(url, prefix, instance.id, number))
+                    html.append(" <a href='{}?{}-author={}'>{}</a></span>".format(url, prefix, self.id, number))
                 # Combine the HTML code
                 sBack = "\n".join(html)
 

@@ -77,6 +77,10 @@ from lila.basic.views import BasicPart, BasicList, BasicDetails, make_search_lis
    app_developer, app_moderator
 
 
+# ======= Settings for the Main views ==========
+PAGINATE_BY_VALUE = 100
+
+
 def adapt_regex_incexp(value):
     """Widen searching for ftext and ftrans
     
@@ -1181,7 +1185,7 @@ class ManuscriptListView(BasicList):
     listform = SearchManuForm
     has_select2 = True
     use_team_group = True
-    paginate_by = 20
+    paginate_by = PAGINATE_BY_VALUE
     bUseFilter = True
     prefix = "manu"
     basketview = False
@@ -2131,7 +2135,7 @@ class CodicoListView(BasicList):
     listform = CodicoForm
     has_select2 = True
     use_team_group = True
-    paginate_by = 20
+    paginate_by = PAGINATE_BY_VALUE
     bUseFilter = True
     prefix = "codi"
     template_help = "seeker/filter_help.html"
@@ -2499,7 +2503,7 @@ class ColwitListView(BasicList):
     listform = ColwitForm
     has_select2 = True
     use_team_group = True
-    paginate_by = 20
+    paginate_by = PAGINATE_BY_VALUE
     bUseFilter = True
     prefix = "colwit"
     new_button = False      # Don't show the [Add new sermon] button here. It is shown under the Manuscript Details view.
@@ -2896,7 +2900,7 @@ class CodheadListView(BasicList):
     listform = CodheadForm
     has_select2 = True
     use_team_group = True
-    paginate_by = 20
+    paginate_by = PAGINATE_BY_VALUE
     bUseFilter = True
     prefix = "chead"
     new_button = False      # Don't show the [Add new sermon] button here. It is shown under the Manuscript Details view.
@@ -3721,7 +3725,7 @@ class CanwitListView(BasicList):
     listform = CanwitForm
     has_select2 = True
     use_team_group = True
-    paginate_by = 20
+    paginate_by = PAGINATE_BY_VALUE
     bUseFilter = True
     prefix = "canwi"
     new_button = False      # Don't show the [Add new canwit] button here. It is shown under the Manuscript Details view.
@@ -4202,7 +4206,7 @@ class CanedListView(BasicList):
     listform = CanedForm
     has_select2 = True
     use_team_group = True
-    paginate_by = 20
+    paginate_by = PAGINATE_BY_VALUE
     bUseFilter = True
     prefix = "caned"
     new_button = False      # Don't show the [Add new caned] button here. It is shown under the Manuscript Details view.
@@ -6422,7 +6426,7 @@ class CollPrivDetails(CollAnyEdit):
                     '{}<span title="Sermons in this manuscript">sermons</span>{}'.format(sort_start_int, sort_end)
                     ]
                 if bMayEdit:
-                    manuscript['columns'].append("")
+                    manuscripts['columns'].append("")
                 related_objects.append(manuscripts)
 
             elif instance.type == "sermo":
@@ -7230,7 +7234,7 @@ class CollectionListView(BasicList):
     model = Collection
     listform = CollectionForm
     prefix = "any"
-    paginate_by = 20
+    paginate_by = PAGINATE_BY_VALUE
     bUseFilter = True
     has_select2 = True
     basic_name_prefix = "coll"

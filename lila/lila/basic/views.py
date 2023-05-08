@@ -39,7 +39,7 @@ from lila.basic.models import UserSearch
 
 
 # Some constants that can be used
-paginateSize = 20
+paginateSize = 100  # Was: 20; See issue #36
 paginateSelect = 15
 paginateValues = (100, 50, 20, 10, 5, 2, 1, )
 
