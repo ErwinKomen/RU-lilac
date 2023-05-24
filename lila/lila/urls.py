@@ -15,6 +15,7 @@ from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import RedirectView
+from lila.basic.models import Custom
 
 # ================================ PROJECT SPECIFIC STUFF ==============================================
 
@@ -52,8 +53,10 @@ pfx = APP_PREFIX
 use_testapp = False
 
 # ================ Custom error handling when debugging =============
-def custom_page_not_found(request):
+def custom_page_not_found(request, exception=None):
     return lila.seeker.views.view_404(request)
+
+handler404 = custom_page_not_found
 
 urlpatterns = [
     # ============ STANDARD VIEWS =====================

@@ -3,6 +3,8 @@ import sys
 from django.conf import settings
 from django import http
 
+from lila.basic.models import Address
+
 class ErrHandle:
     """Error handling"""
 
@@ -105,7 +107,7 @@ class BlockedIpMiddleware(object):
 
     bot_list = ['googlebot', 'bot.htm', 'bot.com', '/petalbot', 'crawler.com', 'robot', 'crawler',
                 'semrush', 'bingbot' ]
-    bDebug = False
+    debug_level = 1
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -113,7 +115,7 @@ class BlockedIpMiddleware(object):
     def __call__(self, request):
 
         oErr = ErrHandle()
-        if self.bDebug:
+        if self.debug_level > 1:
             oErr.Status("BlockedIpMiddleware: __call__")
 
         # First double-check if this is okay...
@@ -130,51 +132,72 @@ class BlockedIpMiddleware(object):
 
     def process_request(self, request):
         oErr = ErrHandle()
-        remote_host = self.get_host(request)
-        remote_ip = request.META['REMOTE_ADDR']
 
-        if self.bDebug:
-            oErr.Status("BlockedIpMiddleware: remote addr = [{}]".format(remote_ip))
-        bHostOkay = (remote_host in settings.ALLOWED_HOSTS)
-        if bHostOkay:
-            # CUrrent debugging
-            if self.bDebug: 
-                oErr.Status("Host: [{}]".format(remote_host))
-        else:
-            # Rejecting this host
-            oErr.Status("Rejecting host: [{}]".format(remote_host))
-            return http.HttpResponseForbidden('<h1>Forbidden</h1>')
+        try:
+            remote_host = self.get_host(request)
+            remote_ip = self.get_client_ip(request)
+            path = request.path            
 
-        if remote_ip in settings.BLOCKED_IPS:
-            oErr.Status("Blocking IP: {}".format(remote_ip))
-            return http.HttpResponseForbidden('<h1>Forbidden</h1>')
-        else:
-            # Try the IP addresses the other way around
-            for block_ip in settings.BLOCKED_IPS:
-                if block_ip in remote_ip:
-                    oErr.Status("Blocking IP: {}".format(remote_ip))
-                    return http.HttpResponseForbidden('<h1>Forbidden</h1>')
-            # Get the user agent
-            user_agent = request.META.get('HTTP_USER_AGENT')
+            if self.debug_level > 0:
+                oErr.Status("BlockedIpMiddleware: remote addr = [{}]".format(remote_ip))
 
-            if self.bDebug:
-                oErr.Status("BlockedIpMiddleware: http user agent = [{}]".format(user_agent))
+            # Check for blocked IP
+            if Address.is_blocked(remote_ip, request):
+                # Reject this IP address
+                oErr.Status("Blocked IP: {}".format(remote_ip))
+                return http.HttpResponseForbidden('<h1>Forbidden</h1>')
 
-            if user_agent == None or user_agent == "":
-                # This is forbidden...
-                oErr.Status("Blocking empty user agent")
+            bHostOkay = (remote_host in settings.ALLOWED_HOSTS)
+            if bHostOkay:
+                # CUrrent debugging
+                if self.debug_level > 1: 
+                    oErr.Status("Host: [{}]".format(remote_host))
+            else:
+                # Rejecting this host
+                oErr.Status("Rejecting host: [{}]".format(remote_host))
+                return http.HttpResponseForbidden('<h1>Forbidden</h1>')
+
+            if remote_ip in settings.BLOCKED_IPS:
+                oErr.Status("Blocking IP: {}".format(remote_ip))
                 return http.HttpResponseForbidden('<h1>Forbidden</h1>')
             else:
-                # Check what the user agent is...
-                user_agent = user_agent.lower()
-                for bot in self.bot_list:
-                    if bot in user_agent:
-                        ip = request.META.get('REMOTE_ADDR')
-                        # Print it for logging
-                        msg = "blocking bot: [{}] {}: {}".format(ip, bot, user_agent)
-                        print(msg, file=sys.stderr)
+                # Try the IP addresses the other way around
+                for block_ip in settings.BLOCKED_IPS:
+                    if block_ip in remote_ip:
+                        oErr.Status("Blocking IP: {}".format(remote_ip))
                         return http.HttpResponseForbidden('<h1>Forbidden</h1>')
+                # Get the user agent
+                user_agent = request.META.get('HTTP_USER_AGENT')
+
+                if self.debug_level > 1:
+                    oErr.Status("BlockedIpMiddleware: http user agent = [{}]".format(user_agent))
+
+                if user_agent == None or user_agent == "":
+                    # This is forbidden...
+                    oErr.Status("Blocking empty user agent")
+                    return http.HttpResponseForbidden('<h1>Forbidden</h1>')
+                else:
+                    # Check what the user agent is...
+                    user_agent = user_agent.lower()
+                    for bot in self.bot_list:
+                        if bot in user_agent:
+                            ip = request.META.get('REMOTE_ADDR')
+                            # Print it for logging
+                            msg = "blocking bot: [{}] {}: {}".format(ip, bot, user_agent)
+                            print(msg, file=sys.stderr)
+                            return http.HttpResponseForbidden('<h1>Forbidden</h1>')
+        except:
+            msg = oErr.get_error_message()
+            oErr.DoError("BlockedIpMiddleware/process_request")
         return None
+
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[-1].strip()
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
 
     def get_host(self, request):
         """

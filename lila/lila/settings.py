@@ -30,7 +30,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT_NAME = os.path.basename(BASE_DIR)
 WRITABLE_DIR = os.path.abspath(os.path.join(BASE_DIR, "../../writable/database/"))
 
-# print("Writable dir = [{}]".format(WRITABLE_DIR))
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = False
 
 if "RU-lila\\writable" in WRITABLE_DIR:
     # Need another string
@@ -50,6 +51,7 @@ if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR or "c:" in WRITABLE_DIR or "C:" 
     # Specific differentiation
     if "d:" in WRITABLE_DIR or "D:" in WRITABLE_DIR:
         USE_REDIS = True
+        DEBUG = True
 elif "131.174" in hst or "/var/www" in WRITABLE_DIR:
     # Configuration within the Radboud University environment (Lightning)
     APP_PREFIX = ""             # Was: "lila/"
@@ -82,9 +84,6 @@ BLOCKED_IPS = ['40.77.167.57',      '161.35.188.242',
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '561c5400-4ebf-4e45-a2ec-12d856638e45'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', 'lilac.rich.ru.nl', 'testserver' ]
 
