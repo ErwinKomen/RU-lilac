@@ -2550,6 +2550,7 @@ var ru = (function ($, ru) {
             multil_obs = null,
             edit_key = "TOBEFILLEDIN",
             url_list = "",
+            predictor = "linguistic_property",
             url_add = "",
             url_delete = "",
             url_forest = "";
@@ -2655,7 +2656,7 @@ var ru = (function ($, ru) {
 
                     // UNCLEAN: data = { calling: "usedatafilter", dataset: dataset };
                     // Using CLEANED data
-                    data = { calling: "usedatafilter", filtervar: "NIETS", predictor: "", dataset: dsetclean };
+                    data = { calling: "usedatafilter", filtervar: "NIETS", predictor: predictor, dataset: dsetclean };
                     // Make sure to STRINGIFY the data, so that it is in the body
                     $.post(url_forest, JSON.stringify(data), function (post_response) {
                       var rfiltermsg = null,
