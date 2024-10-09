@@ -1,0 +1,50 @@
+{% load i18n %}
+
+<h3>Open the filter tab</h3>
+<p>Most listviews will have a 'filter' tab. 
+  Search the top-right area of the screen for this icon:
+  <a class="btn btn-xs jumbo-4" role="button" title="Define your filter(s)...">
+    <span class="glyphicon glyphicon-filter"></span>
+  </a>.
+  <br />Press the filter icon once to open the filter 'tab' (area to specify filters), and press it again to close that tab.</p>
+
+<h3>Select one or more filters</h3>
+<p>The filter tab shows a row of 'selected filters'. 
+  <br />
+  To actually <em>use</em> one of these filters, press it, so that its color changes to 
+  <span class="badge jumbo-3" >green</span>.
+</p>
+<p>
+  The tab may also contain one or more filters that open up a <b>new row</b> of filters.
+  <br />
+  These 'expansion' filters can be recognized by the three dots '...' at the end of the filter name.
+  <br />
+  For example: <code>Collection...</code>
+</p>
+<p>
+  The filters come in a limited number of types:
+  <ul>
+    <li><b>Text</b>:
+      Either provide the exact text of what is being looked for (e.g. author <code>Augustinus Hipponensis (pseudo)</code>), 
+      or else use the wildcard <code>*</code> to indicate what you mean (e.g. author <code>*august*</code>).
+      It is also possible to use a <code>&#35;</code> mark to single out one word or string (e.g. <code>hipponensis#</code>)
+    </li>
+    <li>A <b>number</b>:
+      Provide an integer (whole) number, i.e. one without dot or comma in it.
+    </li>
+    <li>Item <b>selection</b>:
+      Select one or more items from the options provided. Start typing and options will appear. 
+      Select an option by either clicking it with the mouse or by pressing the Enter key.
+    </li>
+  </ul>
+</p>
+
+<h3>Use the Search button</h3>
+<p>
+  Once all criteria have been set, use the button <code>Search</code> to start searching.
+  The results will be provided in one or more pages (depending on how many results there are).
+  Go to a particular page by simply clicking the page number.
+</p>
+<p>Use the button <code>Clear</code> to clear the search criteria.
+  Note that it is still necessary to press <code>Search</code> in order to get the application to provide the complete listview.
+</p>

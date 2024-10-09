@@ -1,0 +1,6 @@
+<div class="hidden">
+  <form id="create_new_template" action="/template/details/" method="post">
+    {% csrf_token %}
+    <input type="text" name="manubase" value="{{manubase}}">
+  </form>
+</div>

@@ -1,0 +1,100 @@
+{% extends "layout.html" %}
+{% load static %}
+
+
+{% block content %}
+
+<div class="container body-content">
+  <h2>Personal Research Environment</h2>
+  <div class="row">
+    <div class="col-md-12">
+      The personal research environment is the place where user-related items will be placed in the future.
+      The version you are seeing here is only a preliminary one.
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6">
+      <section>
+        <h3>Searches</h3>
+        <p>This could contain your top ten searches
+        </p>
+        <p>
+        </p>
+      </section>
+
+      <section>
+        <h3>Keywords</h3>
+        <p>List of my own keywords</p>
+      </section>
+
+      <section class="hidden">
+        <h3>Dynamic Comparative Table</h3>
+        <p>
+          View and work with research sets on the <em>development version</em> of 
+          the <a role="button" class="btn btn-xs jumbo-1" href="">DCT tool</a> page.
+        </p>
+        <p>Current statistics: {{rset_count}} research set(s) and {{dct_count}} DCT(s).
+        </p>
+      </section>
+    </div>
+
+    <div class="col-md-6">
+      <section>
+        <h3>Datasets</h3>
+        <p>List of <a role="button" class="btn btn-xs jumbo-1"  href="{% url 'collpriv_list' %}">my datasets</a>
+        (current size: {{count_datasets}}).
+        </p>
+      </section>
+
+      <section>
+        <h3>Pictures</h3>
+        <p>This could contain a list of the most recent pictures that you have created.
+
+        </p>
+      </section>
+
+      {% if is_app_editor %}
+        <section>
+          <h3>Edit actions</h3>
+          <p>
+            Importing projects can be done by an editor via JSON, Excel and some other ways.
+            The items an editor can import are: Manuscript, Sermon, Historical Collection and Authoritative statement.
+          </p>
+
+          <table>
+            <!-- Edit privileges-->
+            <tr>
+              <td valign="top" colspan="2" class="hangingindent">You are an editor within Solemne for these projects:</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td valign="top" colspan="2">{% spaceless %}{{edit_projects|safe}}{% endspaceless %}</td>
+              <td></td>
+            </tr>
+
+            <!-- Default project assignment -->
+            <tr>
+              <td valign="top" colspan="2" class="hangingindent">By default assign all items that I import to the following project(s):</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td valign="top" colspan="2" >{{default_projects|safe}}</td>
+              <td>
+                <a href="{% url 'default_details' profile.id  %}" role="button" title="Edit default project assignment" class="btn btn-xs jumbo-1">
+                  <span class="glyphicon glyphicon-pencil" title="Edit default project assignment"></span>
+                </a>
+              </td>
+            </tr>
+           </table>
+ 
+        </section>
+      {% endif %}
+
+    </div>
+  </div>
+
+
+
+</div>
+{% endblock %}

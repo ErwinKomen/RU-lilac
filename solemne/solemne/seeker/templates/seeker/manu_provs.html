@@ -1,0 +1,42 @@
+{% load i18n %}
+
+{% if manu.manuscripts_provenances.count == 0 %}
+-
+{% else %}
+  <div>
+    <span class="badge signature ot" data-toggle="collapse" data-target="#manu_prov_table" >
+    {% spaceless %}
+      {% for mprov in manu.manuscripts_provenances.all %}
+        {{mprov.provenance.name}}{% if not forloop.last %}, {% endif %}
+      {% endfor %}
+    {% endspaceless %}
+    </span>
+  </div>
+  <div id="manu_prov_table" class="inert collapse">
+    <table>
+      <tbody>
+        {% for mprov in manu.manuscripts_provenances.all %}
+          <tr>
+            <td valign="top">{{forloop.counter}}</td>
+            <td valign="top" class="tdnowrap nostyle">
+              <span class='badge signature cl'>
+                <a href="{% url 'provenance_details' mprov.provenance.id %}">
+                  <span>
+                    {% if mprov.provenance.name %}{{mprov.provenance.name}}
+                    {% else %}(no name){% endif %}
+                    {% if mprov.provenance.location %}({{mprov.provenance.location.name}}){% endif %}
+                  </span>
+                </a>
+              </span>
+            </td>
+            <td valign="top"  class="nostyle" style="font-size: smaller;">
+              <a href="{% url 'provenanceman_details' mprov.id %}">
+                {% if mprov.note %}{{mprov.note}}{% else %}-{% endif %}
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}

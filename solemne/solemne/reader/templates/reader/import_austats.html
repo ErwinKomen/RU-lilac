@@ -1,0 +1,47 @@
+﻿{% if statuscode == "completed" %}
+  <div class='col-md-12'>
+    <p>
+    The list of Authoritative Statements (Austat) has been processed, and {{results|length}} new Austats have been added.
+    </p>
+    <p>
+      Possible actions:
+      <ul>
+        <li><b>Show</b> show an overview of the Authoritative Statements that have been added
+          <button class="btn btn-default btn-sm dropdown-toggle"
+                  type="button" data-toggle="collapse" data-target="#man-list">List</button>
+        </li>
+        <li><b>List</b> all authoritative statements
+            <!-- When ready press this button -->
+            <span><a class="btn btn-xs jumbo-1" role="button" href="{% url 'austat_list' %}">List</a></span>
+        </li>
+      </ul>
+    </p>
+  </div>
+
+  <div class="col-md-12 collapse" id="man-list">
+    <table class="func-view">
+      <thead><tr><th>Id</th><th>Key</th><th>Full text</th></tr></thead>
+      <tbody>
+        {% for item in results %}
+          <tr>
+            <td class="tdnowrap">{{item.austat}}</td>
+            <td class="tdnowrap">{{item.keycode}}</td>
+            <td>{{item.ftext}}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+{% endif %}
+
+<!-- Any errors are shown here too-->
+<div class="errors">
+  {% if error_list and statuscode != "error" %} 
+    <h4>Errors:</h4>
+    <div>statuscode = {{statuscode}}</div>
+    {% for item in error_list %}
+      <div class="error-item">{{item}}</div>
+    {% endfor %}
+  {% endif %}
+</div>

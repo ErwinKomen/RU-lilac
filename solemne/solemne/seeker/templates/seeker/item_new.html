@@ -1,0 +1,39 @@
+﻿{% load i18n %}
+
+<!-- Modal form that shows the manipulation buttons to move something around -->
+<div id="{{modal_name}}" class="modal fade" role="dialog">
+  <div class="modal-dialog modal-sm" style="width: 100px;">
+    <!-- Modal content -->
+    <div class="modal-content">
+      <div class="modal-header" style="background-color: goldenrod;">
+        <a class="btn btn-xs jumbo-2" role="button"
+            title="Save the new hierarchy"
+            onclick="ru.solemne.seeker.sermon_move('save');"
+            ><span class="glyphicon glyphicon-ok"></span>&nbsp;Save
+        </a>
+      </div>
+      <div class="modal-body modal-dragpoint">
+        <table>
+          <tbody>
+            <tr>
+              <td>&nbsp;</td>
+              <td><a class="btn btn-xs jumbo-3" role="button" onclick="ru.solemne.seeker.sermon_move('up');"><span class="glyphicon glyphicon-arrow-up"></span></a></td>
+              <td>&nbsp;</td>
+            </tr>
+            <tr>
+              <td><a class="btn btn-xs jumbo-3" role="button" onclick="ru.solemne.seeker.sermon_move('left');"><span class="glyphicon glyphicon-arrow-left"></span></a></td>
+              <td><a class="close btn btn-xs jumbo-1" title="Close" role="button" data-dismiss="modal" style="padding-left: 1px;padding-right: 1px;" onclick="ru.solemne.seeker.sermon_move('close', this);"><span class="glyphicon glyphicon-remove"></span></a></td>
+              <td><a class="btn btn-xs jumbo-3" role="button" onclick="ru.solemne.seeker.sermon_move('right');"><span class="glyphicon glyphicon-arrow-right"></span></a></td>
+            </tr>
+            <tr>
+              <td>&nbsp;</td>
+              <td><a class="btn btn-xs jumbo-3" role="button" onclick="ru.solemne.seeker.sermon_move('down');"><span class="glyphicon glyphicon-arrow-down"></span></a></td>
+              <td>&nbsp;</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,79 @@
+﻿{% if statuscode == "completed" %}
+  <div class='col-md-12'>
+    <p>
+    The list of gold sermons has been processed, and {{results|length}} new ones have been reviewed.
+    </p>
+    <p>
+      Possible actions:
+      <ul>
+        <li><b>Show</b> show the list of gold sermons that have been reviewed (existing ones have not been added anew).
+          This option also allows downloading one <b>report</b> for each uploaded gold-sermon Excel file.
+          <button class="btn btn-default btn-sm dropdown-toggle"
+                  type="button" data-toggle="collapse" data-target="#man-list">List</button>
+        </li>
+        <li><b>List</b> all gold sermons
+            <!-- When ready press this button -->
+            <span><a class="btn btn-xs jumbo-1" role="button" href="{% url 'search_gold' %}">List</a></span>
+        </li>
+      </ul>
+    </p>
+  </div>
+
+  <div class="col-md-12 collapse" id="man-list">
+    <table class="func-view">
+      <thead><tr><th>#</th><th>File</th><th>Sermons added</th><th><!-- action --></th></tr></thead>
+      <tbody>
+        {% for item in results %}
+          <tr>
+            <td>{{forloop.counter}}</td>
+            <td>{{item.filename}}</td>
+            <td align="center">{{item.sermons}}</td>
+            <!-- Allow downloading a report -->
+            <td align="right" style="min-width: 200px;">
+              <form targeturl="{% url 'report_results' item.report_id %}" >
+                <!-- Be sure to add csrf -->
+                {% csrf_token %}
+                <div id="downloadcenter" class="hidden">
+                  <input name='downloadtype' id='downloadtype' class='form-control' value='' >
+                </div>
+                <div>
+                  <a id="downloadmenu" role="button" class="btn jumbo-1 btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" 
+                          onclick="" >
+                    Download<span class="caret"></span>
+                  </a>
+                  <ul class="dropdown-menu" aria-labelledby="downloadmenu">
+                    <li><a href="#" downloadtype="xlsx" ajaxurl="{% url 'report_results' item.report_id %}" onclick="ru.solemne.post_download(this);">Excel</a></li>
+                    <li class="divider" role="separator"></li>
+                    <li><a href="#" downloadtype="csv"  ajaxurl="{% url 'report_results' item.report_id %}" onclick="ru.solemne.post_download(this);">csv (tab-separated)</a></li>
+                    <li><a href="#" downloadtype="json" ajaxurl="{% url 'report_results' item.report_id %}" onclick="ru.solemne.post_download(this);">json</a></li>
+                  </ul>
+                </div>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+{% endif %}
+
+<!-- Any errors are shown here too-->
+<div class="errors">
+  {% if error_list  %} 
+    <h4>Errors:</h4>
+    {% if statuscode != "error" %}
+      <div>statuscode = {{statuscode}}</div>
+    {% endif %}
+    {% for item in error_list %}
+      <div class="error-item">{{item|safe}}</div>
+    {% endfor %}
+    <!-- -->
+    <p>&nbsp;</p>
+    <p>
+      List <b>all</b> currently available gold sermons
+      <!-- When ready press this button -->
+      <span><a class="btn btn-xs jumbo-1" role="button" href="{% url 'search_gold' %}">List Gold Sermons</a></span>
+    </p>
+  {% endif %}
+</div>

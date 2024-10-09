@@ -1,0 +1,27 @@
+<div>
+  {% if not colwit %}
+    <span>-&nbsp;</span>
+    <span>
+      <a class="btn btn-xs jumbo-1" data-toggle="collapse" href="#specify_colwit">Tie this to a collection...</a>
+    </span>
+  {% endif %}
+</div>
+<div id="specify_colwit" class="collapse">
+  <div>
+    Create a collection witness for this item, tying it with the following collection:
+  </div>
+  <!-- Form to start create a ColWit based on this ColHead-->
+  <form id="create_new_colwit" action="{% url 'colwit_details' %}" method="post">
+    {% csrf_token %}
+    <div class="hidden">
+      <input name="colw-codhead" type="text" value="{{codhead.id}}" />
+    </div>
+    <div>{{colform.collection}}</div>
+    <div class="warning hidden">Specify a collection before creating a collection witness...</div>
+
+    <a class="edit-mode btn btn-xs jumbo-3" onclick="ru.solemne.seeker.colwit_process(this);">
+      <span class="glyphicon glyphicon-plus" title="Create a Collection Witness based on this"></span>
+      Create a collection witness
+    </a>
+  </form>
+</div>

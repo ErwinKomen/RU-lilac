@@ -1,0 +1,9 @@
+{% load i18n %}
+{% spaceless %}
+<span>
+  {% if size %}{{size|safe}}{% else %}&nbsp;{% endif %}
+</span>
+<span style="display: inline-flex;">
+  {% include 'seeker/colldrop.html' with targeturl=targeturl %}
+</span>
+{% endspaceless %}

@@ -1,0 +1,38 @@
+{% load i18n %}
+
+<span class="manusermo sig-auto">
+  <span class="signature">{{sermon.signature_auto_string}}</span>
+</span>
+<span class="manusermo sig-manual hidden">
+  {% if sermon.canwitsignatures.all|length > 0 %}
+    <span class="signature ma">{{sermon.signature_string}}</span>
+  {% elif sermon.goldsignatures.all|length > 0 %}
+    <span class="signature ma">{{sermon.signature_string}}</span>
+  {% else %}
+    [-]
+  {% endif %}
+</span>
+
+{% if sermon.title %}<span class="manusermo title"><b>{{sermon.title}}</b></span>{% endif %}
+
+<span class="manusermo author">
+  {% if sermon.author %}
+    (<span class="sermon-author">{{sermon.author.name}}</span>)
+  {% else %}
+    (<i>no author</i>)
+  {% endif %}
+</span>
+
+<span class="manusermo ftext">
+  {% if sermon.ftext %}<i>{{sermon.ftext}}</i>{% endif %}
+</span>
+<span class="manusermo ftrans">
+  {% if sermon.ftrans %}(<i>{{sermon.ftrans}}</i>){% endif %}
+</span>
+
+{% if sermon.note %}<span class="manusermo note hidden">(Note: {{sermon.note}})</span>{% endif %}
+
+<span class="manusermo kw-manual hidden">{{sermon.get_keywords_plain|safe}}</span>
+
+<span class="manusermo kw-auto hidden">{{sermon.get_keywords_ssg_plain|safe}}</span>
+

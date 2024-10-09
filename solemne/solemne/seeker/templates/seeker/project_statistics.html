@@ -1,0 +1,44 @@
+<div class="">
+  Project {{project.name}} is associated with the following items:
+  <table class="table">
+    <thead><tr><th>Item</th><th>Total</th><th>Singles</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Manuscripts:</td>
+        <td>{{count_m}}</td>
+        <td>{{single_m}}</td>
+      </tr>
+      <tr>
+        <td>Sermon manifestations:</td>
+        <td>{{count_s}}</td>
+        <td>{{single_s}}</td>
+      </tr>
+      <tr>
+        <td>Historical collections:</td>
+        <td>{{count_hc}}</td>
+        <td>{{single_hc}}</td>
+      </tr>
+      <tr>
+        <td>Authoritative statements:</td>
+        <td>{{count_ssg}}</td>
+        <td>{{single_ssg}}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Notes:</h3>
+  No items are allowed to be <i>without</i> a project assigned to them.
+  Should an item turn out to be without a project (when you delete project [{{project.name}}] from that item,
+  the project cannot be deleted from that item. 
+  The proper way to 'clean' a whole project is:
+  <ul>
+    <li>Review all the items belonging to a particular project (manuscripts, sermons, Authoritative statements, historical collections) </li>
+    <li>Choose:
+      <ul>
+        <li>Add the proper (alternative) project to that item, so that it won't be 'project-orphaned'</li>
+        <li>Or remove the item (if you have the right), so that it won't have a chance to be 'project-orphaned'</li>
+      </ul>
+    </li>
+    <li>Only then is it possible to remove the project association from all these items</li>
+  </ul>
+</div>

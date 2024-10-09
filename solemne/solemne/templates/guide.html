@@ -1,0 +1,70 @@
+{% extends "layout.html" %}
+{% load static %}
+
+
+{% block content %}
+
+<div class="container body-content">
+  <h2>Short user manual</h2>
+  <div class="row">
+    <div class="col-md-6">
+      <h3>Home page</h3>
+      <p>The home page of the Solemne web application comes up with three pie charts that give a bird's eye view of the current status.
+      This status is provided for three categories:
+      <ul>
+        <li>Sermon manifestations</li>
+        <li>Super sermons gold (SSGs)</li>
+        <li>Manuscripts</li>
+      </ul>
+      </p>
+      <p>Each of the pie charts show a <em>red</em>, <em>orange</em> and a <em>green</em> area.
+      These area's signal progress in processing the sermons, SSGs and manuscripts.
+      Each color stands for one area of progress:
+      <table class="guide-table">
+        <tr>
+          <td valign="top" style="color: red;"><b>red</b></td>
+          <td valign="top"><b>Initial</b></td>
+          <td valign="top">items have been imported (often automatically), but no processing has begun yet.</td>
+        </tr>
+        <tr>
+          <td valign="top"style="color: orange;"><b>orange</b></td>
+          <td valign="top"><b>Edited</b></td>
+          <td valign="top">items are being edited and reviewed by the Solemne team.</td>
+        </tr>
+        <tr>
+          <td valign="top"style="color: green;"><b>green</b></td>
+          <td valign="top"><b>Approved</b></td>
+          <td valign="top">items have been manually approved.</td>
+        </tr>
+      </table>
+
+      </p>
+    </div>
+
+    <div class="col-md-6">
+      <h3>SSG histograms</h3>
+      <p>The super sermons gold (SSG) listview provides a 'histogram' button.
+      The histogram shows how the total amount of SSGs is divided in terms of 'sermon manifestation frequency'.
+      Each SSG has such a frequency, and this amounts to the number of sermon manifestations that are linked with the SSG.
+      </p>
+      <p>The SSG histogram adapts itself to the current set of filtered SSGs.
+      </p>
+
+    </div>
+  </div>
+
+  <section>
+    <h2>Instruction video's</h2>
+    <h3>Dragging sermons</h3>
+    <p>Instructions (Dutch):</p>
+    <video controls width="800">
+      <source src="{% static 'seeker/media/2021-lila-PrekenVerslepen.mp4' %}"
+              type="video/mp4" />
+      Sorry, your browser doesn't suppor embedded videos.
+    </video>
+
+  </section>
+
+
+</div>
+{% endblock %}

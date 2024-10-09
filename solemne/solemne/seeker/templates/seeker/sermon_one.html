@@ -1,0 +1,126 @@
+{% load i18n %}
+
+    <!-- Information on one sermon-->
+    <div sermonid="{{msitem.obj.id}}" level="{{level}}" id="sermon_{{msitem.obj.id}}"
+         sermontype="{% if msitem.shead %}head{% else %}sermon{% endif %}"
+         class="tree {% if lean_method and level > 1 %} hidden{% endif %}">
+
+      <!-- Possible start of a new codicological unit -->
+      {% if msitem.codistart and dit_is_geen_passim %}
+        <div class="codi-start {% if is_app_editor and msitem.codiorder > 1 %}draggable{% endif %}" 
+             {% if is_app_editor and msitem.codiorder > 1 %}
+                draggable="true"
+                ondragstart="ru.solemne.seeker.sermon_drag(event);"
+             {% endif %}
+             order="{{msitem.codiorder}}"
+             targetid="{{msitem.codistart}}">
+          <span>{{msitem.codiorder}} CES </span><hr title="Codicological unit order={{msitem.codiorder}}" />
+        </div>
+      {% endif %}
+
+      <table class="func-view sermons" style="width: 100%;">
+        <tbody>
+          <!-- Horizontal ruler that can be expanded -->
+          <tr style="font-size: 1px;" class="">
+            <td colspan="2" class="ruler ruler_white" 
+                {% if is_app_editor %}ondragover="ru.solemne.seeker.sermon_dragenter(event);" 
+                ondragenter="ru.solemne.seeker.sermon_dragenter(event);" ondragleave="ru.solemne.seeker.sermon_dragleave(event);"
+                ondrop="ru.solemne.seeker.sermon_drop(event);"{% endif %}
+                >
+
+            </td>
+            <td colspan="2" style="background-color: white;"></td>
+          </tr>
+          <!-- Actual line-->
+          <tr>
+            <!-- Either '+' sign or empty space -->
+            <td valign="top" class="sermonbutton"
+                {% if msitem.isparent %}{% endif %}>
+              {% if msitem.isparent %}
+                <span class="glyphicon glyphicon-plus" onclick="ru.solemne.seeker.sermon_level(this);"></span>
+              {% elif msitem.sermon %}
+                <a href="{% url 'canwit_details' msitem.sermon.id %}"><span>&nbsp;</span></a>
+              {% else %}
+                <span>&nbsp;</span>
+              {% endif %}
+            </td>
+
+            <!-- The number of the sermon in our current hierarchy -->
+            <td valign="top" class="sermonnumber tdnowrap" onclick="ru.solemne.seeker.sermon_selection(this);">
+              <span>{{msitem.number}}</span>
+            </td>
+
+            <!-- The *LOCUS* of the sermon that serves as drag point -->
+            <td valign="top" class="tdnowrap sermonlocus"  style="background-color: white;"
+                {% if is_app_editor %}ondragover="ru.solemne.seeker.sermon_dragenter(event);" 
+                ondragenter="ru.solemne.seeker.sermon_dragenter(event);" ondragleave="ru.solemne.seeker.sermon_dragleave(event);"
+                ondrop="ru.solemne.seeker.sermon_drop(event);"{% endif %}
+                >
+                {% if msitem.sermon %}
+                  <code draggable="true" class="draggable" 
+                        {% if is_app_editor %}ondragstart="ru.solemne.seeker.sermon_drag(event);"{% endif %}
+                        >{% if msitem.sermon.locus %}{{msitem.sermon.locus}}{% else %}?{% endif %}</code>
+                {% elif msitem.shead %}
+                  <code draggable="true" class="draggable" 
+                        {% if is_app_editor %}ondragstart="ru.solemne.seeker.sermon_drag(event);"{% endif %}
+                        >{% if msitem.shead.locus %}{{msitem.shead.locus}}{% else %}?{% endif %}</code>
+
+                  {% if is_app_editor %}
+                    <!-- Add a button to (re-)calculate the LOCUS -->
+                    <a class="edit-mode btn btn-xs jumbo-1" onclick="ru.solemne.seeker.sermon_locus(this);">
+                      <span class="glyphicon glyphicon-repeat" title="Calculate the LOCUS"></span>
+                    </a>
+                  {% endif %}
+
+                {% endif %}
+            </td>
+
+            <!-- The sermon itself -->
+            <td valign="top" class="td clickable" style="width: 100%;" >
+              <span draggable="false" targeturl="{{msitem.obj.target}}">
+                {% if msitem.obj.goldsermons.count > 0 %}
+                  <span class="badge signature ot" title="This links to {{msitem.obj.goldsermons.count}} Sermons Gold">G</span>
+                {% endif %}
+                {% if msitem.obj.get_eqsetcount > 0 %}
+                  <span class="glyphicon glyphicon-link" style="color: darkgreen;" title="This links to {{msitem.obj.get_eqsetcount}} Authoritative statements"></span>
+                {% endif %}
+                {% if msitem.sermon %}
+                  <a href="{% url 'canwit_details' msitem.sermon.id %}" class="sermon">
+                    <span>{% include 'seeker/sermon_view.html' with sermon=msitem.sermon %}</span>
+                  </a>
+                  <span class="sermon">
+                    <span class="manusermo hc hidden">{{msitem.hclist|safe}}</span>
+                  </span>
+                {% elif msitem.shead %}
+                  <a href="{% url 'codhead_details' msitem.shead.id %}" class="sermon">
+                    <span>
+                      {% if msitem.shead.title %}{{msitem.shead.title}}{% else %}(structure head){% endif %}
+                    </span>
+                  </a>
+                  {% if msitem.colwit %}
+                    <a class="btn btn-xs jumbo-3" href="{% url 'colwit_details' msitem.colwit.id %}">
+                      <span class="glyphicon glyphicon-arrow-right" title="Open the collection witness"></span>
+                    </a>
+                  {% endif %}
+
+                {% endif %}
+              </span>
+              {% if is_app_editor and msitem.shead %}
+                <div class="hidden">
+                  <!-- Form to start create a ColWit based on this ColHead-->
+                  <form id="create_new_colwit_{{msitem.shead.id}}" action="{% url 'colwit_details' %}" method="post">
+                    {% csrf_token %}
+                    <input name="colw-codhead" type="text" value="{{msitem.shead.id}}" />
+                  </form>
+                </div>
+              {% endif %}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      {% for child in canwit_list %}
+        {% if child.obj.parent and child.obj.parent.id == msitem.obj.id %}
+          {% include 'seeker/sermon_one.html' with msitem=child canwit_list=canwit_list level=level|add:1 %}
+        {% endif %}
+      {% endfor %}
+    </div>

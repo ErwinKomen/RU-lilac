@@ -1,0 +1,44 @@
+{% load i18n %}
+
+{% if codi.codico_provenances.count == 0 %}
+-
+{% else %}
+  <div>
+    <span class="badge signature ot"  title="Click to show/hide..." data-toggle="collapse" data-target="#codi_prov_table" >
+    {% spaceless %}
+      {% for cprov in codi.codico_provenances.all %}
+        {% if cprov.provenance.name %}{{cprov.provenance.name}}
+          {% else %}(no name){% endif %}
+        {% if not forloop.last %}, {% endif %}
+      {% endfor %}
+    {% endspaceless %}
+    </span>
+  </div>
+  <div id="codi_prov_table" class="inert collapse">
+    <table>
+      <tbody>
+        {% for cprov in codi.codico_provenances.all %}
+          <tr>
+            <td valign="top">{{forloop.counter}}</td>
+            <td valign="top" class="tdnowrap nostyle">
+              <span class='badge signature cl'>
+                <a href="{% url 'provenance_details' cprov.provenance.id %}">
+                  <span>
+                    {% if cprov.provenance.name %}{{cprov.provenance.name}}
+                    {% else %}(no name){% endif %}
+                    {% if cprov.provenance.location %}({{cprov.provenance.location.name}}){% endif %}
+                  </span>
+                </a>
+              </span>
+            </td>
+            <td valign="top"  class="nostyle" style="font-size: smaller;">
+              <a href="{% url 'provenancecod_details' cprov.id %}">
+                {% if cprov.note %}{{cprov.note}}{% else %}-{% endif %}
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}

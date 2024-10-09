@@ -1,0 +1,620 @@
+{% extends "layout.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    {% include 'breadcrumb_list.html' %}
+  </div>
+{% endblock %}
+
+{% block scripts %}
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'basic/content/basic.css' %}" />
+    <link rel="stylesheet" href="{% static 'basic/content/font-awesome.min.css' %}" />
+    <script src="{% static 'basic/scripts/basic.js' %}"></script>
+    <script src="{% static 'basic/scripts/html2canvas.js' %}"></script>
+  {% if has_select2 %}{{listForm.media.css}}{% endif %}
+{% endblock %}
+
+{% block content %}
+
+  <div>
+
+    {% if authenticated and permission %}
+      <!-- Upper part of the basic list interface -->
+
+      <div id="basiclist_top" class="container-small" >
+
+        <!-- Allow access to interface parts that are normally hidden -->
+        <div  class="panel panel-none">
+          {% if user.is_superuser %}
+            <!-- Test purposes for MultiL -->
+            <div class="row">
+              <div class="col-md-12">
+                <div class="multil-main">
+                  <a role="button" class="btn jumbo-1 btn-xs hidden"
+                     onclick="ru.basic.multil_check(this);">MultiL Check</a>
+                  <div class="multil-check"></div>
+                </div>
+              </div>
+            </div>
+            <!-- End test purposes -->
+          {% endif %}
+
+          <div class="row">
+            <div class="col-md-2 col-md-offset-8 text-right dropdown" style="margin-top: 5px;">
+
+              {% if downloads %}
+                <a id="downloadmenu" role="button" class="btn jumbo-1 btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" 
+                        onclick="" >
+                  Download<span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="downloadmenu">
+                  {% for ditem in downloads %}
+                    {% if ditem.label %}
+                      <li><a href="#" downloadtype="{{ditem.dtype}}" ajaxurl="{{ditem.url}}" onclick="ru.basic.post_download(this);">{{ditem.label}}</a></li>
+                    {% else %}
+                      <li class="divider" role="separator"></li>
+                    {% endif %}
+                  {% endfor %}
+                </ul>
+                <span id="downloadstatus" class="hidden"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></span>
+              {% endif %}
+
+            </div>
+            <div class="col-md-2 text-right dropdown">
+              {% if custombuttons and is_app_editor %}
+                {% for citem in custombuttons %}
+                  <a class="btn btn-xs jumbo-1" data-toggle="collapse" data-target="#tab_{{citem.name}}" 
+                     role="button" title="{{citem.title}}">
+                    <span class="glyphicon glyphicon-{{citem.icon}}"></span>
+                  </a>
+                {% endfor %}
+              {% endif %}
+
+              {% if download_excel %}
+                <span id="exceldownloadstatus" class="hidden"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span></span>
+                <span id="download_excel">
+                  <a role="button" class="btn btn-xs jumbo-1" downloadtype="xlsx" ajaxurl="{{download_excel}}"
+                     onclick="ru.basic.post_download(this);" title="Download Excel">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-filetype-xls" viewBox="0 0 16 16">
+                      <path fill-rule="evenodd" d="M14 4.5V14a2 2 0 0 1-2 2h-1v-1h1a1 1 0 0 0 1-1V4.5h-2A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v9H2V2a2 2 0 0 1 2-2h5.5L14 4.5ZM6.472 15.29a1.176 1.176 0 0 1-.111-.449h.765a.578.578 0 0 0 .254.384c.07.049.154.087.25.114.095.028.202.041.319.041.164 0 .302-.023.413-.07a.559.559 0 0 0 .255-.193.507.507 0 0 0 .085-.29.387.387 0 0 0-.153-.326c-.101-.08-.255-.144-.462-.193l-.619-.143a1.72 1.72 0 0 1-.539-.214 1.001 1.001 0 0 1-.351-.367 1.068 1.068 0 0 1-.123-.524c0-.244.063-.457.19-.639.127-.181.303-.322.527-.422.225-.1.484-.149.777-.149.305 0 .564.05.78.152.216.102.383.239.5.41.12.17.186.359.2.566h-.75a.56.56 0 0 0-.12-.258.625.625 0 0 0-.247-.181.923.923 0 0 0-.369-.068c-.217 0-.388.05-.513.152a.472.472 0 0 0-.184.384c0 .121.048.22.143.3a.97.97 0 0 0 .405.175l.62.143c.217.05.406.12.566.211a1 1 0 0 1 .375.358c.09.148.135.335.135.56 0 .247-.063.466-.188.656a1.216 1.216 0 0 1-.539.439c-.234.105-.52.158-.858.158-.254 0-.476-.03-.665-.09a1.404 1.404 0 0 1-.478-.252 1.13 1.13 0 0 1-.29-.375Zm-2.945-3.358h-.893L1.81 13.37h-.036l-.832-1.438h-.93l1.227 1.983L0 15.931h.861l.853-1.415h.035l.85 1.415h.908L2.253 13.94l1.274-2.007Zm2.727 3.325H4.557v-3.325h-.79v4h2.487v-.675Z" />
+                    </svg>
+                  </a>
+                </span>
+              {% endif %}
+
+              {% if uploads and is_app_uploader %}
+                <a id="uploadmenu" role="button" title="Importing..." class="btn jumbo-1 btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" onclick="">
+                  <span class="glyphicon glyphicon-upload"></span>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="uploadmenu">
+                  {% for uitem in uploads %}
+                    {% if uitem.label %}
+                      <li><a href="#" title="upload {{uitem.title}}" targetid="import_{{uitem.title}}" onclick="ru.basic.toggle_click(this);">{{uitem.label}}</a></li>
+                    {% else %}
+                      <li class="divider" role="separator"></li>
+                    {% endif %}
+                  {% endfor %}
+                </ul>
+              {% endif %}
+              {% if filters %}
+                <span class="">
+                  <!-- Show a help button that will open a model popup -->
+                  <a class="btn btn-xs jumbo-5" role="button" 
+                     data-toggle="modal" data-target="#modal-filterhelp" title="How can I filter?">
+                    <span class="glyphicon glyphicon-question-sign"></span>
+                  </a>
+                </span>
+                <span class="">
+                  <!-- NEW: use filtering instead of 'searching' -->
+                  <a class="btn btn-xs jumbo-4" data-toggle="collapse" data-target="#tab_filter" role="button" title="Define your filter(s)...">
+                    <span class="glyphicon glyphicon-filter"></span>
+                  </a>
+
+                </span>
+              {% endif %}
+              <!-- Always: show/hide the row to show/hide columns -->
+              <span class="">
+                  <a class="btn btn-xs jumbo-1" data-toggle="collapse" data-target="#tab_colwrap" role="button" title="Show/hide column(s)...">
+                    <span class="glyphicon glyphicon-tasks"></span>
+                  </a>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <form  id="basiclist_filter" method='post' action="{{basic_list}}" >
+          {% csrf_token %}
+          <!-- entrypoint for search_paged_start -->
+          <div class="hidden search_paged_start">
+            <input name="page" type="text" />
+          </div>
+
+          <!-- entrypoint for search_ordered_start -->
+          <div class="hidden search_ordered_start">
+            <input name="o" type="text" value="{{sortOrder}}" />
+            <input name="w" type="text" value="{{colWrap}}" />
+          </div>
+
+          {% if downloads %}
+            <!-- Entrypoint for downloading -->
+            <div id="downloadcenter" class="hidden">
+              <input name='downloadtype' id='downloadtype' class='form-control' value='' >
+            </div>
+          {% endif %}
+
+          <!-- basket switched on or not -->
+          <div class="hidden">
+            <input name="usebasket" type="text" value="{{usebasket}}" />
+          </div>
+
+          <!-- Filter tab -->
+          {% if filters %}
+            <div class="inert {% if has_filter %}in{% else %}collapse{% endif %}" id="tab_filter">
+              <div class="panel panel-default">
+                <!-- Filter interface -->
+                <div class="row" id="filter_badges">
+                  <div class="col-md-2">
+                    <h4>Selected filters</h4>
+                  </div>
+                  <div class="col-md-10">
+                    <!-- Main filters -->
+                    <div>
+                      <h4>
+                      {% for filter in filters %}
+                        {% if not filter.head_id or filter.head_id == "none" %}
+                          <span class="badge filter {% if filter.enabled %} jumbo-3 on {% else %} jumbo-1 {% endif %} " 
+                                targetid="{{filter.id}}" targetaddid="{{filter.include_id}}">{{filter.name}}</span>
+                        {% endif %}
+                      {% endfor %}
+                      </h4>
+                    </div>
+                  </div>
+                </div>
+              
+                <div class="row" id="basiclist_filter_specs">
+                  <!-- The column with the different filter sections -->
+                  <div class="col-md-10">
+                    <div class="panel panel-default ">
+
+                      <!-- Intro -->
+                      <div><h5>{{titlesg}} filters: </h5></div>
+
+                      <!-- Show the different filters in the list -->
+                      {% for filter in filters %}
+                        {% if not filter.head_id or filter.head_id == "hidden" %}
+                          <div id="{{filter.id}}" class="{% if filter.hasvalue %} {% else %}hidden {% endif %}"
+                               addview="{% if filter.include_id %}{{filter.include_id}}{% endif %}"
+                               >
+                            <table style="width: 100%;">
+                              <tr class="form-row">
+                                <td style="min-width: 130px;" valign="top">
+                                  {{filter.name}}
+                                  {% if filter.help != "" and filter.helptext != "" %}
+                                    <a role="button" data-toggle="collapse" data-target="#basic_h_{{filter.help}}">
+                                      <span class="glyphicon glyphicon-question-sign" style="color: blue;"></span>
+                                    </a>
+                                  {% endif %}
+                                </td>
+                                <td style="width: 100%;">
+                                  {% if filter.help != "" and filter.helptext != "" %}
+                                    <div id="basic_h_{{filter.help}}" class="collapse">
+                                      {{filter.helptext|safe}}
+                                    </div>
+                                  {% endif %}
+                                  <div>
+                                    {% for fitem in filter.fitems %}
+                                      {% if fitem.dbfield %}<span class="keyword-key hidden filter-dbfield">{{fitem.dbfield}}</span>{% endif %}
+                                      {% if fitem.keyS %}
+                                        <span class="filter-keys">{{fitem.keyS}}</span>
+                                        {% if fitem.has_keylist %}
+                                          <span> or select: </span>
+                                          <span class="filter-keylist">{{fitem.keyList}}</span>
+                                        {% endif %}
+                                      {% elif fitem.has_keylist %}
+                                          <span class="filter-keylist">{{fitem.keyList}}</span>
+                                      {% endif %}
+                                    {% endfor %}
+                                  </div>
+                                </td>
+                              </tr>
+                            </table>
+                          </div>
+                        {% endif %}
+                      {% endfor %}
+
+
+                    </div>
+                  </div>
+
+                  <!-- Basket operation buttons -->
+                  {% if entrycount > 0 and basket_update %}
+                    <div class="col-md-2 text-right">
+                      {% include 'seeker/basket_buttons.html' %}
+                    </div>
+                  {% endif %}
+
+                </div>
+
+                <!-- Process other filter sections - if these are available -->
+                {% for section in fsections  %}
+                  {% if section.name and section.name != "other"  %}
+                    <!-- Row with buttons and stuff for this filtersection -->
+                    <div id="filter_{{section.name}}" class="row {% if not section.has_value %}hidden{% endif %}" targetid="filter_{{section.name}}_specs">
+
+                      <!-- Sub filters for this section -->
+                      <div class="col-md-10 col-sm-offset-2">
+
+                        <!-- Sub filters from this section -->
+                        <div>
+                          {% for filter in filters %}
+                            {% if filter.head_id == "filter_"|add:section.name %}
+                              <span class="badge filter {% if filter.enabled %} jumbo-2 on {% else %} jumbo-1 {% endif %} " targetid="{{filter.id}}" >{{filter.name}}</span>
+                            {% endif %}
+                          {% endfor %}
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                    <!-- Row with the fields for this section -->
+                    <div id="filter_{{section.name}}_specs" class="row">
+                      <div class="col-md-10">
+                        <div class="panel panel-default ">
+
+                          <!-- Intro -->
+                          <div><h5>{{section.name|title}} filters: </h5></div>
+
+                          <!-- Show the different filters in the list -->
+                          {% for filter in filters %}
+                            {% if filter.head_id == "filter_"|add:section.name   %}
+                              <div id="{{filter.id}}" class="{% if not filter.hasvalue %}hidden{% endif %}">
+                                <table style="width: 100%;">
+                                  <tr class="form-row">
+                                    <td style="min-width: 130px;" valign="top"
+                                        {% if filter.title %}title="{{filter.title}}" {% endif %}>
+                                      {{filter.name}}
+                                      {% if filter.help != "" and filter.helptext != "" %}
+                                      <a role="button" data-toggle="collapse" data-target="#basic_h_{{filter.help}}">
+                                        <span class="glyphicon glyphicon-question-sign" style="color: blue;"></span>
+                                      </a>
+                                      {% endif %}
+                                    </td>
+                                    <td style="width: 100%;">
+                                      {% if filter.help != "" and filter.helptext != "" %}
+                                        <div id="basic_h_{{filter.help}}" class="collapse">
+                                          {{filter.helptext|safe}}
+                                        </div>
+                                      {% endif %}
+                                      {% for fitem in filter.fitems %}
+                                        {% if fitem.dbfield %}<span class="keyword-key hidden">{{fitem.dbfield}}</span>{% endif %}
+                                        {% if fitem.keyS %}
+                                          <span>{{fitem.keyS}}</span>
+                                          {% if fitem.keyList %}
+                                            <span> or select: </span>
+                                            <span>{{fitem.keyList}}</span>
+                                          {% endif %}
+                                        {% elif fitem.keyList %}
+                                            <span>{{fitem.keyList}}</span>
+                                        {% endif %}
+                                      {% endfor %}
+                                    </td>
+                                  </tr>
+                                </table>
+                              </div>
+                            {% endif %}
+                          {% endfor %}
+
+
+                        </div>
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endfor %}
+
+                <!-- Row with buttons-->
+                <div class="row">
+                  <div class="col-md-2 col-md-offset-8 text-right">
+                    {% if usersearch != "" %}
+                      <span class="clipboard-confirm" style="color:red;"></span>
+                      <a role="button" class="btn btn-sm jumbo-1 clipboard-copy" 
+                         title="Copy the search URL to the clipboard">Search URL</a>
+                      <textarea id="search_copy" class="hiddenaway">{{usersearch}}</textarea>
+                    {% endif %}
+                  </div>
+                  <div class="col-md-2 text-right">
+                    <!-- Room to reset the search criteria -->
+                    <span>
+                      <a role="button" class="btn btn-sm jumbo-1 clear-button" title="Clear search criteria" onclick="ru.basic.search_clear(this);" >Clear</a>
+                    </span>
+                    <!-- Submit the search form -->
+                    <span>
+                      <a role="button" class="btn btn-sm jumbo-3 search-button" title="Start searching..." onclick="ru.basic.search_start(this);">Search</a>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+
+        </form>
+
+        <!-- Custom button processing -->
+        {% if custombuttons and is_app_editor %}
+          {% for citem in custombuttons %}
+            <div id="tab_{{citem.name}}" class="inert collapse">
+              {% if "template_name" in citem %}
+                {% include citem.template_name %}
+              {% endif %}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+
+        <!-- Allow importing list items from Excel -->
+        {% if is_app_uploader and uploads %}
+          {% for uitem in uploads %}
+            <div id="import_{{uitem.title}}" class="hidden container">
+              <div class="row">
+                <form action="{{uitem.url}}" method="POST" enctype="multipart/form-data">
+                  {% csrf_token %}
+                  <!-- Room for the filename to appear -->
+                  <div class="col-md-6 form-group" id="{{uitem.title}}-import_info"
+                       sync-progress-TEST="{% url 'sync_progress' %}?synctype={{uitem.title}}"
+                       targetid="{{uitem.title}}_data_import"
+                       targeturl="{{uitem.url}}">
+                    <div class="input-group">
+                      <span>{{uitem.msg|safe}}</span>
+                      <span class="input-group-btn">
+                        <span class="btn btn-default btn-xs btn-file">
+                          Browse...
+                          {% if uitem.type == "multiple" %}
+                            <input id="id_{{uitem.title}}-files_field" name="files_field" required="" multiple="" type="file" oninput="ru.basic.import_data('{{uitem.title}}');" />
+                          {% else %}
+                            <input id="id_{{uitem.title}}-file_source" name="file_source" required="" type="file" oninput="ru.basic.import_data('{{uitem.title}}');" />
+                          {% endif %}
+                        </span>
+                      </span>
+                    </div>
+            
+                  </div>
+                  <!-- Progress of upload indicator -->
+                  <div class="col-md-6">
+                    <progress class="hidden" style="width:100%;" id="{{uitem.title}}-import_progress" value="0" min="0" max="100"></progress>
+                  </div>
+                  <div class="save-warning"></div>
+                  <!-- Any error reporting -->
+                  <div id="{{uitem.title}}-import_error"></div>
+                </form>
+              </div>
+
+              <!-- Import information -->
+              <div id="{{uitem.title}}_data_import" class="project-part hidden"></div>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <!-- List tab -->
+        <div class="" id="tab_list">
+          <div class="panel panel-default">
+
+            <h3>
+              <span>{{title|title}}</span>
+              {% if is_app_editor and new_button %}
+                <span id="add_{{basic_name}}" class="pull-right">
+                  {% csrf_token %}
+                  <a class="btn btn-xs jumbo-3" role="button" 
+                      onclick="document.getElementById('create_new_{{basic_name}}').submit();" >
+                    <span class="glyphicon glyphicon-plus"></span>{{add_text}} {{titlesg}}
+                  </a>
+                </span>
+              {% elif user_button %}
+                <span class="pull-right">{{user_button|safe}}</span>
+              {% endif %}
+            </h3>
+
+            <!-- Room to have the form-link to create a new list-item -->
+            <div class="hidden" >
+              <form action="{{basic_add}}" method="post" id="create_new_{{basic_name}}">
+                {% csrf_token %}
+              </form>
+            </div>
+
+            {% if object_list %}
+              <!-- Column Wrapping tab -->
+              <div class="{% if colWrap and colWrap != '[]' %}{% else %}collapse{% endif %}" id="tab_colwrap" >
+                <span>Show or hide columns: </span>
+                {% for hd in order_heads %}
+                  {% if hd.name %}
+                    <a role="button" class="btn btn-xs {% if hd.colwrap or hd.autohide == "on" %}{% else %}jumbo-1{% endif %}"
+                       offset="{{forloop.counter}}"
+                       onclick="ru.basic.colwrap(this);">{{hd.name}}</a>
+                  {% endif %}
+                {% endfor %}
+              </div>
+
+              <!-- Top pagination -->
+              <div class="row">
+                <div class="col-sm-4"><span>Total: </span><span>{{entrycount}}</span></div>
+                <div class="col-sm-8">
+                  <span class="step-links pull-right">
+                    {% include 'paginationpost.html' %}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Table that contains a list of the basic list items -->
+              <div class="row">
+                <div class="col-md-12">
+                  <table class="table table-hover">
+                    <thead>
+                      <tr>
+                        <th class="hidden">id</th>
+                        {% for hd in order_heads %}
+                          <th class="sortable tdnowrap {% if hd.colwrap or hd.autohide == "on" %}hidden{% endif %}" 
+                              scope="col" {% if hd.title %}title="{{hd.title}}"{% endif %}>
+                            <div class="text">
+                              {% if hd.order == "" %}{{hd.name}}
+                              {% else %}
+                                <a class="clickable {% if hd.used %}sorted{% endif %}" 
+                                   onclick="ru.basic.search_ordered_start('{{hd.sorting}}');">
+                                  {{hd.name}}
+                                </a>
+                                <span class="sortoptions">
+                                  {% if hd.used %}
+                                    <a class="sortremove" title="Clear this sort column"
+                                       onclick="ru.basic.search_ordered_start('{{hd.sorting}}', '{{hd.order}}');">
+                                      <span class="fa fa-sort"></span>
+                                    </a>
+                                  {% endif %}
+                                  {% if hd.priority %}
+                                    <span class="sortpriority" title="sorteerprioriteit: {{hd.priority}}">{{hd.priority}}</span>
+                                  {% endif %}
+                                  <a class="clickable"
+                                     onclick="ru.basic.search_ordered_start('{{hd.sorting}}');">
+                                    <span class="fa fa-sort{% if hd.direction %}-{{hd.direction}}{% endif %} sortmulti"></span>
+                                  </a>
+                                </span>
+                              {% endif %}
+                            </div>
+                          </th>
+                        {% endfor %}
+                      </tr>
+                    </thead>
+                    <tbody>
+
+                    <!-- New method: use result_list -->
+                    {% for result in result_list %}
+                      <tr class="dict-entry clickable">
+                        <!-- put the ID field here-->
+                        <td class="hidden">{{result.id}}</td>
+
+                        <!-- walk the other fields -->
+                        {% for field in result.fields %}
+                          <td class="{{field.classes}}  {% if field.colwrap or field.autohide == "on" %}hidden{% endif %}" 
+                              style="{{field.styles}}" {% if field.title %}title="{{field.title}}"{% endif %} 
+                              {% if field.align %}align="{{field.align}}"{% endif %}>
+                            {% if field.linkdetails %}
+                              <a href="{% url basic_details result.id %}{% if params %}?params={{params}}{% endif %}" 
+                                 class="nostyle" title="Show details of this {{titlesg}}">
+                                {% if field.value %}{{field.value|safe}}{% else %}&nbsp;&nbsp;{% endif %}
+                              </a>
+                            {% else %}
+                              {{field.value|safe}}
+                            {% endif %}
+                            {% if field.main %}
+                              <!-- Provide a standard possibility to do delete confirmation *without* a popup form -->
+                              {% if delete_line and is_app_editor %}
+                                <div class="delete-confirm hidden selected">
+                                  <form>
+                                    {% csrf_token %}
+                                    <span>Are you sure you would like to delete this {{titlesg}}?</span>
+                                    <span>
+                                      <!-- The button to cancel deletion -->
+                                      <a title="Cancel deletion" class="btn btn-xs jumbo-1"
+                                          onclick="ru.basic.delete_cancel(this);">Cancel</a>
+                                      <!-- The actual delete button-->
+                                      <a mode="delete" title="Delete this {{titlesg}}" class="btn btn-xs jumbo-3"
+                                          afterurl="{{basic_list}}"
+                                          targetid="{{basic_name}}_edit"
+                                          targeturl="{% if result.id %}{% url basic_edit result.id %}{% endif %}">
+                                        Delete
+                                      </a>
+                                    </span>
+                                  </form>
+                                </div>
+                              {% endif %}
+                            {% elif field.delete and is_app_editor %}
+                                <!-- Put the delete button completely to the right-->
+                                <a mode="skip" class="view-mode btn btn-xs jumbo-1 pull-right"
+                                    onclick="ru.basic.delete_confirm(this);">
+                                  <span class="glyphicon glyphicon-remove" title="Delete this {{titlesg}}"></span>
+                                </a>
+                            {% endif %}
+                          </td>
+                        {% endfor %}
+                      </tr>
+                    {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Bottom pagination -->
+              <div class="pagination">
+                  <span class="step-links">
+
+                  {% include 'paginationpost.html' %}
+
+                  </span>
+              </div>
+
+            {% else %}
+              <p>No {{title}} have been found.</p>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+
+    
+    {% elif authenticated and not permission %}
+      <div class="explanation">
+        <p>Dear user, you do not have permission to view this item.</p>
+      </div>
+    {% else %}
+      <div class="explanation">
+        <p>Dear user, you are <b>not</b> logged in.</p>
+        <p>Unfortunately this means that you will not be able to perform any searches.</p>
+        <p>Should you want to work with this application, here are your options:
+          <ul>
+            <li><a class="btn btn-info btn-xs" href="{% url 'login' %}">Login</a> - if you already have an account</li> 
+            <li><a class="btn btn-warning btn-xs" href="{% url 'signup' %}">Sign up</a> - if you don't have an account yet</li>
+          </ul>
+        </p>
+      </div>
+    {% endif %}
+    
+  </div>
+
+<!-- Modal form for filter help -->
+<div id="modal-filterhelp" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <!-- Modal content -->
+    <div class="modal-content" style='width: 70%;' >
+      <!-- introduction header -->
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">How can I filter?</h4>
+      </div>
+
+      <!-- Body of the modal-->
+      <div class="modal-body modal-dragpoint" id="view-filterhelp">
+        <!-- This is where the actual help shows up -->
+        <div  style='height: 300px; overflow-y: scroll;'>
+          {{filterhelp_contents|safe}}
+        </div>
+      </div>
+
+      <!-- Footer with the save button -->
+      <div class="modal-footer">
+        <a class="btn jumbo-1" data-dismiss="modal" >
+          <span class="glyphicon glyphicon-ok" title="Close help">&nbsp;Close</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  ru.basic.init_events();
+</script>
+
+{% endblock content %}
+
+{% block endcontent %} 
+  {% if has_select2 %}{{listForm.media.js }}{% endif %}
+{% endblock %}

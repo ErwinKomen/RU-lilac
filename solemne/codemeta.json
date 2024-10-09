@@ -1,0 +1,84 @@
+{
+    "@context": [
+        "https://doi.org/10.5063/schema/codemeta-2.0",
+        "http://schema.org",
+        {
+            "entryPoints": { "@reverse": "schema:actionApplication" },
+            "interfaceType": { "@id": "codemeta:interfaceType" }
+        }
+    ],
+    "@type": "SoftwareSourceCode",
+    "identifier": "solemne",
+    "name": "SOLEMNE (solemne)",
+    "version": "unknown",
+    "description": "Django web application that contains sermon metadata and allows searching",
+    "license": "unknown",
+	"url": "https://github.com/ErwinKomen/RU-solemne",
+    "producer": {
+        "@id": "https://www.ru.nl/humanitieslab/technical-support-group",
+        "@type": "Organization",
+        "name": "Technical Support Group",
+        "url": "https://www.ru.nl/humanitieslab/technical-support-group",
+        "parentOrganization": {
+            "@id": "https://www.ru.nl/humanitieslab/",
+            "@type": "Organization",
+            "name": "Humanities Lab",
+            "url": "https://www.ru.nl/humanitieslab/",
+            "parentOrganization": {
+                "@id": "https://www.ru.nl/facultyofarts/",
+                "@type": "Organization",
+                "name": "Faculty of Arts",
+                "url": "https://www.ru.nl/facultyofarts/",
+                "parentOrganization": {
+                    "@id": "https://www.ru.nl",
+                    "name": "Radboud University",
+                    "@type": "Organization",
+                    "url": "https://www.ru.nl",
+                    "location": {
+                        "@type": "Place",
+                        "name": "Nijmegen"
+                    }
+                }
+            }
+        }
+    },
+    "author": [
+		{
+			"@type": "Person",
+			"givenName": "Erwin",
+			"familyName": "Komen",
+			"affiliation": { "@id": "https://www.ru.nl/humanitieslab/technical-support-group" }
+		}
+	],
+	"sourceOrganization": { "@id": "https://www.ru.nl/humanitieslab/technical-support-group" },
+	"programmingLanguage": {
+		"@type": "ComputerLanguage",
+		"identifier": "python",
+		"name": "Django with Python3"
+	},
+	"operatingSystem": "POSIX",
+	"codeRepository": "https://github.com/ErwinKomen/RU-solemne",
+    "softwareRequirements": [],
+	"funder": [
+		{
+			"@type": "Organization",
+			"name": "ERC",
+			"url": "https://cordis.europa.eu/project/rcn/218691/factsheet/en"
+		}
+	],
+	"issueTracker": "https://github.com/ErwinKomen/RU-solemne/issues",
+	"developmentStatus": "active",
+	"keywords":  [ "syntax", "xquery" ],
+    "referencePublication": [
+		{
+			"@type": "TechArticle",
+			"name": "",
+			"author": [ "Erwin R. Komen" ],
+            "datePublished": "2024",
+			"url": ""
+		}
+	],
+    "dateCreated": "2024",
+    "entryPoints": [
+    ]
+}

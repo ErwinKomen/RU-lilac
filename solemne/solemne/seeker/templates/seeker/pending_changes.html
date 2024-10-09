@@ -1,0 +1,44 @@
+<div>
+  {% if is_app_editor and approval_pending.count > 0 %}
+  <!-- Allow the editor user to review the pending approvals -->
+  <a class="btn btn-xs jumbo-1" title="Show all changes pending approval (these are view-only, since they are to be approved by other editors)"
+      data-toggle="collapse" 
+      data-target="#equalchange_pendings">Pending changes ({{approval_pending.count}}) <span 
+        class="glyphicon glyphicon-envelope" style="color: orangered;" title="Show all changes pending approval"></span></a>
+  {% endif %}
+</div>
+
+<div id="equalchange_pendings" class="collapse container-small">
+  <!-- <h4>Suggested changes</h4> -->
+  <table class="func-view compact-simple " style="width: 100%;">
+    <thead>
+      <tr>
+        <th class="tdnowrap">Editor</th>
+        <th class="tdnowrap">Field</th>
+        <th class="tdnowrap">Suggested change</th>
+        <th class="tdnowrap">Status</th>
+        <th class="tdnowrap" align="right">Updated</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for obj in approval_pending_list %}
+        <tr class="form-row">
+          <td >{{obj.editor}}</td>
+          <td class="tdnowrap hoverable">{{obj.field}}</td>
+          <td class="hoverable">{{obj.change|safe}}</td>
+          <td class="hoverable clickable" title="click for details..."
+              data-toggle="collapse" data-target="#status-history-{{obj.id}}">
+            <span>{{obj.atype}}...</span>
+          </td>
+          <td class="tdnowrap" align="right" style="font-size: smaller;">{{obj.saved}}</td>
+        </tr>
+        <tr class="collapse status-details" id="status-history-{{obj.id}}">
+          <td colspan="2"></td>
+          <td colspan="3" >
+            {{obj.statushistory|safe}}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

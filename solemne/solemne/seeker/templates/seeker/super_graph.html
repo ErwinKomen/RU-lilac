@@ -1,0 +1,299 @@
+<div class="row">
+  <div class="md-col-12">
+    <span class="pull-right" style="margin-bottom: 10px;">
+      <a class="btn btn-xs jumbo-1 sticky-visualization" title="Textual overlap network" 
+         data-target="#ssg_network_overlap"
+         onclick="ru.solemne.seeker.network_overlap(this);">Overlap</a>
+      <a class="btn btn-xs jumbo-1 sticky-visualization" title="Manuscript Transmission" 
+         data-target="#ssg_network_trans"
+         onclick="ru.solemne.seeker.network_transmission(this);">Transmission</a>
+    </span>
+  </div>
+
+</div>
+
+
+<div id="ssg_network_trans" class="hidden container-small">
+  <form action="{{austat_trans}}" method="post" >
+    {% csrf_token %}
+    <div id="downloadcenter" class="hidden">
+      <input name='downloadtype' id='downloadtype' class='form-control' value='' >
+      <input name="downloaddata" id="downloaddata" class="hidden form-control" value="" />
+    </div>
+
+    <div class="row">
+      <div class="col-md-5 col-md-offset-3 align-right">
+        <span>Minimum number of manuscripts in which SSGs co-occur: </span>
+        <span id="network_trans_slider_value">2</span>
+      </div>
+      <div class="col-md-3 slidecontainer">
+        <input name="network_trans_slider" id="id_network_trans_slider" valueid="network_trans_slider_value"
+                type="range" min="1" max="{{manuscripts}}" value="2" class="slider" />
+      </div>
+
+      <!-- Button to stop -->
+      <div class="col-md-1 align-right">
+        <a role="button" class="btn btn-xs jumbo-2"
+            targeturl={{austat_trans}}
+            onclick="ru.solemne.seeker.network_transmission(this);">Update</a>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-5 col-md-offset-3 align-right">
+        <span>Gravity: </span>
+        <span id="gravity_trans_value">100</span>
+      </div>
+      <div class="col-md-3 slidecontainer">
+        <input name="gravity_trans_slider" id="id_gravity_trans_slider" valueid="gravity_trans_value"
+                type="range" min="-100" max="300" value="100" class="slider" />
+      </div>
+
+      <!-- Download button -->
+      <div class="col-md-1 align-right">
+        {% include 'seeker/download.html' with downloadid="trans" urlname="austat_trans_download" object_id=object.id %}
+      </div>
+    </div>
+  </form>
+
+  <div id="super_network_trans_wait" class="hidden">
+    <span>Calculating SSG co-occurrance network...</span>
+    <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+  </div>
+
+  <div class="row" style="height: 800px;">
+    <!-- A legend of author names (selectable) -->
+    <div class="col-md-2">
+      <div id="super_network_trans_authors" style="width: 100%; ">
+        <svg viewBox="0,0,100,500"></svg>
+      </div>
+    </div>
+
+    <!-- The transmission network -->
+    <div class="col-md-10">
+      <div id="super_network_trans" class="visborder" style="width: 100%; ">
+        <svg viewBox="0,0,800,500"></svg>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+
+<div id="ssg_network_overlap" class="hidden container-small">
+
+  <form action="{{austat_overlap}}" method="post" >
+    {% csrf_token %}
+    <div id="downloadcenter" class="hidden">
+      <input name='downloadtype' id='downloadtype' class='form-control' value='' >
+      <input name="downloaddata" id="downloaddata" class="hidden form-control" value="" />
+    </div>
+
+    <div class="row">
+      <div class="col-md-offset-1 col-md-11">
+        <table class="spacy-border" style="width: 100%;">
+          <tr>
+            <td class="tdnowrap"><span>Direction&nbsp;</span></td>
+            <td>
+              <label class="switch" title="Show direction">
+                <input type="checkbox" onclick="ru.solemne.seeker.network_overlap_option(this, 'overlap_direction');" />
+                <span class="switchslider round"></span>
+              </label>
+            </td>
+
+            <td class="tdnowrap" ><span>Alternative options&nbsp;</span></td>
+            <td>
+              <label class="switch" title="Highlight alternative options">
+                <input type="checkbox" onclick="ru.solemne.seeker.network_overlap_option(this, 'overlap_alternatives');" />
+                <span class="switchslider round"></span>
+              </label>
+            </td>
+
+            <td class="tdnowrap" ><span>Historical collections&nbsp;</span></td>
+            <td>
+              <label class="switch" title="Show historical collections">
+                <input type="checkbox" onclick="ru.solemne.seeker.network_overlap_option(this, 'overlap_histcoll');" />
+                <span class="switchslider round"></span>
+              </label>
+            </td>
+
+            <td class="tdnowrap" align="right">
+              <span>Overlap network degree: </span>
+              <span id="network_overlap_slider_value">1</span>
+              <span>&nbsp;</span>
+            </td>
+            <td class="slidecontainer" style="width: 100%;">
+              <input name="network_overlap_slider" id="id_network_overlap_slider" valueid="network_overlap_slider_value"
+                      type="range" min="1" max="10" value="1" class="slider" />
+            </td>
+
+            <td align="right">
+              <a role="button" class="btn btn-xs jumbo-2"
+                 targeturl={{austat_overlap}}
+                 onclick="ru.solemne.seeker.network_overlap(this);">Update</a>
+            </td>
+          </tr>
+
+          <tr>
+            <td class="tdnowrap"><span>Link types&nbsp;</span></td>
+            <td>
+              <label class="switch" title="Show link types">
+                <input type="checkbox" onclick="ru.solemne.seeker.network_overlap_option(this, 'overlap_linktypes');"  />
+                <span class="switchslider round"></span>
+              </label>
+            </td>
+
+            <td class="tdnowrap"><span>Manuscript count&nbsp;</span></td>
+            <td>
+              <label class="switch" title="Show number of manuscripts">
+                <input type="checkbox" onclick="ru.solemne.seeker.network_overlap_option(this, 'overlap_scount');" />
+                <span class="switchslider round"></span>
+              </label>
+            </td>
+
+            <!-- waiting -->
+            <td>
+              <span class="waiting hidden">
+                <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+              </span>
+            </td>
+            <!-- Update button -->
+            <td align="right">
+
+            </td>
+
+            <td class="tdnowrap" align="right">
+              <span>Gravity: </span>
+              <span id="gravity_overlap_value">100</span>
+              <span>&nbsp;</span>
+            </td>
+            <td class="slidecontainer" style="width: 100%;">
+              <input name="gravity_overlap_slider" id="id_gravity_overlap_slider" valueid="gravity_overlap_value"
+                      type="range" min="-100" max="300" value="100" class="slider" />
+            </td>
+
+            <td align="right">
+              {% include 'seeker/download.html' with downloadid="overlap" urlname="austat_overlap_download" object_id=object.id %}
+            </td>
+          </tr>
+
+          <tr>
+            <td colspan="5">
+              <!-- Possibility one: linktypes -->
+              <div class="hidden linktypes">
+                <label class="checkbox-inline">
+                  <input type="checkbox" value="linktype_neq" checked
+                          onclick="ru.solemne.seeker.network_overlap_option(this, 'overlap_linktype_change');" />
+                  <span>Nearly Equals</span>
+                </label>
+                <label class="checkbox-inline">
+                  <input type="checkbox" value="linktype_prt" checked
+                          onclick="ru.solemne.seeker.network_overlap_option(this, 'overlap_linktype_change');" />
+                  <span>Partially Equals</span>
+                </label>
+                <label class="checkbox-inline">
+                  <input type="checkbox" value="linktype_ech" checked
+                          onclick="ru.solemne.seeker.network_overlap_option(this, 'overlap_linktype_change');" />
+                  <span>Echoes</span>
+                </label>
+                <label class="checkbox-inline">
+                  <input type="checkbox" value="linktype_uns" checked 
+                          onclick="ru.solemne.seeker.network_overlap_option(this, 'overlap_linktype_change');"/>
+                  <span>Unspecified</span>
+                </label>
+              </div>
+
+            </td>
+            <td colspan="2">&nbsp;</td>
+          </tr>
+
+          <tr>
+            <td colspan="9">
+              <!-- Possibility two: historical collection buttons -->
+              <div class="hidden histcolls">
+
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+  </form>
+
+  <div id="super_network_overlap_wait" class="hidden">
+    <span>Calculating SSG overlap network...</span>
+    <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+  </div>
+
+  <div class="row" style="height: 500px;">
+    <!-- The overlap network -->
+    <div class="col-md-12">
+      <div id="super_network_overlap" style="width: 100%; " class="visborder" >
+        <svg viewBox="0,0,800,500"></svg>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="ssg_pca" class="hidden">
+  <form action="{{austat_pca}}" method="post" >
+    {% csrf_token %}
+  </form>
+
+  <div id="super_pca_wait" class="hidden">
+    <span>Calculating incipit-explicit network...</span>
+    <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+  </div>
+
+  <div id="super_pca" style="width: 800px; height: 500px;">
+    <svg viewBox="0,0,800,500"></svg>
+  </div>
+</div>
+
+<!-- Modal form that helps define a color -->
+<div id="modal-nodecolor" class="modal fade" role="dialog">
+  <div class="modal-dialog nodecolorpicker">
+    <!-- Modal content -->
+    <div class="modal-content">
+      <!-- introduction header -->
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" title="Cancel color selection">&times;</button>
+        <h4 class="modal-title">Select a color</h4>
+      </div>
+
+      <!-- Body of the modal-->
+      <div class="modal-body modal-dragpoint" id="view-nodecolor">
+        <!-- This is where the list of possible colors shows up -->
+        <table>
+          <tr>
+            <td valign="top" align="right">Click the button and select a color:</td>
+            <td valign="top" align="left"><input type="color" value="#ff0000" id="nodecolor" list="presets" /></td>
+          </tr>
+        </table>
+        <div>
+          <datalist id="presets">
+            <option value="#ea2028">Red</option>
+            <option value="#f02d93">Pink</option>
+            <option value="#78cbd1">Light blue</option>
+            <option value="#5c9924">Green</option>
+            <option value="#d4d426">Light green</option>
+          </datalist>
+        </div>
+      </div>
+
+      <!-- Footer with the save button -->
+      <div class="modal-footer">
+        <a class="btn jumbo-1" data-dismiss="modal" >
+          <span class="glyphicon glyphicon-ok" 
+                onclick="ru.solemne.seeker.network_overlap_setcolor(this);"
+                title="Back to the original and apply the selected color">&nbsp;Ok</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+

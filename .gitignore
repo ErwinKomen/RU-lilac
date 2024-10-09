@@ -312,20 +312,6 @@ paket-files/
 # CodeRush personal settings
 .cr/personal
 
-# Python Tools for Visual Studio (PTVS)
-__pycache__/
-*.pyc
-/lila/static/seeker
-/lila/static/basic
-/lila/static/bible
-/lila/static/reader
-/lila/static/stylo
-/lila/lila/seeker/migrations
-/lila/lila/basic/migrations
-/lila/lila/bible/migrations
-/lila/lila/reader/migrations
-/lila/lila/stylo/migrations
-
 # Cake - Uncomment if you are using it
 # tools/**
 # !tools/packages.config
@@ -374,12 +360,22 @@ FodyWeavers.xsd
 # Python stuff
 *.pyc
 
-/lila/lila/basic/migrations
-/lila/lila/bible/migrations
-/lila/lila/lict/migrations
-/lila/lila/reader/migrations
-/lila/lila/seeker/migrations
-/lila/lila/stylo/migrations
-/lila/lila/cms/migrations
-/lila/static
-/lila/lila/seeker/static/seeker/scripts/litref.js
+# Python Tools for Visual Studio (PTVS)
+__pycache__/
+*.pyc
+/solemne/static
+/solemne/static/seeker
+/solemne/static/basic
+/solemne/static/bible
+/solemne/static/reader
+/solemne/static/stylo
+/solemne/static/core
+/solemne/solemne/basic/migrations
+/solemne/solemne/bible/migrations
+/solemne/solemne/lict/migrations
+/solemne/solemne/reader/migrations
+/solemne/solemne/seeker/migrations
+/solemne/solemne/stylo/migrations
+/solemne/solemne/cms/migrations
+/solemne/solemne/core/migrations
+/solemne/solemne/seeker/static/seeker/scripts/litref.js

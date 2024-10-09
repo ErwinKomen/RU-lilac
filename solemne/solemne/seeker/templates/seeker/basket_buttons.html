@@ -1,0 +1,50 @@
+﻿{% load i18n %}
+
+<div id="basket_buttons">
+  <!-- Dynamic buttons updating -->
+  {% include 'seeker/basket_choices.html' %}
+</div>
+<div>
+  <!-- Show waiting sign -->
+  <div id="basket_waiting" class="hidden">
+    <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+  </div>
+
+  <!-- Static selection of target collection -->
+  {% if listForm.collone %}
+    <div id="colladdinterface" class="hidden">
+      <table style="width: 100%;">
+        <tr><td style="width: 100%;">{{listForm.collone}}</td></tr>
+        <tr>
+          <td align="right">
+            <a id="basket_colladdcancel" title="Cancel adding to a collection" 
+               class="btn btn-sm jumbo-1" 
+                href="#" operation="colladdcancel" targetid="colladdinterface"
+                onclick="ru.solemne.seeker.do_basket(this);">
+              <span>Cancel</span>
+            </a>
+            <a id="basket_colladd" title="Add search results to a collection" 
+               class="btn btn-sm jumbo-3" 
+                href="#" operation="colladd" targetid="basket_buttons"
+                ajaxurl="{{basket_update}}" onclick="ru.solemne.seeker.do_basket(this);">
+              <span>Add to this dataset</span>
+            </a>
+          </td>
+        </tr>
+      </table>
+      <!-- Show the options to the user -->
+    </div>
+  {% endif %}
+
+  <!-- Report and link to Collection -->
+  <div id="basket_report" class="hidden">
+    <div>The collection has been updated.</div>
+    <div>
+      <a id="basket_coll_link" class="btn btn-sm jumbo-1"
+         href="{% url 'collany_details' 777 %}" title="Open this collection">
+        <span>Open...</span>
+      </a>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,81 @@
+{% load i18n %}
+
+<div>
+    <table class="func-view" style="width: 100%;">
+      <tbody>
+        {% for instance in superlist %}
+          <tr class="form-row">
+            <!-- The kind of link 
+            <td valign="top"><span class='badge signature ot'>{{instance.get_linktype_display}}</span></td>
+              -->
+
+            <!-- The contents of the linked SSG -->
+            <td style="width: 100%;">
+
+              <!-- View-mode: show the destination SSG according to the specs-->
+              <div class="view-mode">
+                <!-- Only allow copying, if the link is 'equal' -->
+                {% if instance.linktype == "eqs" or instance.linktype == "uns" %}
+                  <span>
+                    <a class="btn btn-xs jumbo-1" 
+                        onclick="ru.solemne.seeker.elevate_confirm(this)"
+                        title="Copy information from this Authoritative Statement to this Canon Witness (Author, full text, translation)">
+                      Copy <span class="glyphicon glyphicon-share-alt"></span>
+                    </a>
+                  </span>
+                {% endif %}
+                <!-- The standard details of the SSG -->
+                <span>{{instance.austat.get_view|safe}}</span>
+                <span>&nbsp;</span>
+                <!-- Possibly a note -->
+                {% if instance.note %}
+                  <span class="austat-note"><a href="{% url 'canwitaustat_details' instance.id %}" class="nostyle">{{instance.note}}</a>
+                  </span>
+                {% else %}
+                  <span>
+                    <a class="btn btn-xs jumbo-1"
+                        href="{% url 'canwitaustat_details' instance.id %}"
+                        title="View and edit the Canwit-Austat link">View</a>
+                  </span>
+                {% endif %}
+                  
+              </div>
+
+              <!-- Confirmation of COPY -->
+              {% if is_app_editor %}
+                <div class="elevate-confirm hidden">
+                  <div>
+                    <span>The information that will be copied is:</span>
+                    <table>
+                      <tr><td>Author</td><td>{{instance.austat.author.name}}</td></tr>
+                      <tr><td>Full text</td><td>{{instance.austat.get_ftext_markdown}}</td></tr>
+                      <tr><td>Translation</td><td>{{instance.austat.get_ftrans_markdown}}</td></tr>
+                    </table>
+                  </div>
+                  <div>
+                    <span>Do you really want to copy these details to the Canon Witnesss?</span>
+                    <span>
+                      <a class="btn btn-xs jumbo-1" onclick="ru.solemne.seeker.elevate_cancel(this);">Cancel</a>
+                    </span>
+                    <span>
+                      <a class="btn btn-xs jumbo-4" 
+                         onclick="ru.solemne.seeker.elevate_confirm(this)"
+                         href="{% url 'canwit_details' object_id %}?supercopy={{instance.austat.id}}"
+                         title="Copy information from this Authoritative Statement to this Canon witness (Author, full text, translation)">
+                        Copy <span class="glyphicon glyphicon-share-alt"></span>
+                      </a>
+                    </span>
+                  </div>
+                </div>
+              {% endif %}
+
+            </td>
+
+          </tr>
+
+        {% endfor %}
+
+      </tbody>
+    </table>
+</div>
+

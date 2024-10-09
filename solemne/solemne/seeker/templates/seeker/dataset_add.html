@@ -1,0 +1,30 @@
+
+<a class="btn btn-xs jumbo-3 dropdown-toggle" data-toggle="dropdown">
+  <span class="glyphicon glyphicon-plus"></span>Add a new Dataset <span class="caret"></span>
+</a>
+<ul class="dropdown-menu" role="menu" style="position: relative;">
+  <li><a onclick="document.getElementById('create_new_coll_m').submit();">Manuscript</a></li>
+  <li><a onclick="document.getElementById('create_new_coll_s').submit();">Sermon</a></li>
+  <li><a onclick="document.getElementById('create_new_coll_ssg').submit();">Authoritative statement</a></li>
+</ul>
+
+<div class="hidden" >
+  <form action="{% url 'collpriv_details' %}" method="post" id="create_new_coll_m">
+    {% csrf_token %}
+    <input id="id_datasettype" name="datasettype" value="manu" />
+  </form>
+</div>
+
+<div class="hidden" >
+  <form action="{% url 'collpriv_details' %}" method="post" id="create_new_coll_s">
+    {% csrf_token %}
+    <input id="id_datasettype" name="datasettype" value="sermo" />
+  </form>
+</div>
+
+<div class="hidden" >
+  <form action="{% url 'collpriv_details' %}" method="post" id="create_new_coll_ssg">
+    {% csrf_token %}
+    <input id="id_datasettype" name="datasettype" value="austat" />
+  </form>
+</div>

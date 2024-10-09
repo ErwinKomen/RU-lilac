@@ -1,0 +1,16 @@
+{% load i18n %}
+
+<form action="{{ukw_list}}" method="POST">
+  {% csrf_token %}
+  <div class="row hidden">
+    <input name="approvelist" value="{{ukw_selection}}" />    
+  </div>
+  <div class='row'>
+    <div class='col-md-6' >
+      Are you absolutely sure that you would like to approve <b>all</b> of the keywords that are currently selected?
+    </div>
+    <div class="col-md-6">
+      <button type="submit" title='Confirm user-keyword approval' class="btn btn-xs jumbo-4" >YES, approve them</button>
+    </div>
+  </div>
+</form>

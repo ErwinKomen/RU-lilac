@@ -1,0 +1,62 @@
+<!-- Modal form for a user's comment -->
+<div id="modal-comment" class="modal fade" role="dialog" style="top: 200px;">
+  <div class="modal-comment">
+    <!-- Modal content -->
+    <div class="modal-content">
+
+      <form>
+        {% csrf_token %}
+        <div class="hidden">{{commentForm.otype}}</div>
+        <div class="hidden">{{commentForm.objid}}</div>
+        <div class="hidden">{{commentForm.profile}}</div>
+
+          <!-- introduction header -->
+          <div class="modal-header">
+            <span class="pull-right">
+              <a role="button" class=""><span class="glyphicon glyphicon-info-sign" style="color: green;"></span>Help</a>
+              <a role="button" class=""  data-dismiss="modal"><span class="glyphicon glyphicon-remove-sign" style="color: lightblue;"></span>Cancel</a>
+            </span>
+            <h4 class="modal-title">
+              Submit a comment on this
+              {% if commentForm.otype.value == "canwit" %}Canon witness
+              {% elif commentForm.otype.value == "austat" %}Authoritative statement
+              {% elif commentForm.otype.value == "manu" %}Manuscript
+              {% else %}Item
+              {% endif %}
+            </h4>
+          </div>
+
+          <!-- Body of the modal-->
+          <div class="modal-body modal-dragpoint" id="view-history">
+            <!-- This is where the current user-comment shows up -->
+            <div  style='height: 300px; overflow-y: scroll;'>
+              <!-- Where the user can add a new comment -->
+              <div>
+                <textarea id="id_com-content" name="com-content" rows="4" cols="50" style="width: 100%; height: 100%;"
+                        placeholder="Enter your comment here, and then press [Send] to forward it to the developers. Thanks in advance!"></textarea>
+              </div>
+
+              <!-- Previous comments made by the user -->
+              <div id="comment_list">
+                {% if comment_list != "" and comment_list|length > 0 %}
+                  {% include 'seeker/comment_list.html' %}
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer with the save button -->
+          <div class="modal-footer">
+            {% if is_app_editor %}
+              <a class="btn jumbo-1" data-dismiss="modal" 
+                 ajaxurl="{% url 'comment_send'  %}"
+                 onclick="ru.solemne.seeker.comment_send(this);">
+                <span class="glyphicon glyphicon-ok" title="Send comment to the lila team">&nbsp;Send</span>
+              </a>
+            {% endif %}
+          </div>
+      </form>
+    </div>
+  </div>
+</div>
+

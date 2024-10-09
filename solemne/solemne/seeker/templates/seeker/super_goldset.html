@@ -1,0 +1,71 @@
+{% load i18n %}
+
+<div>
+    <table class="func-view" style="width: 100%;">
+      <tbody>
+        {% for instance in goldlist %}
+          <tr class="form-row">
+            <!-- The contents of the destination gold sermon -->
+            <td style="width: 100%;">
+
+              <!-- View-mode: show the destination SSG according to the specs-->
+              <div class="view-mode">
+                <span>
+                  <a class="btn btn-xs jumbo-1" 
+                      onclick="ru.solemne.seeker.elevate_confirm(this)"
+                      title="Elevate this Gold Sermon to Authoritative statement (Author, full text, translation)">
+                    Elevate <span class="glyphicon glyphicon-share-alt"></span>
+                  </a>
+                </span>
+                <!-- The actual gold-sermon information -->
+                <span>
+                  <a href="{% url 'gold_details' instance.id %}">{{instance.get_view|safe}}</a>
+                </span>
+              </div>
+
+              <!-- Confirmation of ELEVATE -->
+              {% if is_app_editor %}
+                <div class="elevate-confirm hidden">
+                  <div>
+                    <span>The information that will be copied is:</span>
+                    <table>
+                      <tr><td>Author</td><td>{{instance.author.name}}</td></tr>
+                      <tr><td>Incipit</td><td>{{instance.get_incipit_markdown}}</td></tr>
+                      <tr><td>Explicit</td><td>{{instance.get_explicit_markdown}}</td></tr>
+                    </table>
+                  </div>
+                  <div>
+                    <span>Do you really want to elevate this one as Authoritative statement?</span>
+                    <span>
+                      <a class="btn btn-xs jumbo-1" onclick="ru.solemne.seeker.elevate_cancel(this);">Cancel</a>
+                    </span>
+                    <span>&nbsp;</span>
+                    <span>
+                      <a class="btn btn-xs jumbo-3" 
+                          href="{% url 'austat_details' object_id %}?goldcopy={{instance.id}}&simple=t"
+                          title="Elevate this Gold Sermon to Authoritative statement (fulltext, translation)">
+                        Elevate basic<span class="glyphicon glyphicon-share-alt"></span>
+                      </a>
+                    </span>
+                    <span>&nbsp;</span>
+                    <span>
+                      <a class="btn btn-xs jumbo-4" 
+                          href="{% url 'austat_details' object_id %}?goldcopy={{instance.id}}&simple=f"
+                          title="Elevate this Gold Sermon to Authoritative statement (fulltext, translation)">
+                        Elevate all<span class="glyphicon glyphicon-share-alt"></span>
+                      </a>
+                    </span>
+                  </div>
+                </div>
+              {% endif %}
+
+            </td>
+
+          </tr>
+
+        {% endfor %}
+
+      </tbody>
+    </table>
+</div>
+

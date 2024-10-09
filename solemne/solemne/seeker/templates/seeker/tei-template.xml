@@ -1,0 +1,79 @@
+<TEI xmlns="http://www.tei-c.org/ns/1.0"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xmlns:xi="http://www.w3.org/2001/XInclude"
+     xml:lang="eng"
+     xsi:schemaLocation="http://www.tei-c.org/ns/1.0 ../xsd/TEI-P5/1.7/tei-p5-e-codices_1.7.xsd"
+     xml:base="{{details_url}}"
+     xml:id="solemne_manu_{{manu.id}}"
+     version="5.1">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title>{{manu.idno}}</title>
+      </titleStmt>
+      <editionStmt>
+        <edition>Electronic version according to TEI P5.1</edition>
+        <respStmt>
+          <resp>
+            Automatic conversion to TEI initialized by user: <persName>{{download_person}}</persName>
+            <date when="{{download_date_ymd}}">{{download_date}}</date>
+          </resp>
+          <name>lila - Radboud University of the Netherlands</name>
+        </respStmt>
+      </editionStmt>
+      <publicationStmt>
+        <publisher>Radboud lila - Patristic sermons in the Middle Ages, Radboud University of the Netherlands</publisher>
+        <availability status="restricted" n="cc-by">
+          <licence target="http://creativecommons.org/licenses/by/3.0/">
+            <p>Creative Commons Attribution 3.0 Unported (CC BY 3.0)</p>
+          </licence>
+        </availability>
+      </publicationStmt>
+      <sourceDesc>
+        <bibl>{{manu.get_full_name}}</bibl>
+        <msDesc xml:id="solemne_manu_desc_{{manu.id}}" xml:lang="lat">
+          <msIdentifier>
+            <settlement>{{manu.get_library_city}}</settlement>
+            <repository>{{manu.get_library}}</repository>
+            <idno>{{manu.idno}}</idno>
+          </msIdentifier>
+          <head>
+            <origDate notBefore="{{manu.yearstart}}" notAfter="{{manu.yearfinish}}">{{manu.get_dates}}</origDate>
+            {% if manu.manuscriptcodicounits.first.origins.count %}
+              <origPlace>{{manu.manuscriptcodicounits.first.origins.first.get_location}}</origPlace>
+            {% endif %}
+          </head>
+          {% if manu.manuscriptcodicounits.count == 1 %}
+            {%  include 'seeker/tei-physdesc.xml' with codico=manu.manuscriptcodicounits.first %}
+            {%  include 'seeker/tei-additional.xml' with codico=manu.manuscriptcodicounits.first %}
+            {%  include 'seeker/tei-contents.xml' with codico=manu.manuscriptcodicounits.first %}
+          {% else %}
+            <physDesc></physDesc>
+            <additional></additional>
+            {% for codico in manu.manuscriptcodicounits.all %}
+              <msPart>
+                <altIdentifier type="partial">
+                  <idno>{{codico.name}}</idno>
+                </altIdentifier>
+                <head>
+                  <origDate notBefore="{{codico.yearstart}}" notAfter="{{codico.yearfinish}}">{{codico.get_dates}}</origDate>
+                  {% if codico.origins.count %}
+                    <origPlace>{{codicoorigins.first.get_location}}</origPlace>
+                  {% endif %}
+                </head>
+                {%  include 'seeker/tei-physdesc.xml' with codico=codico %}
+                {%  include 'seeker/tei-additional.xml' with codico=codico %}
+                {%  include 'seeker/tei-contents.xml' with codico=codico %}
+              </msPart>
+            {% endfor %}
+          {% endif %}
+        </msDesc>
+      </sourceDesc>
+    </fileDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <p/>
+    </body>
+  </text>
+</TEI>    

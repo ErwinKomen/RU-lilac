@@ -1,0 +1,274 @@
+
+
+<div class="row">&nbsp;</div>
+<div id="manuscript_itemset" class="row">
+  <div class="col-md-12">
+    <!-- Codhead and Canwit in this manuscript -->
+    <h3>
+      <span>Contents</span>
+      {% if is_app_editor %}
+        <span id="add_search_criteria" class="pull-right">
+          <!-- Completely manual codhead adding -->
+          <a class="btn btn-xs jumbo-3" role="button" 
+             onclick="document.getElementById('create_new_codhead').submit();"             
+              >
+            <span class="glyphicon glyphicon-plus"></span>Add a Section to this manuscript
+          </a>
+          <!-- Completely manual canwit adding -->
+          <a class="btn btn-xs jumbo-3" role="button" 
+             onclick="document.getElementById('create_new_canwit').submit();"             
+              >
+            <span class="glyphicon glyphicon-plus"></span>Add a Canon Witness to this manuscript
+          </a>
+          <!-- Import canwit from Excel -->
+          <a class="btn btn-xs jumbo-3" role="button" data-toggle="collapse"
+             data-target="#import_canwit"
+             title="Import one or more canon witnesses from an Excel file"
+              >
+            <span class="glyphicon glyphicon-plus"></span>Import Canon Witnesses
+          </a>
+        </span>
+      {% endif %}
+    </h3>
+
+    {% if is_app_editor %}
+      <!-- Room to have the form-link to create a new codhead for this manuscript -->
+      <div class="row">
+        <div class="hidden col-md-offset-6 col-md-6" >
+          <form id="create_new_codhead" action="{% url 'codhead_details' %}" method="post" >
+            {% csrf_token %}
+            <div class="hidden" >
+              <input type="text" name="chead-manu" value="{{manuForm.instance.id}}" />
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Room to have the form-link to create a new canwit for this manuscript -->
+      <div class="row">
+        <div class="hidden col-md-offset-6 col-md-6" >
+          <form id="create_new_canwit" action="{% url 'canwit_details' %}" method="post" >
+            {% csrf_token %}
+            <div class="hidden" >
+              <input type="text" name="canwi-manu" value="{{manuForm.instance.id}}" />
+              <input type="text" name="canwi-mtype" value="{{manuForm.instance.mtype}}" />
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Room to have the form-link to import canwits from Excel for this manuscript -->
+      <div class="row">
+        <div class="collapse col-md-offset-6 col-md-6" id="import_canwit" >
+          <form action="{% url 'manuscript_upload_canwits' manuForm.instance.id %}" method="post"  enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="hidden" >
+              <input type="text" name="canwi-manu" value="{{manuForm.instance.id}}" />
+              <input type="text" name="canwi-mtype" value="{{manuForm.instance.mtype}}" />
+            </div>
+            <div>
+              {{manuForm.headlist}}
+            </div>
+            <div id="excel-import_info"
+                 targetid="excel_data_import"
+                 targeturl="{% url 'manuscript_upload_canwits' manuForm.instance.id %}">
+              <span class="btn btn-default btn-xs btn-file">
+                Browse...
+                <input id="id_excel-files_field" name="files_field" required="" type="file" oninput="ru.basic.import_data('excel');">
+              </span>
+            </div>
+            <!-- progress of upload indicator -->
+            <div class="col-md-6">
+              <progress class="hidden" style="width:100%;" id="excel-import_progress" value="0" min="0" max="100"></progress>
+            </div>
+            <div class="save-warning"></div>
+            <!-- Any error reporting -->
+            <div id="excel-import_error"></div>
+
+          </form>
+        </div>
+        <!-- Import information -->
+        <div id="excel_data_import" class="project-part hidden"></div>
+
+      </div>
+    {% endif %}
+
+    <!-- Hidden hierarchy submit form -->
+    <div class="hidden">
+      <form id="save_new_hierarchy" method="post" action="{% url 'manuscript_hierarchy' pk=manuForm.instance.id %}">
+        {% csrf_token %}
+        <input type="text" id="id_manu-hlist" name="manu-hlist" value="" />
+      </form>
+    </div>
+
+    {% if canwit_list|length == 0 %}  <!-- object.manuitems.count -->
+      <p><i>This manuscript does not contain a definition of its contents</i></p>
+    {% else %}
+
+    <div id="sermonlog"></div>
+
+      <!-- A place where the MsItems are put in hierarchically organized <div> elements -->
+      <div id="sermon_tree" class="not_hidden">
+        <div class="" level="1">
+          <table class="func-view sermons" style="width: 100%;">
+            <thead>
+              <tr>
+                <th style="width: 100%;">
+                  <!-- Summary infor of this manuscript's items/sermons -->
+                  <span>Details of this manuscript's {{object.manuitems.count}} items ({{object.get_sermon_count}} canwits)</span>
+                  {% if is_app_editor %}
+                    <span class="tree" sermonid="" id="sermon_new">
+                      <!-- The *LOCUS* of the MsItem that serves as drag point -->
+                      <span ondragover="ru.solemne.seeker.sermon_dragenter(event);" ondragenter="ru.solemne.seeker.sermon_dragenter(event);"
+                            ondragleave="ru.solemne.seeker.sermon_dragleave(event);" ondrop="ru.solemne.seeker.sermon_drop(event);">
+                        <code draggable="true" class="draggable" title="Add a new structure element from here"
+                              ondragstart="ru.solemne.seeker.sermon_drag(event);">Section...</code>
+                      </span>
+                    </span>
+                  {% endif %}
+
+                  <!-- Buttons completely at the right-->
+                  <span role="group" aria-label="erwin" class="btn-group btn-group-xs pull-right">
+                    <span type="button" class="btn jumbo-2" title="Gryson/Clavis codes linked through the Super Sermon Gold"
+                          onclick="ru.solemne.seeker.manusermo(this, 'sig-auto');">Gryson A</span>
+                    <span type="button" class="btn jumbo-1" title="Gryson/Clavis codes added manually"
+                          onclick="ru.solemne.seeker.manusermo(this, 'sig-manual');">Gryson M</span>
+                    <span type="button" class="btn jumbo-2" title="Title of this item"
+                          onclick="ru.solemne.seeker.manusermo(this, 'title');">Title</span>
+                    <span type="button" class="btn jumbo-2" title="Attributed author"
+                          onclick="ru.solemne.seeker.manusermo(this, 'author');">Author</span>
+                    <span type="button" class="btn jumbo-2" title="Incipit"
+                          onclick="ru.solemne.seeker.manusermo(this, 'incipit');">Inc</span>
+                    <span type="button" class="btn jumbo-2" title="Explicit"
+                          onclick="ru.solemne.seeker.manusermo(this, 'explicit');">Exc</span>
+                    <span type="button" class="btn jumbo-1" title="Note"
+                          onclick="ru.solemne.seeker.manusermo(this, 'note');">Note</span>
+                    <span type="button" class="btn jumbo-1" title="Kewords attached to the Super Sermon Gold"
+                          onclick="ru.solemne.seeker.manusermo(this, 'kw-auto');">Keywords A</span>
+                    <span type="button" class="btn jumbo-1" title="Kewords manually attached to this item"
+                          onclick="ru.solemne.seeker.manusermo(this, 'kw-manual');">Keywords M</span>
+                    <span type="button" class="btn jumbo-1" title="Historical Collection(s) associated with this item"
+                          onclick="ru.solemne.seeker.manusermo(this, 'hc');">HC</span>
+                  </span>
+
+                </th>
+                <th class="tdnowrap">
+                  {% if is_app_editor %}
+                    <span>
+                      <a mode="restore" class="edit-mode btn btn-xs jumbo-1 hidden" 
+                         onclick="ru.solemne.seeker.manuscript('restore');">
+                        <span class="glyphicon glyphicon-arrow-left" title="Restore to the original item hierarchy"></span>
+                      </a>
+                    </span>
+                    <span>
+                      <a mode="save" class="edit-mode btn btn-xs jumbo-2 hidden" 
+                         onclick="ru.solemne.seeker.manuscript('save', this);"
+                         targetid=""
+                         targeturl="{% if manuForm.instance.id %}{% url 'manuscript_details' manuForm.instance.id %}{% endif %}" >
+                        <span class="glyphicon glyphicon-ok" title="Save this item hierarchy"></span>
+                        Save
+                      </a>
+                    </span>
+                    <span class="hidden waiting">
+                      <span>Processing changes...</span><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+                    </span>
+                  {% endif %}
+                  <span>
+                    <a mode="expand" role="button" class="btn btn-xs jumbo-1" 
+                         onclick="ru.solemne.seeker.manuscript('expand');">
+                        <span class="glyphicon glyphicon-collapse-down" title="Expand the whole hierarchy"></span>
+                    </a>
+                  </span>
+                  <span>
+                    <a mode="collapse" role="button" class="btn btn-xs jumbo-1" 
+                         onclick="ru.solemne.seeker.manuscript('collapse');">
+                        <span class="glyphicon glyphicon-collapse-up" title="Collapse the whole hierarchy"></span>
+                    </a>
+                  </span>
+                </th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+
+
+        <div id="sermon_tree_main">
+          {% for codi in codi_list %}
+            <!-- Draw the codicological unit break -->
+            <div class="tree codi-start {% if is_app_editor and codi.codico.order > 1 %}draggable{% endif %} " 
+                 id="codi_{{codi.codico.id}}" sermonid="" sermontype="codi"
+                 targetid="{{codi.codico.id}}" order="{{codi.codico.order}}"
+                 {% if is_app_editor and codi.codico.order > 1 %}
+                    draggable="true"
+                    ondragstart="ru.solemne.seeker.sermon_drag(event);"             
+                 {% endif %}>
+              <span>Part {{codi.codico.order}}</span> 
+              <hr  title="Codicological unit order={{codi.codico.order}}" />
+
+            </div>
+
+            <!-- This is where the MsItem hierarchy is put-->
+              {% for msitem in codi.canwit_list %}
+                {% if msitem.childof == 1 %}
+                  {% include 'seeker/sermon_one.html' with msitem=msitem canwit_list=codi.canwit_list level=1 %}
+                {% endif %}
+              {% endfor %}
+
+          {% endfor %}
+        </div>
+
+      </div>
+
+
+      {% if is_app_editor %}
+        <!-- Hidden MsItem hierarchy element -->
+        <div sermonid="" id="sermon_hierarchy_element" class="tree hidden" sermontype="new">
+          <table class="func-view sermons" style="width: 100%;">
+            <tbody>
+              <!-- Horizontal ruler that can be expanded -->
+              <tr style="font-size: 1px;" class="">
+                <td colspan="2" class="ruler ruler_white"
+                    ondragover="ru.solemne.seeker.sermon_dragenter(event);" ondragenter="ru.solemne.seeker.sermon_dragenter(event);" 
+                    ondragleave="ru.solemne.seeker.sermon_dragleave(event);" ondrop="ru.solemne.seeker.sermon_drop(event);" ></td>
+                <td colspan="2" style="background-color: white;"></td>
+              </tr>
+              <!-- Actual line-->
+              <tr>
+                <!-- empty space -->
+                <td valign="top" class="sermonbutton"><span>&nbsp;</span></td>
+
+                <!-- The number of the MsItem in our current hierarchy -->
+                <td valign="top" class="sermonnumber tdnowrap" onclick="ru.solemne.seeker.sermon_selection(this);">
+                  <span>*</span>
+                </td>
+
+                <!-- The *LOCUS* of the MsItem that serves as drag point -->
+                <td valign="top" class="tdnowrap " style="background-color: white;"
+                    ondragover="ru.solemne.seeker.sermon_dragenter(event);" ondragenter="ru.solemne.seeker.sermon_dragenter(event);" 
+                    ondragleave="ru.solemne.seeker.sermon_dragleave(event);" ondrop="ru.solemne.seeker.sermon_drop(event);" >
+                  <code draggable="true" class="draggable" ondragstart="ru.solemne.seeker.sermon_drag(event);">Hierarchy</code>
+                </td>
+
+                <!-- The sermon itself -->
+                <td valign="top" class="td clickable" style="width: 100%;">
+                  <div class="sermon-new-head" draggable="false" targeturl="">
+                    <!-- THis is where the structural elements (contenteditable) will appear -->
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+
+      <!-- Copy of the tree -->
+      <div id="sermon_tree_copy" class="hidden"></div>
+
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  ru.solemne.seeker.manuscript('init');
+</script>
+
